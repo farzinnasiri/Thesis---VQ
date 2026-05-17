@@ -1,6 +1,9 @@
 \chapter{Background}
 \label{ch:background}
 
+% For AI-assisted explanatory figures in this chapter, use \aifigurecaption{...}
+% so the standardized disclosure is included directly in the caption.
+
 Autoregressive visual generation rests on a family of methods that compress images into discrete visual tokens and then model those tokens as sequences. This review covers that line of work: VQ-VAE (van den Oord et al., 2017), VQGAN/Taming Transformers (Esser et al., 2021), DALL-E-style discrete autoencoders (Ramesh et al., 2021), and LlamaGen (Sun et al., 2024). Diffusion models are not reviewed in detail because the experiments do not compare generative sampling methods; they compare the behavior of the tokenizers that make autoregressive image generation possible. Several figure placeholders in this chapter are pedagogical redraws inspired by Miranda (2021), adapted to match the notation and scope of this thesis.
 
 \section{Autoregressive Models: From Text to Images}
