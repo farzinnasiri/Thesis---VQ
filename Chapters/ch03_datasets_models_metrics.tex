@@ -9,7 +9,7 @@ The following sections fix the model instances, datasets, and measurement defini
 \section{Models Under Study}
 \label{sec:models_under_study}
 
-This thesis compares two tokenizer families that both support autoregressive modeling over discrete visual indices, but make different architectural and training choices.
+This thesis compares two tokenizers that both support autoregressive modeling over discrete visual tokens, but with different architectures and training recipes.
 
 \subsection{VQGAN Tokenizer (Taming Transformers)}
 \label{subsec:vqgan_tokenizer}
@@ -26,12 +26,12 @@ Core configuration used in experiments:
 \item first-stage objective family: reconstruction + perceptual + adversarial terms
 \end{itemize}
 
-The Taming Transformers model card reports reconstruction-level distribution metrics for this first-stage setting and provides a standard baseline for visual tokenization at $256 \times 256$ resolution.
+The published Taming Transformers checkpoint provides reconstruction metrics for this setting and serves as a standard baseline at $256 \times 256$ resolution.
 
 \subsection{LlamaGen Tokenizer}
 \label{subsec:llamagen_tokenizer}
 
-The second tokenizer is from LlamaGen (Sun et al., 2024), which revisits large-scale autoregressive image generation with a Llama-style next-token objective and reports both \texttt{VQ-16} and \texttt{VQ-8} tokenizers.
+The second tokenizer is LlamaGen (Sun et al., 2024), which uses a Llama-style next-token objective for autoregressive image generation and provides both \texttt{VQ-16} and \texttt{VQ-8} tokenizers.
 
 Core configuration used in experiments:
 \begin{itemize}
@@ -44,14 +44,14 @@ Core configuration used in experiments:
 \item codebook L2 normalization: enabled
 \end{itemize}
 
-In published LlamaGen results, \texttt{VQ-16} and \texttt{VQ-8} report strong reconstruction metrics, and codebook utilization is substantially higher than classical sparse-codebook behavior often observed in older VQ settings.
+In published LlamaGen results, \texttt{VQ-16} and \texttt{VQ-8} report competitive reconstruction metrics, and codebook utilization is higher than the sparse-codebook behavior typical of older VQ settings.
 
 \subsection{Comparability and Caveats}
 \label{subsec:comparability_caveats}
 
 The two tokenizers are directly comparable along one axis: both can represent $256 \times 256$ images as $16 \times 16$ discrete token grids with the same nominal vocabulary size. This allows controlled analysis of codebook usage, robustness, and locality without conflating sequence length.
 
-However, the comparison is not architecture-neutral. Differences in codebook dimension, normalization, and training recipe can produce different internal geometries even when external metrics are similar. These differences are treated as informative rather than confounding: they are precisely what allows the experiments to separate properties common to discrete image tokenizers from properties specific to a particular design.
+However, the comparison is not architecture-neutral. Differences in codebook dimension, normalization, and training recipe can produce different internal geometries even when external metrics are similar. These differences are informative, not confounding: they allow the experiments to separate properties common to discrete image tokenizers from properties specific to a particular design.
 
 \begin{quote}
 \textbf{Figure placeholder 3.1a: Experimental Model Comparison Table.} Add a compact table with rows = tokenizers (\texttt{VQGAN f16}, \texttt{LlamaGen VQ-16}, optional \texttt{LlamaGen VQ-8}) and columns = input resolution, token grid size, codebook size, embedding dimension, normalization, and reported reconstruction metrics.
@@ -63,7 +63,7 @@ However, the comparison is not architecture-neutral. Differences in codebook dim
 \subsection{ImageNet Validation}
 \label{subsec:imagenet_validation}
 
-The primary in-distribution evaluation set is ImageNet-1K validation (Deng et al., 2009; Russakovsky et al., 2015). This split provides 50,000 labeled images over 1,000 classes and is the standard benchmark domain for both tokenizers studied here.
+The primary test set is ImageNet-1K validation (Deng et al., 2009; Russakovsky et al., 2015). This split provides 50,000 labeled images over 1,000 classes and is the standard benchmark for both tokenizers.
 
 Preprocessing protocol:
 \begin{itemize}
@@ -77,17 +77,17 @@ For reproducibility, all models are evaluated with deterministic preprocessing a
 \subsection{ImageNet-V2}
 \label{subsec:imagenet_v2}
 
-ImageNet-V2 (Recht et al., 2019) replicates the original ImageNet data-collection process and provides new test images for the same semantic label space. It is used here as a near-domain shift benchmark to measure whether codebook usage and reconstruction behavior remain stable under resampled natural-image statistics. The exact ImageNet-V2 variant used in each run (for example, matched-frequency style subsets) is reported with the corresponding results tables.
+ImageNet-V2 (Recht et al., 2019) follows the same collection protocol as the original ImageNet and provides new test images for the same label space. It is used here as a near-domain shift benchmark to measure whether codebook usage and reconstruction behavior remain stable under resampled natural-image statistics. The exact ImageNet-V2 variant used in each run (for example, matched-frequency style subsets) is reported with the corresponding results tables.
 
 \subsection{ImageNet-Sketch}
 \label{subsec:imagenet_sketch}
 
-ImageNet-Sketch (Wang et al., 2019) emphasizes shape cues over natural texture statistics, making it a stronger shift benchmark than ImageNet-V2. It probes failure modes that arise when natural-image texture priors are weakened and stress-tests codebook assignments under stylistic and structural abstraction. Together, the two OOD sets form a severity ladder from mild resampling to pronounced distributional departure.
+ImageNet-Sketch (Wang et al., 2019) emphasizes shape over texture, so it is a stronger shift benchmark than ImageNet-V2. It tests whether tokenizers fail when natural-image texture priors are absent, and whether codebook assignments remain stable under stylistic abstraction. Together, the two OOD sets form a severity ladder from mild resampling to pronounced distributional departure.
 
 \subsection{Other Candidate Datasets}
 \label{subsec:other_candidate_datasets}
 
-Additional OOD datasets may be included for ablations, but the core cross-dataset analysis is anchored on the three datasets above so that distribution-shift conclusions remain interpretable.
+Additional OOD datasets may be used for ablations, but the core analysis uses the three datasets above to keep distribution-shift conclusions interpretable.
 
 \begin{quote}
 \textbf{Figure placeholder 3.2a: Dataset Shift Severity Ladder.} Add a three-column visual panel with example thumbnails from ImageNet validation, ImageNet-V2, and ImageNet-Sketch. Caption should explain the intended shift progression: in-distribution $\rightarrow$ mild natural-image shift $\rightarrow$ strong sketch-like shift.
@@ -96,7 +96,7 @@ Additional OOD datasets may be included for ablations, but the core cross-datase
 \section{Metrics}
 \label{sec:metrics}
 
-No single scalar captures reconstruction fidelity, perceptual quality, distribution matching, and discrete-representation behavior simultaneously, so the metric stack is intentionally redundant. The sections below define each metric, note what it misses, and explain how it is interpreted in combination with the others.
+No single scalar captures all of these properties simultaneously, so the metrics below are intentionally redundant. Each section defines the metric and explains its limitations and how it is used in combination with the others.
 
 \begin{quote}
 \textbf{Figure placeholder 3.3a: Metric Taxonomy for Tokenizer Evaluation.} Add a matrix with rows = metrics and columns = evaluation questions (\texttt{pixel fidelity}, \texttt{perceptual fidelity}, \texttt{distribution match}, \texttt{diversity/coverage}, \texttt{codebook efficiency}, \texttt{locality/stability}). Mark which metric informs which question.
@@ -112,7 +112,7 @@ Mean squared error (MSE) and peak signal-to-noise ratio (PSNR) are full-referenc
 \mathrm{PSNR}(x, \hat{x}) &= 10\,\log_{10}\!\left(\frac{\mathrm{MAX}^2}{\mathrm{MSE}}\right)
 \end{align}
 
-For normalized images in $[0,1]$, $\mathrm{MAX}=1$. Lower MSE and higher PSNR indicate better pixel agreement. Both metrics are sensitive to small spatial misalignment and high-frequency texture shifts, which makes them useful for establishing reconstruction baselines and measuring controlled perturbation deltas, but insufficient on their own as a proxy for perceptual realism.
+For normalized images in $[0,1]$, $\mathrm{MAX}=1$. Lower MSE and higher PSNR indicate better pixel agreement. They are useful for reconstruction baselines and perturbation deltas, but poor proxies for perceptual realism on their own.
 
 \subsection{Structural Similarity (SSIM)}
 \label{subsec:ssim}
@@ -123,7 +123,7 @@ SSIM (Wang et al., 2004) compares local luminance, contrast, and structure inste
 \mathrm{SSIM}(x,y) = l(x,y)\,c(x,y)\,s(x,y)
 \end{equation}
 
-where $l$, $c$, and $s$ are luminance, contrast, and structure comparisons. Reported values are typically averaged across windows. SSIM is closer to perceptual structure than pixel-error metrics, though it remains a full-reference metric rather than a learned perceptual model.
+where $l$, $c$, and $s$ are luminance, contrast, and structure comparisons. Reported values are typically averaged across windows. SSIM is closer to perceptual structure than pixel-error metrics, but it is still a full-reference metric, not a learned perceptual model.
 
 \subsection{Learned Perceptual Similarity (LPIPS)}
 \label{subsec:lpips}
@@ -134,7 +134,7 @@ LPIPS (Zhang et al., 2018) compares deep feature activations between two images 
 \mathrm{LPIPS}(x,y) = \sum_l w_l\,\lVert \phi_l(x) - \phi_l(y) \rVert_2^2
 \end{equation}
 
-where $\phi_l$ are normalized deep features and $w_l$ are learned layer weights. Lower LPIPS indicates higher perceptual similarity. It aligns more closely with human perceptual judgments than shallow pixel metrics, though it remains dependent on the specific backbone and calibration choices.
+where $\phi_l$ are normalized deep features and $w_l$ are learned layer weights. Lower LPIPS indicates higher perceptual similarity. It correlates better with human judgments than shallow pixel metrics, but it depends on the backbone and calibration.
 
 \subsection{Distribution Metrics (FID, sFID, Inception Score)}
 \label{subsec:fid_sfid_is}
@@ -147,7 +147,7 @@ FID (Heusel et al., 2017) compares two Gaussian approximations in Inception feat
 
 Lower FID indicates closer real-vs-generated (or real-vs-reconstructed) feature distributions.
 
-sFID is a spatial variant used in the OpenAI evaluator stack (Dhariwal and Nichol, 2021; guided-diffusion evaluator). It is reported as an additional distribution-level signal and should be interpreted alongside FID rather than as a replacement.
+sFID is a spatial variant used in the OpenAI evaluator stack (Dhariwal and Nichol, 2021; guided-diffusion evaluator). It is reported as an additional distribution-level check alongside FID, not as a replacement.
 
 Inception Score (Salimans et al., 2016) evaluates generated samples by combining label confidence and marginal diversity:
 
@@ -175,14 +175,14 @@ This separation is important when two models have similar FID but different mode
 \subsection{Codebook Usage Metrics}
 \label{subsec:codebook_usage_metrics}
 
-Let $K$ be codebook size and $p_k$ be empirical token frequency for code $k$. A purely literal definition of activity as $p_k > 0$ is often too brittle for finite datasets, because a code that appears once or twice may be operationally negligible while still counting as active. For this reason, codebook usage should be reported at two levels:
+Let $K$ be codebook size and $p_k$ be empirical token frequency for code $k$. A literal definition of activity as $p_k > 0$ is too brittle for finite datasets: a code that appears once or twice is negligible in practice, even if it technically counts as active. For this reason, codebook usage should be reported at two levels:
 
 \begin{itemize}
 \item raw activity: whether a code appears at least once
 \item effective activity: whether a code exceeds a minimum support threshold or belongs to the cumulative mass covering almost all assignments
 \end{itemize}
 
-In this thesis, the default descriptive quantities are defined from the raw empirical distribution, but active-subset analyses should also report an effective-support criterion when the distinction materially affects conclusions.
+This thesis defines quantities from the raw empirical distribution by default, but active-subset analyses also report an effective-support criterion when the distinction affects conclusions.
 
 \begin{align}
 \mathrm{raw\_active\_count} &= \#\{k\,|\,p_k > 0\} \\
@@ -197,7 +197,7 @@ Here $\tau$ denotes a minimum frequency threshold chosen to suppress one-off or 
 
 Positional entropy is computed per token-grid location $(u,v)$ using the local token distribution at that position across images.
 
-Active fraction and perplexity together quantify effective vocabulary size. Top-$k$ mass quantifies how concentrated assignments are, with high concentration indicating near-collapse onto a small subset of codes. Positional entropy reveals whether individual grid positions have specialized to particular codebook regions. Raw and effective activity should be compared whenever rare-code behavior is consequential for downstream interventions such as token replacement.
+Active fraction and perplexity measure effective vocabulary size. Top-$k$ mass measures concentration: high values indicate near-collapse onto a small subset of codes. Positional entropy measures whether individual grid positions specialize to particular codebook regions. Raw and effective activity should be compared whenever rare-code behavior matters for downstream interventions such as token replacement.
 
 \subsection{Locality and Robustness Metrics}
 \label{subsec:locality_robustness_metrics}
@@ -220,11 +220,11 @@ For global perturbation experiments, robustness is reported as metric degradatio
 \subsection{Reporting Protocol}
 \label{subsec:reporting_protocol}
 
-To avoid over-interpreting single scalars, each metric is reported with distribution-aware summaries:
+To prevent over-interpreting single scalars, each metric is reported with its distribution over samples:
 \begin{itemize}
 \item mean and standard deviation over samples
 \item when relevant, bootstrap confidence intervals
 \item paired comparisons for clean vs perturbed variants on the same images
 \end{itemize}
 
-All major claims in later chapters are based on metric bundles (pixel + perceptual + distribution + codebook/locality), not on a single number.
+All claims in later chapters are based on multiple metrics together, not on a single number.
