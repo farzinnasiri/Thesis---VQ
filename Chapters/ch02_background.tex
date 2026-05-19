@@ -4,7 +4,7 @@
 % For AI-assisted explanatory figures in this chapter, use \aifigurecaption{...}
 % so the standardized disclosure is included directly in the caption.
 
-Autoregressive visual generation rests on a family of methods that compress images into discrete visual tokens and then model those tokens as sequences. This review covers that line of work: VQ-VAE (van den Oord et al., 2017), VQGAN/Taming Transformers (Esser et al., 2021), DALL-E-style discrete autoencoders (Ramesh et al., 2021), and LlamaGen (Sun et al., 2024). Diffusion models are not reviewed in detail because the experiments do not compare generative sampling methods; they compare the behavior of the tokenizers that make autoregressive image generation possible. Several figure placeholders in this chapter are pedagogical redraws inspired by Miranda (2021), adapted to match the notation and scope of this thesis.
+Autoregressive visual generation rests on a family of methods that compress images into discrete visual tokens and then model those tokens as sequences. This review covers that line of work: VQ-VAE (van den Oord et al., 2017), VQGAN/Taming Transformers~\cite{esser2021taming,tamingtransformersgithub}, DALL-E-style discrete autoencoders (Ramesh et al., 2021), and LlamaGen (Sun et al., 2024). Diffusion models are not reviewed in detail because the experiments do not compare generative sampling methods; they compare the behavior of the tokenizers that make autoregressive image generation possible.
 
 \section{Autoregressive Models: From Text to Images}
 \label{sec:ar_models_text_to_images}
@@ -19,14 +19,7 @@ For text, this factorization aligns naturally with the representation used by th
 
 An autoregressive image model must therefore make two design choices before it can use a standard sequence model. First, it must choose a sequence order for a two-dimensional object, usually by flattening a spatial grid. Second, it must choose the unit of prediction. Pixel-level autoregressive models predict raw or discretized pixel values, but their sequences are long and the resulting model must learn both low-level image statistics and long-range structure. Modern autoregressive image generators often avoid this by introducing a learned image tokenizer. The tokenizer compresses an image into a shorter grid of discrete codes; the transformer then models this grid as a sequence.
 
-The scaling constraint is central. If a transformer receives a sequence of length $T$, full self-attention has $\mathcal{O}(T^2)$ time and memory cost. For image-like inputs, $T$ can be very large if we flatten at pixel level. A concrete order-of-magnitude comparison is:
-
-\begin{align}
-\text{pixel-level sequence for }256\times256\text{ RGB: } &T = 256 \times 256 \times 3 = 196{,}608 \\
-\text{token-level sequence for }256\times256\text{ with }f=16: &T = 16 \times 16 = 256
-\end{align}
-
-This gap motivates the two-stage design used in VQ-based image generation: first learn a compact discrete representation, then model token dependencies autoregressively.
+If a transformer receives a sequence of length $T$, full self-attention has $\mathcal{O}(T^2)$ time and memory cost. For image-like inputs, $T$ can be very large if we flatten at pixel level: a $256 \times 256$ RGB image has $196{,}608$ scalar values, while a $16 \times 16$ token grid has only $256$ tokens. This gap motivates the two-stage design used in VQ-based image generation: first learn a compact discrete representation, then model token dependencies autoregressively.
 
 \begin{figure}[t]
     \centering
@@ -37,7 +30,7 @@ This gap motivates the two-stage design used in VQ-based image generation: first
 
 In this two-stage design, the first stage is an autoencoder-like tokenizer and the second stage is an autoregressive prior. The tokenizer determines the visual vocabulary and the spatial resolution of the sequence. For example, a tokenizer with downsampling factor $f = 16$ maps a $256 \times 256$ image to a $16 \times 16$ grid, which contains only $256$ image tokens. The autoregressive model then predicts a sequence of 256 discrete token IDs rather than hundreds of thousands of pixel-channel values.
 
-This compression is more than an engineering convenience: it changes the learning problem. The transformer no longer models pixels directly; it models the distribution of learned visual parts. The quality and behavior of the tokenizer therefore constrain the whole generative system. If the tokenizer loses information, uses its codebook unevenly, or reacts unstably to small input changes, those properties become part of the data distribution seen by the autoregressive model.
+The quality and behavior of the tokenizer therefore constrain the whole generative system. If the tokenizer loses information, uses its codebook unevenly, or reacts unstably to small input changes, those properties become part of the data distribution seen by the autoregressive model.
 
 \begin{figure}[t]
     \centering
@@ -53,7 +46,7 @@ This compression is more than an engineering convenience: it changes the learnin
     \label{fig:local_features_vs_long_range_dependencies}
 \end{figure}
 
-This motivates the central choice in the thesis: rather than evaluating only final generated images, the experiments study the tokenizer itself. Reconstruction metrics test whether the autoencoder preserves images on average, but they do not fully explain how the representation is organized.
+This motivates the central choice in the thesis: rather than evaluating only final generated images, the experiments study the tokenizer itself.
 
 \section{Image Tokens and Vector Quantization}
 \label{sec:image_tokens_vq}
@@ -122,9 +115,9 @@ Second, the quantization boundary can create discontinuities. A small image pert
 \section{VQGAN and Taming Transformers}
 \label{sec:vqgan_taming}
 
-VQGAN extends vector-quantized autoencoding with perceptual and adversarial losses (Esser et al., 2021). The goal is to learn a codebook of visual parts that reconstruct sharper images than pixel-loss-only autoencoders. Taming Transformers then models the resulting discrete image tokens with transformers for high-resolution image synthesis.
+VQGAN extends vector-quantized autoencoding with perceptual and adversarial losses~\cite{esser2021taming}. The goal is to learn a codebook of visual parts that reconstruct sharper images than pixel-loss-only autoencoders. Taming Transformers then models the resulting discrete image tokens with transformers for high-resolution image synthesis.
 
-The main limitation of a pixel-loss autoencoder is that pixel fidelity and perceptual fidelity are not the same objective. Minimizing an average pixel error can encourage blurry reconstructions when several plausible high-frequency explanations exist. VQGAN addresses this by combining vector quantization with a perceptual reconstruction loss and an adversarial discriminator. The perceptual term compares images in a learned feature space, while the adversarial term encourages reconstructions to look realistic. Taming Transformers uses this improved first-stage model as the tokenizer for transformer-based high-resolution synthesis (Esser et al., 2021).
+The main limitation of a pixel-loss autoencoder is that pixel fidelity and perceptual fidelity are not the same objective. Minimizing an average pixel error can encourage blurry reconstructions when several plausible high-frequency explanations exist. VQGAN addresses this by combining vector quantization with a perceptual reconstruction loss and an adversarial discriminator. The perceptual term compares images in a learned feature space, while the adversarial term encourages reconstructions to look realistic. Taming Transformers uses this improved first-stage model as the tokenizer for transformer-based high-resolution synthesis~\cite{esser2021taming}.
 
 Architecturally, the VQGAN tokenizer used in this work follows the standard first-stage design from Taming Transformers. An image is passed through a convolutional encoder, projected into the codebook embedding space, quantized by nearest-neighbor lookup, projected back into the decoder latent space, and reconstructed by a convolutional decoder. The pipeline moves from image space to continuous latent space, then to discrete codebook indices, and back to image space.
 
