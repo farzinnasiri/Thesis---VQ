@@ -55,21 +55,21 @@ The Vector Quantised Variational Autoencoder (VQ-VAE) introduced a discrete late
 
 In simplified form:
 
-\begin{align}
-z_e &= \mathrm{Encoder}(x) \\
-k &= \arg\min_j \lVert z_e - e_j \rVert_2 \\
-z_q &= e_k \\
+\begin{alignat}{2}
+z_e   &= \mathrm{Encoder}(x) \\
+k     &= \arg\min_j \lVert z_e - e_j \rVert_2 \\
+z_q   &= e_k \\
 \hat{x} &= \mathrm{Decoder}(z_q)
-\end{align}
+\end{alignat}
 
 Here, $e_j$ is a codebook vector and $k$ is the discrete token ID.
 
 More explicitly, an encoder maps an image $x$ to a latent tensor $z_e(x)$ with spatial dimensions $h \times w$ and channel dimension $d$. Each vector $z_e(x)_{u,v}$ is replaced by the nearest entry in a learned codebook $E = \{e_1, \ldots, e_K\}$. The result is both a quantized latent tensor $z_q$ and an integer token grid $k$:
 
-\begin{align}
-k_{u,v} &= \arg\min_j \lVert z_e(x)_{u,v} - e_j \rVert_2 \\
+\begin{alignat}{2}
+k_{u,v}      &= \arg\min_j \lVert z_e(x)_{u,v} - e_j \rVert_2 \\
 z_q(x)_{u,v} &= e_{k_{u,v}}
-\end{align}
+\end{alignat}
 
 The decoder receives $z_q$, not the original continuous encoder output. This forces image information through a finite vocabulary. The codebook size $K$ controls the nominal number of possible visual symbols, while the spatial grid size controls how many symbols represent one image.
 
@@ -194,11 +194,11 @@ These behaviors are not secondary implementation details. They affect the sequen
 
 For the second-stage autoregressive model, training follows the same conditional factorization used in language models, but over visual token indices:
 
-\begin{align}
-\text{given sequence } s &= (s_0, s_1, \ldots, s_n), \\
-\text{model learns } &p(s_i \mid s_0, \ldots, s_{i-1}) \text{ for each } i, \\
-p(s) &= \prod_i p(s_i \mid s_{<i}).
-\end{align}
+\begin{alignat}{2}
+\text{given sequence}\quad s      &= (s_0, s_1, \ldots, s_n), \\
+\text{model learns}\quad p(s_i \mid s_{<i}) & \text{ for each } i, \\
+p(s)                             &= \prod_i p(s_i \mid s_{<i}).
+\end{alignat}
 
 This means that robustness or locality failures in the tokenizer modify the token sequence distribution seen by the transformer, affecting both likelihood and sampling behavior.
 
