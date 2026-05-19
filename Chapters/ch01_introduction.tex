@@ -1,8 +1,43 @@
 \chapter{Introduction}
 \label{ch:introduction}
 
-\section{Research Questions}
-\label{sec:research_questions}
+\section{Motivation}
+\label{sec:introduction_motivation}
+
+\section{Context}
+\label{sec:introduction_context}
+
+\section{Problem Statement}
+\label{sec:introduction_problem_statement}
+
+\section{Scope}
+\label{sec:introduction_scope}
 
 \section{Contributions}
 \label{sec:contributions}
+
+\section{Research Questions and Thesis Overview}
+\label{sec:research_questions}
+
+This thesis studies discrete image tokenizers used in autoregressive visual generation. The central premise is that reconstruction quality alone is not enough to characterize a tokenizer. A tokenizer also defines a visual vocabulary, a token distribution, and a spatial response to perturbations. These properties determine what the downstream autoregressive model sees and how local or global its errors may become.
+
+The experiments are organized around five research questions:
+
+\begin{enumerate}
+\item How do the tokenizers compare in reconstruction quality and empirical codebook usage?
+\item How stable are their reconstructions and token assignments under global perturbations?
+\item How local is the encoder response when a perturbation is applied to a local image patch?
+\item How local is the decoder response when a local patch of visual tokens is edited directly?
+\item How do reconstruction quality and codebook usage change under distribution shift?
+\end{enumerate}
+
+These questions decompose the tokenizer into the functional boundaries relevant to autoregressive image generation: reconstruction behavior, codebook behavior, encoder-side stability, decoder-side locality, and robustness under distribution shift.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.9\textwidth]{ch02_fig_2_5_tokenizer_probe_taxonomy.png}
+    \aifigurecaption{Taxonomy of the tokenizer probes used in this thesis, covering reconstruction, global robustness, encoder locality, decoder locality, and codebook behavior under shift.}
+    \label{fig:tokenizer_probe_taxonomy}
+\end{figure}
+
+The remainder of the thesis follows this decomposition. Chapter~\ref{ch:background} gives the conceptual background on autoregressive image modeling and vector-quantized tokenizers. Chapter~\ref{ch:datasets_models_metrics} defines the models, datasets, and metrics. The subsequent experimental chapters evaluate reconstruction and codebook usage, global perturbation robustness, local image-space perturbations, token-space perturbations, and distribution shift, before the final discussion synthesizes the results across these probes.

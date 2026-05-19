@@ -4,7 +4,9 @@
 % For AI-assisted explanatory figures in this chapter, use \aifigurecaption{...}
 % so the standardized disclosure is included directly in the caption.
 
-Autoregressive visual generation rests on a family of methods that compress images into discrete visual tokens and then model those tokens as sequences. This review covers that line of work: VQ-VAE (van den Oord et al., 2017), VQGAN/Taming Transformers~\cite{esser2021taming,tamingtransformersgithub}, DALL-E-style discrete autoencoders (Ramesh et al., 2021), and LlamaGen~\cite{sun2024llamagen,llamagengithub}. Diffusion models are not reviewed in detail because the experiments do not compare generative sampling methods; they compare the behavior of the tokenizers that make autoregressive image generation possible.
+Autoregressive models generate structured data by predicting one element at a time from the elements that came before it. This simple factorization has been especially successful for language, where the data is already naturally represented as a sequence of discrete tokens. Applying the same idea to images requires an additional representational step, because images are spatial, continuous, and much longer when flattened at the pixel level.
+
+Autoregressive visual generation therefore often rests on methods that compress images into discrete visual tokens and then model those tokens as sequences. This review covers that line of work: VQ-VAE (van den Oord et al., 2017), VQGAN/Taming Transformers~\cite{esser2021taming,tamingtransformersgithub}, DALL-E-style discrete autoencoders (Ramesh et al., 2021), and LlamaGen~\cite{sun2024llamagen,llamagengithub}. Diffusion models are not reviewed in detail because the experiments do not compare generative sampling methods; they compare the behavior of the tokenizers that make autoregressive image generation possible.
 
 \section{Autoregressive Models: From Text to Images}
 \label{sec:ar_models_text_to_images}
@@ -94,9 +96,9 @@ Vector quantization maps continuous latent vectors to a finite set of representa
 
 Two practical properties are especially important for this thesis.
 
-First, the nominal vocabulary and the empirical vocabulary can differ. A model may have $K = 16{,}384$ entries, but only a subset may appear on a dataset. This can happen because some codes are unused after training or because the evaluated data occupies only part of the learned visual space. The distinction between nominal and active codebook size is central to RQ1 and RQ5.
+First, the nominal vocabulary and the empirical vocabulary can differ. A model may have $K = 16{,}384$ entries, but only a subset may appear on a dataset. This can happen because some codes are unused after training or because the evaluated data occupies only part of the learned visual space. The distinction between nominal and active codebook size is central to reconstruction analysis and distribution-shift analysis.
 
-Second, the quantization boundary can create discontinuities. A small image perturbation may move an encoder output across a nearest-neighbor boundary and change the token ID. This change can be local if only the affected spatial region crosses a boundary, or it can be non-local if the encoder architecture spreads information across a wider area. This motivates the encoder-locality experiment in RQ3.
+Second, the quantization boundary can create discontinuities. A small image perturbation may move an encoder output across a nearest-neighbor boundary and change the token ID. This change can be local if only the affected spatial region crosses a boundary, or it can be non-local if the encoder architecture spreads information across a wider area. This motivates encoder-locality analysis.
 
 \begin{figure}[t]
     \centering
@@ -167,7 +169,7 @@ The vector quantizer computes nearest-neighbor assignments in codebook space. Wh
 
 For this thesis, the main LlamaGen comparison uses \texttt{VQ-16}. This makes the spatial token grid directly comparable to the VQGAN $f = 16$ baseline: both map a $256 \times 256$ image to $16 \times 16$ tokens with the same nominal vocabulary size. The two tokenizers differ, however, in codebook dimensionality, normalization, training recipe, and empirical code usage. These differences are informative. They allow the experiments to separate properties that are common to discrete image tokenizers from properties that depend on a particular tokenizer design.
 
-Unlike the VQGAN setup used here, LlamaGen shows near-full or full codebook usage in the evaluated setting. Therefore, codebook-relation maps for LlamaGen are computed over the full codebook. This difference is carried into RQ4: a nearest-neighbor replacement in VQGAN is nearest among observed alive codes, while the corresponding LlamaGen replacement is nearest in the full normalized codebook.
+Unlike the VQGAN setup used here, LlamaGen shows near-full or full codebook usage in the evaluated setting. Therefore, codebook-relation maps for LlamaGen are computed over the full codebook. This difference matters for token-space perturbation analysis: a nearest-neighbor replacement in VQGAN is nearest among observed alive codes, while the corresponding LlamaGen replacement is nearest in the full normalized codebook.
 
 \begin{figure}[t]
     \centering
@@ -202,15 +204,6 @@ p(s)                             &= \prod_i p(s_i \mid s_{<i}).
 
 This means that robustness or locality failures in the tokenizer modify the token sequence distribution seen by the transformer, affecting both likelihood and sampling behavior.
 
-The experiments in this thesis are designed around this broader view of tokenizer quality. RQ1 establishes reconstruction and codebook usage. RQ2 measures global stability under additive noise. RQ3 tests encoder locality by perturbing local image patches and measuring token changes. RQ4 tests decoder locality by editing local token patches and measuring image-space changes. RQ5 asks whether reconstruction and codebook behavior remain stable under distribution shift.
-
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=0.9\textwidth]{ch02_fig_2_5_tokenizer_probe_taxonomy.png}
-    \aifigurecaption{Taxonomy of the tokenizer probes used in this thesis, covering reconstruction, global robustness, encoder locality, decoder locality, and codebook behavior under shift.}
-    \label{fig:tokenizer_probe_taxonomy}
-\end{figure}
-
 \begin{figure}[t]
     \centering
     \includegraphics[width=0.9\textwidth]{ch02_fig_2_5a_next_token_prediction_visual_indices.png}
@@ -218,4 +211,4 @@ The experiments in this thesis are designed around this broader view of tokenize
     \label{fig:next_token_prediction_visual_indices}
 \end{figure}
 
-This thesis probes the tokenizer directly, rather than treating it as a black box. The next chapter defines the models, datasets, and metrics used in the experiments.
+The next chapter defines the models, datasets, and metrics used in the experiments.
