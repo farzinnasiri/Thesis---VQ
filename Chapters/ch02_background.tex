@@ -4,7 +4,7 @@
 % For AI-assisted explanatory figures in this chapter, use \aifigurecaption{...}
 % so the standardized disclosure is included directly in the caption.
 
-Autoregressive visual generation rests on a family of methods that compress images into discrete visual tokens and then model those tokens as sequences. This review covers that line of work: VQ-VAE (van den Oord et al., 2017), VQGAN/Taming Transformers~\cite{esser2021taming,tamingtransformersgithub}, DALL-E-style discrete autoencoders (Ramesh et al., 2021), and LlamaGen (Sun et al., 2024). Diffusion models are not reviewed in detail because the experiments do not compare generative sampling methods; they compare the behavior of the tokenizers that make autoregressive image generation possible.
+Autoregressive visual generation rests on a family of methods that compress images into discrete visual tokens and then model those tokens as sequences. This review covers that line of work: VQ-VAE (van den Oord et al., 2017), VQGAN/Taming Transformers~\cite{esser2021taming,tamingtransformersgithub}, DALL-E-style discrete autoencoders (Ramesh et al., 2021), and LlamaGen~\cite{sun2024llamagen,llamagengithub}. Diffusion models are not reviewed in detail because the experiments do not compare generative sampling methods; they compare the behavior of the tokenizers that make autoregressive image generation possible.
 
 \section{Autoregressive Models: From Text to Images}
 \label{sec:ar_models_text_to_images}
@@ -155,9 +155,9 @@ Reconstruction quality is the usual evaluation for this first stage, measured by
 \section{LlamaGen Tokenizer}
 \label{sec:llamagen_tokenizer}
 
-LlamaGen revisits autoregressive image generation using Llama-style next-token prediction (Sun et al., 2024). It includes VQ tokenizers with downsampling ratios such as \texttt{VQ-16} and \texttt{VQ-8}, and reports competitive reconstruction and generation metrics. In this project, LlamaGen is compared against VQGAN as a more recent tokenizer/generator stack.
+LlamaGen revisits autoregressive image generation using Llama-style next-token prediction~\cite{sun2024llamagen}. It includes VQ tokenizers with downsampling ratios such as \texttt{VQ-16} and \texttt{VQ-8}, and reports competitive reconstruction and generation metrics. In this project, LlamaGen is compared against VQGAN as a more recent tokenizer/generator stack.
 
-Sun et al. (2024) ask whether the next-token prediction paradigm from large language models can scale to image generation when images are represented as discrete tokens. Its system keeps the broad two-stage structure: an image tokenizer maps images to token grids, and a Llama-style autoregressive model predicts those tokens (Sun et al., 2024). The released tokenizers include downsampling ratios 16 and 8, corresponding to $16 \times 16$ and $32 \times 32$ token grids for $256 \times 256$ images. In the class-conditional ImageNet setting, the reported rFID values include 2.19 for the \texttt{VQ-16} tokenizer at $16 \times 16$ tokens and 0.59 for the \texttt{VQ-8} tokenizer at $32 \times 32$ tokens.
+Sun et al.~\cite{sun2024llamagen} ask whether the next-token prediction paradigm from large language models can scale to image generation when images are represented as discrete tokens. Its system keeps the broad two-stage structure: an image tokenizer maps images to token grids, and a Llama-style autoregressive model predicts those tokens~\cite{sun2024llamagen}. The released tokenizers include downsampling ratios 16 and 8, corresponding to $16 \times 16$ and $32 \times 32$ token grids for $256 \times 256$ images. In the class-conditional ImageNet setting, the reported rFID values include 2.19 for the \texttt{VQ-16} tokenizer at $16 \times 16$ tokens and 0.59 for the \texttt{VQ-8} tokenizer at $32 \times 32$ tokens.
 
 The LlamaGen tokenizer is structurally similar to the VQGAN first stage but was designed with stronger reconstruction and denser codebook usage as prerequisites for scalable next-token image modeling. The concrete hyperparameters used in this thesis are specified in Chapter~\ref{ch:datasets_models_metrics}.
 
