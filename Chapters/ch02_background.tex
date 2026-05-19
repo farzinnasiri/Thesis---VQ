@@ -22,7 +22,7 @@ An autoregressive image model must therefore make two design choices before it c
 The scaling constraint is central. If a transformer receives a sequence of length $T$, full self-attention has $\mathcal{O}(T^2)$ time and memory cost. For image-like inputs, $T$ can be very large if we flatten at pixel level. A concrete order-of-magnitude comparison is:
 
 \begin{align}
-\text{pixel-level sequence for }224\times224\text{ RGB: } &T = 224 \times 224 \times 3 = 150{,}528 \\
+\text{pixel-level sequence for }256\times256\text{ RGB: } &T = 256 \times 256 \times 3 = 196{,}608 \\
 \text{token-level sequence for }256\times256\text{ with }f=16: &T = 16 \times 16 = 256
 \end{align}
 
