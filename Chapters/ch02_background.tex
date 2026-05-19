@@ -28,21 +28,30 @@ The scaling constraint is central. If a transformer receives a sequence of lengt
 
 This gap motivates the two-stage design used in VQ-based image generation: first learn a compact discrete representation, then model token dependencies autoregressively.
 
-\begin{quote}
-\textbf{Figure placeholder 2.1a: Pixel Flattening vs Token Sequence Length.} Place this immediately after the complexity paragraph. Left panel: a $224 \times 224 \times 3$ image tensor expanded into a long 1D sequence; annotate $T = 150{,}528$. Right panel: a $16 \times 16$ token grid flattened to length $256$; annotate $T = 256$. Add a small note below: self-attention cost grows quadratically in $T$.
-\end{quote}
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.94\textwidth]{ch02_fig_2_1a_pixel_vs_token_sequence.png}
+    \aifigurecaption{Pixel-level flattening produces much longer autoregressive sequences than token-level flattening, which is why learned tokenizers are useful for visual sequence modeling.}
+    \label{fig:pixel_vs_token_sequence}
+\end{figure}
 
 In this two-stage design, the first stage is an autoencoder-like tokenizer and the second stage is an autoregressive prior. The tokenizer determines the visual vocabulary and the spatial resolution of the sequence. For example, a tokenizer with downsampling factor $f = 16$ maps a $256 \times 256$ image to a $16 \times 16$ grid, which contains only $256$ image tokens. The autoregressive model then predicts a sequence of 256 discrete token IDs rather than hundreds of thousands of pixel-channel values.
 
 This compression is more than an engineering convenience: it changes the learning problem. The transformer no longer models pixels directly; it models the distribution of learned visual parts. The quality and behavior of the tokenizer therefore constrain the whole generative system. If the tokenizer loses information, uses its codebook unevenly, or reacts unstably to small input changes, those properties become part of the data distribution seen by the autoregressive model.
 
-\begin{quote}
-\textbf{Figure placeholder 2.1: Two-stage autoregressive image generation.} Add a diagram showing: input image $\rightarrow$ encoder $\rightarrow$ token grid $\rightarrow$ flattened token sequence $\rightarrow$ autoregressive transformer $\rightarrow$ generated token sequence $\rightarrow$ decoder $\rightarrow$ output image. The figure should highlight the reduction from $256 \times 256 \times 3$ pixels to a $16 \times 16$ token grid for the $f = 16$ setting used in this project.
-\end{quote}
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.96\textwidth]{ch02_fig_2_1_two_stage_autoregressive_pipeline.png}
+    \aifigurecaption{Two-stage autoregressive image generation pipeline. A tokenizer maps the input image to a compact token grid, which is flattened and modeled autoregressively before decoding back to image space.}
+    \label{fig:two_stage_autoregressive_pipeline}
+\end{figure}
 
-\begin{quote}
-\textbf{Figure placeholder 2.1b: Local Features vs Long-Range Dependencies.} Place this at the end of Section~\ref{sec:ar_models_text_to_images}. Three blocks: (1) CNN feature hierarchy (low-level edges/colors $\rightarrow$ mid-level motifs $\rightarrow$ high-level parts), (2) discrete tokenization/codebook stage, (3) transformer modeling long-range relationships among tokens. Caption idea: local composition and global dependency modeling are separated but complementary.
-\end{quote}
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.94\textwidth]{ch02_fig_2_1b_local_features_vs_long_range_dependencies.png}
+    \aifigurecaption{Local feature extraction and long-range dependency modeling play complementary roles: convolutional encoders capture local visual structure, while the autoregressive transformer models global token relationships.}
+    \label{fig:local_features_vs_long_range_dependencies}
+\end{figure}
 
 This motivates the central choice in the thesis: rather than evaluating only final generated images, the experiments study the tokenizer itself. Reconstruction metrics test whether the autoencoder preserves images on average, but they do not fully explain how the representation is organized.
 
@@ -83,9 +92,12 @@ The token grid can be interpreted in two equivalent ways. For the autoencoder, i
 
 Vector quantization maps continuous latent vectors to a finite set of representative centroids: one learns a dictionary of visual prototypes (the codebook) and replaces each latent vector with the index of its nearest prototype. This gives the model a discrete alphabet without requiring pixel-level sequence modeling.
 
-\begin{quote}
-\textbf{Figure placeholder 2.2a: VQ as Clustering and Codebook Construction.} Place this after the paragraph above. Three panels: (1) latent vectors as points in 2D/3D, (2) partition into clusters with one centroid per cluster, (3) lookup-table style codebook with entries $z_0, z_1, \ldots, z_{K-1}$. Caption should state that quantization maps each latent to the nearest centroid and emits a discrete index.
-\end{quote}
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.94\textwidth]{ch02_fig_2_2a_vq_clustering_codebook.png}
+    \aifigurecaption{Vector quantization can be understood as clustering in latent space: continuous encoder outputs are mapped to the nearest learned centroid, and the centroid index becomes the discrete token.}
+    \label{fig:vq_clustering_codebook}
+\end{figure}
 
 Two practical properties are especially important for this thesis.
 
@@ -93,13 +105,19 @@ First, the nominal vocabulary and the empirical vocabulary can differ. A model m
 
 Second, the quantization boundary can create discontinuities. A small image perturbation may move an encoder output across a nearest-neighbor boundary and change the token ID. This change can be local if only the affected spatial region crosses a boundary, or it can be non-local if the encoder architecture spreads information across a wider area. This motivates the encoder-locality experiment in RQ3.
 
-\begin{quote}
-\textbf{Figure placeholder 2.2: Vector quantization in latent space.} Add a schematic with continuous encoder vectors as points, codebook entries as centroids, nearest-neighbor regions as Voronoi cells, and a highlighted point crossing a boundary after a small perturbation. The caption should connect this boundary crossing to token flips in RQ2 and RQ3.
-\end{quote}
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.9\textwidth]{ch02_fig_2_2_vq_latent_space_boundary_crossing.png}
+    \aifigurecaption{Nearest-neighbor boundaries in latent space create discontinuities: a small perturbation can move an encoder output across a quantization boundary and cause a token flip.}
+    \label{fig:vq_boundary_crossing}
+\end{figure}
 
-\begin{quote}
-\textbf{Figure placeholder 2.2b: From Encoded Feature Map to Discrete Token Sequence.} Place this at the end of Section~\ref{sec:image_tokens_vq}. Show: image $x \rightarrow$ encoder output $\hat{z}$ (continuous grid) $\rightarrow$ quantized grid $z_q$ (indices into codebook) $\rightarrow$ flattened token sequence $s_0, s_1, \ldots, s_n$. Caption should emphasize that the transformer is trained on codebook indices, not raw pixels.
-\end{quote}
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.94\textwidth]{ch02_fig_2_2b_feature_map_to_token_sequence.png}
+    \aifigurecaption{From continuous feature map to discrete sequence: the encoder produces a latent grid, quantization replaces each latent vector with a codebook index, and the resulting token grid is flattened for autoregressive modeling.}
+    \label{fig:feature_map_to_token_sequence}
+\end{figure}
 
 \section{VQGAN and Taming Transformers}
 \label{sec:vqgan_taming}
@@ -112,9 +130,12 @@ Architecturally, the VQGAN tokenizer used in this work follows the standard firs
 
 In practical implementations, this stage is trained with a reconstruction objective plus perceptual and adversarial terms. Pixel-level matching alone tends to blur fine details, while adversarial and perceptual losses produce sharper reconstructions.
 
-\begin{quote}
-\textbf{Figure placeholder 2.3a: Why Add Adversarial Training to the Tokenizer.} Place this before the tokenizer configuration bullet list. Diagram: generator pathway reconstructing $\hat{x}$ from $x$, discriminator scoring realism, and a perceptual-feature branch comparing $x$ and $\hat{x}$. Caption should explain that the first stage jointly optimizes reconstruction fidelity and perceptual realism.
-\end{quote}
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.94\textwidth]{ch02_fig_2_3a_adversarial_and_perceptual_losses.png}
+    \aifigurecaption{VQGAN augments reconstruction with perceptual and adversarial objectives, encouraging reconstructions that are not only accurate but also visually realistic.}
+    \label{fig:adversarial_and_perceptual_losses}
+\end{figure}
 
 This separation between encoding, quantization, and decoding makes it possible to intervene at different points in the tokenizer. Perturbations applied before encoding test the stability of the encoder and quantizer, while perturbations applied directly to token IDs test the spatial behavior of the decoder.
 
@@ -122,13 +143,19 @@ The concrete configuration used in this thesis is specified in Chapter~\ref{ch:d
 
 One important methodological detail is that the nominal VQGAN codebook can be much larger than the empirically active set. This matters because a token replacement experiment should not silently replace a valid token with a dead code that the model rarely or never uses in the evaluated setting. For VQGAN, the decoder-locality experiments therefore define nearest, farthest, and orthogonal replacements over the observed active subset rather than over the full nominal vocabulary.
 
-\begin{quote}
-\textbf{Figure placeholder 2.3: VQGAN first-stage model.} Add an architecture diagram for the VQGAN first-stage path: encoder, projection into codebook space, vector quantization, projection into decoder space, and decoder. Annotate the project settings: $256 \times 256$ input, $16 \times 16$ token grid, $K = 16{,}384$, $\mathrm{embed\_dim}=256$.
-\end{quote}
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.94\textwidth]{ch02_fig_2_3_vqgan_first_stage_model.png}
+    \aifigurecaption{VQGAN first-stage tokenizer architecture used as the classical baseline in this thesis, showing encoding, projection to codebook space, quantization, projection to decoder space, and reconstruction.}
+    \label{fig:vqgan_first_stage_model}
+\end{figure}
 
-\begin{quote}
-\textbf{Figure placeholder 2.3b: Two-Stage Training Schedule.} Place this at the end of Section~\ref{sec:vqgan_taming}. Panel A: train tokenizer (encoder/quantizer/decoder, plus discriminator). Panel B: freeze tokenizer, encode dataset into token sequences, train autoregressive transformer with next-token prediction on indices.
-\end{quote}
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.94\textwidth]{ch02_fig_2_3b_two_stage_training_schedule.png}
+    \aifigurecaption{Two-stage training schedule for autoregressive image generation: first train the tokenizer, then freeze it and train the autoregressive model on token sequences.}
+    \label{fig:two_stage_training_schedule}
+\end{figure}
 
 Reconstruction quality is the usual evaluation for this first stage, measured by rFID, LPIPS, and related perceptual metrics. Those metrics are necessary but incomplete for this thesis. A tokenizer can achieve strong average reconstruction while still having representational properties that are important for downstream autoregressive modeling: concentrated code usage, unstable token assignments, or decoder changes outside an edited token patch. The VQGAN baseline is therefore used both as a reconstruction model and as a system whose internal discrete representation can be probed.
 
@@ -149,9 +176,12 @@ For this thesis, the main LlamaGen comparison uses \texttt{VQ-16}. This makes th
 
 Unlike the VQGAN setup used here, LlamaGen shows near-full or full codebook usage in the evaluated setting. Therefore, codebook-relation maps for LlamaGen are computed over the full codebook. This difference is carried into RQ4: a nearest-neighbor replacement in VQGAN is nearest among observed alive codes, while the corresponding LlamaGen replacement is nearest in the full normalized codebook.
 
-\begin{quote}
-\textbf{Figure placeholder 2.4: VQGAN and LlamaGen tokenizer comparison.} Add a compact table or diagram comparing the two first-stage tokenizers used in this thesis: grid size, nominal codebook size, embedding dimension, normalization, and codebook-relation domain.
-\end{quote}
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.9\textwidth]{ch02_fig_2_4_vqgan_vs_llamagen_comparison.png}
+    \aifigurecaption{Comparison of the two tokenizer families studied in this thesis, highlighting the shared token-grid resolution and codebook size together with differences in embedding geometry and codebook usage.}
+    \label{fig:vqgan_vs_llamagen_comparison}
+\end{figure}
 
 \section{From Reconstruction Quality to Tokenizer Behavior}
 \label{sec:reconstruction_to_behavior}
@@ -181,13 +211,19 @@ This means that robustness or locality failures in the tokenizer modify the toke
 
 The experiments in this thesis are designed around this broader view of tokenizer quality. RQ1 establishes reconstruction and codebook usage. RQ2 measures global stability under additive noise. RQ3 tests encoder locality by perturbing local image patches and measuring token changes. RQ4 tests decoder locality by editing local token patches and measuring image-space changes. RQ5 asks whether reconstruction and codebook behavior remain stable under distribution shift.
 
-\begin{quote}
-\textbf{Figure placeholder 2.5: Taxonomy of tokenizer probes.} Add a four-panel explanatory figure: reconstruction baseline, global noise, local image-space perturbation through the encoder, and local token-space perturbation through the decoder. Each panel should show the measured object: image metrics, token flips, leakage outside the patch, or codebook usage.
-\end{quote}
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.9\textwidth]{ch02_fig_2_5_tokenizer_probe_taxonomy.png}
+    \aifigurecaption{Taxonomy of the tokenizer probes used in this thesis, covering reconstruction, global robustness, encoder locality, decoder locality, and codebook behavior under shift.}
+    \label{fig:tokenizer_probe_taxonomy}
+\end{figure}
 
-\begin{quote}
-\textbf{Figure placeholder 2.5a: Next-Token Prediction Over Visual Indices.} Place this after Figure placeholder 2.5. Show a token prefix $s_0 \ldots s_4$ followed by a masked/unknown $s_5$, and a probability distribution over candidate next indices. Caption should connect visual autoregression to standard language-model next-token training.
-\end{quote}
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.9\textwidth]{ch02_fig_2_5a_next_token_prediction_visual_indices.png}
+    \aifigurecaption{Autoregressive visual modeling reduces to next-token prediction over discrete visual indices, analogous to next-token prediction in language models.}
+    \label{fig:next_token_prediction_visual_indices}
+\end{figure}
 
 This thesis treats the tokenizer as a measurable object, not a black-box preprocessing step. The goal is to identify which properties are visible only when the discrete representation is probed directly.
 

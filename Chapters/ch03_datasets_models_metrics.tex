@@ -53,9 +53,12 @@ The two tokenizers are directly comparable along one axis: both can represent $2
 
 However, the comparison is not architecture-neutral. Differences in codebook dimension, normalization, and training recipe can produce different internal geometries even when external metrics are similar. These differences are informative, not confounding: they allow the experiments to separate properties common to discrete image tokenizers from properties specific to a particular design.
 
-\begin{quote}
-\textbf{Figure placeholder 3.1a: Experimental Model Comparison Table.} Add a compact table with rows = tokenizers (\texttt{VQGAN f16}, \texttt{LlamaGen VQ-16}, optional \texttt{LlamaGen VQ-8}) and columns = input resolution, token grid size, codebook size, embedding dimension, normalization, and reported reconstruction metrics.
-\end{quote}
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.92\textwidth]{ch03_fig_3_1a_experimental_model_comparison.png}
+    \aifigurecaption{Compact comparison of the tokenizer configurations discussed in this thesis, summarizing the main architectural quantities that matter for downstream robustness and locality analysis.}
+    \label{fig:experimental_model_comparison}
+\end{figure}
 
 \section{Datasets}
 \label{sec:datasets}
@@ -89,18 +92,24 @@ ImageNet-Sketch (Wang et al., 2019) emphasizes shape over texture, so it is a st
 
 Additional OOD datasets may be used for ablations, but the core analysis uses the three datasets above to keep distribution-shift conclusions interpretable.
 
-\begin{quote}
-\textbf{Figure placeholder 3.2a: Dataset Shift Severity Ladder.} Add a three-column visual panel with example thumbnails from ImageNet validation, ImageNet-V2, and ImageNet-Sketch. Caption should explain the intended shift progression: in-distribution $\rightarrow$ mild natural-image shift $\rightarrow$ strong sketch-like shift.
-\end{quote}
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.94\textwidth]{ch03_fig_3_2a_dataset_shift_severity_ladder.png}
+    \aifigurecaption{The dataset suite forms a shift-severity ladder, from in-distribution ImageNet validation to the milder ImageNet-V2 shift and the stronger stylized shift of ImageNet-Sketch.}
+    \label{fig:dataset_shift_severity_ladder}
+\end{figure}
 
 \section{Metrics}
 \label{sec:metrics}
 
 No single scalar captures all of these properties simultaneously, so the metrics below are intentionally redundant. Each section defines the metric and explains its limitations and how it is used in combination with the others.
 
-\begin{quote}
-\textbf{Figure placeholder 3.3a: Metric Taxonomy for Tokenizer Evaluation.} Add a matrix with rows = metrics and columns = evaluation questions (\texttt{pixel fidelity}, \texttt{perceptual fidelity}, \texttt{distribution match}, \texttt{diversity/coverage}, \texttt{codebook efficiency}, \texttt{locality/stability}). Mark which metric informs which question.
-\end{quote}
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.94\textwidth]{ch03_fig_3_3a_metric_taxonomy_matrix.png}
+    \aifigurecaption{Metric taxonomy used in this thesis. No single scalar captures tokenizer quality, so evaluation combines pixel, perceptual, distributional, codebook, and locality-oriented measures.}
+    \label{fig:metric_taxonomy_matrix}
+\end{figure}
 
 \subsection{Pixel-Domain Reconstruction Metrics (MSE, PSNR)}
 \label{subsec:mse_psnr}
@@ -168,9 +177,12 @@ Precision/recall for generative models (Kynk\"a\"anniemi et al., 2019) estimates
 
 This separation is important when two models have similar FID but different mode coverage.
 
-\begin{quote}
-\textbf{Figure placeholder 3.3b: Precision-Recall Trade-off in Feature Space.} Add a 2D schematic with real manifold and generated manifold overlays, showing high-precision/low-recall and low-precision/high-recall failure modes.
-\end{quote}
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.9\textwidth]{ch03_fig_3_3b_precision_recall_tradeoff.png}
+    \aifigurecaption{Precision and recall separate two different generative behaviors: fidelity to the real-data support and coverage of that support. Models can perform well on one axis while failing on the other.}
+    \label{fig:precision_recall_tradeoff}
+\end{figure}
 
 \subsection{Codebook Usage Metrics}
 \label{subsec:codebook_usage_metrics}
@@ -213,9 +225,12 @@ Encoder-locality metrics use token-space regions induced by image-space perturba
 
 For global perturbation experiments, robustness is reported as metric degradation curves vs perturbation strength (for example, sigma levels for Gaussian noise).
 
-\begin{quote}
-\textbf{Figure placeholder 3.3c: Locality Leakage Curve.} Add a plot of response magnitude vs distance from perturbation boundary, with separate curves for each tokenizer and confidence bands across images.
-\end{quote}
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.9\textwidth]{ch03_fig_3_3c_locality_leakage_curve.png}
+    \aifigurecaption{Schematic locality-leakage curve. A more localized tokenizer response decays rapidly with distance from the perturbation boundary, whereas broader leakage indicates a less spatially confined response.}
+    \label{fig:locality_leakage_curve}
+\end{figure}
 
 \subsection{Reporting Protocol}
 \label{subsec:reporting_protocol}
