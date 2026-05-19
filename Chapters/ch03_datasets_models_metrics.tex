@@ -91,6 +91,29 @@ ImageNet-V2 (Recht et al., 2019) follows the same collection protocol as the ori
 
 ImageNet-Sketch (Wang et al., 2019) emphasizes shape over texture, so it is a stronger distribution-shift benchmark than ImageNet-V2. In this thesis it is used only for shift analysis, where it tests whether tokenizers fail when natural-image texture priors are absent and whether codebook assignments remain stable under stylistic abstraction. Together, ImageNet-V2 and ImageNet-Sketch form an ImageNet-aligned severity ladder from mild resampling to pronounced visual departure.
 
+\begin{figure}[t]
+    \centering
+    \setlength{\tabcolsep}{3pt}
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{ccc}
+        \textbf{ImageNet validation} & \textbf{ImageNet-V2} & \textbf{ImageNet-Sketch} \\
+        \includegraphics[width=0.28\textwidth]{dataset_examples/imagenet_val_golden_retriever.jpeg} &
+        \includegraphics[width=0.28\textwidth]{dataset_examples/imagenet_v2_golden_retriever.jpeg} &
+        \includegraphics[width=0.28\textwidth]{dataset_examples/imagenet_sketch_golden_retriever.jpeg} \\
+        golden retriever & golden retriever & golden retriever \\
+        \includegraphics[width=0.28\textwidth]{dataset_examples/imagenet_val_macaw.jpeg} &
+        \includegraphics[width=0.28\textwidth]{dataset_examples/imagenet_v2_macaw.jpeg} &
+        \includegraphics[width=0.28\textwidth]{dataset_examples/imagenet_sketch_macaw.jpeg} \\
+        macaw & macaw & macaw \\
+        \includegraphics[width=0.28\textwidth]{dataset_examples/imagenet_val_strawberry.jpeg} &
+        \includegraphics[width=0.28\textwidth]{dataset_examples/imagenet_v2_strawberry.jpeg} &
+        \includegraphics[width=0.28\textwidth]{dataset_examples/imagenet_sketch_strawberry.jpeg} \\
+        strawberry & strawberry & strawberry \\
+    \end{tabular}
+    \caption{Representative examples from the ImageNet-aligned dataset ladder used for distribution-shift analysis. Each row keeps the same ImageNet class across the original validation set, ImageNet-V2, and ImageNet-Sketch, so the visual shift is style and collection process rather than label-space change.}
+    \label{fig:dataset_shift_severity_ladder}
+\end{figure}
+
 \subsection{Non-ImageNet Domain-Shift Checks}
 \label{subsec:other_candidate_datasets}
 
@@ -111,13 +134,18 @@ The shift datasets above are ImageNet-derived or ImageNet-aligned: ImageNet-V2 k
     \label{tab:non_imagenet_datasets}
 \end{table}
 
-These datasets are not treated as replacements for the ImageNet-based severity ladder and are not used in the perturbation-locality chapters. They are used only as domain-shift checks: if a tokenizer's codebook statistics remain stable on ImageNet-V2 and ImageNet-Sketch but change strongly on medical or document images, the result suggests domain specialization rather than a generic failure of the measurement pipeline. Figure~\ref{fig:dataset_shift_severity_ladder} shows the intended shift ordering.
+These datasets are not treated as replacements for the ImageNet-based severity ladder in Figure~\ref{fig:dataset_shift_severity_ladder} and are not used in the perturbation-locality chapters. They are used only as domain-shift checks: if a tokenizer's codebook statistics remain stable on ImageNet-V2 and ImageNet-Sketch but change strongly on medical or document images, the result suggests domain specialization rather than a generic failure of the measurement pipeline. Figure~\ref{fig:non_imagenet_domain_examples} shows two representative examples from this non-ImageNet group.
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.94\textwidth]{ch03_fig_3_1_dataset_shift_severity_ladder.png}
-    \aifigurecaption{The dataset suite forms a shift-severity ladder, from in-distribution ImageNet validation to the milder ImageNet-V2 shift and the stronger stylized shift of ImageNet-Sketch.}
-    \label{fig:dataset_shift_severity_ladder}
+    \setlength{\tabcolsep}{12pt}
+    \begin{tabular}{cc}
+        \includegraphics[width=0.34\textwidth]{dataset_examples/ood_objectnet_banana.png} &
+        \includegraphics[width=0.34\textwidth]{dataset_examples/ood_bloodmnist.png} \\
+        ObjectNet & BloodMNIST
+    \end{tabular}
+    \caption{Representative non-ImageNet domain-shift examples. ObjectNet remains a natural-object dataset but changes viewpoint and background statistics, while BloodMNIST moves to biomedical microscopy and therefore changes both texture and semantic domain.}
+    \label{fig:non_imagenet_domain_examples}
 \end{figure}
 
 \section{Metrics}
