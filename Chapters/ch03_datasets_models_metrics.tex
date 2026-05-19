@@ -261,4 +261,32 @@ Encoder-locality metrics use token-space regions induced by image-space perturba
 
 For global perturbation experiments, robustness is reported as metric degradation curves vs perturbation strength (for example, sigma levels for Gaussian noise).
 
+\subsection{Metric Comparison Summary}
+\label{subsec:metric_comparison_summary}
+
+Table~\ref{tab:metric_comparison_summary} summarizes the metrics used in this thesis, with directionality, practical ranges, and key caveats drawn from the original metric papers and follow-up evaluation analyses~\cite{heusel2017gans,barratt2018note,chong2019unbiased,zhang2018unreasonable,wang2004ssim,salimans2016improved,kynkaanniemi2019improved,openaiguideddiffusionevals}.
+
+\begin{table}[t]
+    \centering
+    \scriptsize
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.11\textwidth} >{\raggedright\arraybackslash}p{0.21\textwidth} >{\raggedright\arraybackslash}p{0.17\textwidth} >{\raggedright\arraybackslash}p{0.19\textwidth} >{\raggedright\arraybackslash}X}
+        \textbf{Metric} & \textbf{Measures} & \textbf{Category} & \textbf{Range / Direction} & \textbf{Key limitations} \\ \hline
+        MSE & Pixel-wise squared error & Pixel fidelity & $[0,\infty)$ ($\downarrow$) & Sensitive to small spatial shifts; weak perceptual correlation on its own. \\
+        PSNR & Log-scaled inverse reconstruction error & Pixel fidelity & $[0,\infty)$ ($\uparrow$) & Inherits MSE limitations; can be dominated by low-level errors. \\
+        SSIM & Local luminance/contrast/structure similarity & Perceptual fidelity (full-reference) & Theoretical $[-1,1]$, practical near $[0,1]$ ($\uparrow$) & Can vary under small geometric misalignment and windowing choices. \\
+        LPIPS & Deep-feature perceptual distance & Perceptual fidelity (learned) & Non-negative, typically near $[0,1]$ ($\downarrow$) & Depends on pretrained backbone and calibration choices. \\
+        FID & Fr\'echet distance between real and generated feature Gaussians & Distribution match & $[0,\infty)$ ($\downarrow$) & Depends on feature extractor and finite-sample estimation; Gaussian approximation can be restrictive. \\
+        sFID & Spatial-FID variant in evaluator pipelines & Distribution match & $[0,\infty)$ ($\downarrow$) & Same caveats as FID, plus evaluator-implementation dependence. \\
+        IS & Confidence/diversity trade-off via classifier outputs & Distribution/quality proxy & $[1,C]$ for $C$ classifier classes ($\uparrow$) & Does not directly compare to real-data distribution; can be gamed by classifier bias. \\
+        Precision / Recall & Fidelity to real manifold / coverage of real manifold & Diversity and coverage & Each in $[0,1]$ ($\uparrow$) & Depends on feature space and neighborhood construction hyperparameters. \\
+        Active fraction & Fraction of nominal codebook used & Codebook efficiency & $[0,1]$ ($\uparrow$) & Sensitive to sample size and activity definition (raw vs thresholded support). \\
+        Entropy / Perplexity / Top-$k$ mass & Uniformity and concentration of token usage & Codebook efficiency & $H \in [0,\log K]$ ($\uparrow$), perplexity $\in [1,K]$ ($\uparrow$), top-$k$ mass $\in [0,1]$ ($\downarrow$ for concentration) & Can mask spatial heterogeneity unless reported with positional analysis. \\
+        Flip rate & Token-change frequency under perturbation & Locality/stability & $[0,1]$ ($\downarrow$) & Depends on perturbation protocol and region definition. \\
+        Leakage ratio & Outside-patch vs inside-patch change ratio & Locality/stability & $[0,\infty)$ ($\downarrow$) & Unstable when denominator is very small; should be reported with inside-region activity. \\
+    \end{tabularx}
+    \caption{Comparison of metrics used in this thesis. Direction arrows indicate preferred direction under fixed evaluation protocol.}
+    \label{tab:metric_comparison_summary}
+\end{table}
+
 The next chapters apply these metrics to the five research questions, moving from baseline reconstruction and codebook usage to perturbation robustness, locality, and distribution shift.
