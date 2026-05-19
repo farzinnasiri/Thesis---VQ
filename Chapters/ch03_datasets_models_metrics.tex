@@ -14,7 +14,7 @@ This thesis compares two tokenizers that both support autoregressive modeling ov
 \subsection{VQGAN Tokenizer (Taming Transformers)}
 \label{subsec:vqgan_tokenizer}
 
-The first tokenizer is the ImageNet VQGAN first-stage model introduced in Taming Transformers (Esser et al., 2021). The configuration used in this work corresponds to the commonly used $f = 16$, $K = 16{,}384$ setting.
+The first tokenizer is the ImageNet VQGAN first-stage model introduced in Taming Transformers (Esser et al., 2021). The configuration used in this work corresponds to the commonly used $f = 16$, $K = 16{,}384$ setting, summarized in Table~\ref{tab:vqgan_config}.
 
 \begin{table}[h]
     \centering
@@ -35,7 +35,7 @@ The published Taming Transformers checkpoint provides reconstruction metrics for
 \subsection{LlamaGen Tokenizer}
 \label{subsec:llamagen_tokenizer}
 
-The second tokenizer is LlamaGen~\cite{sun2024llamagen,llamagengithub}, which uses a Llama-style next-token objective for autoregressive image generation and provides both \texttt{VQ-16} and \texttt{VQ-8} tokenizers.
+The second tokenizer is LlamaGen~\cite{sun2024llamagen,llamagengithub}, which uses a Llama-style next-token objective for autoregressive image generation and provides both \texttt{VQ-16} and \texttt{VQ-8} tokenizers. Table~\ref{tab:llamagen_config} gives the tokenizer configuration used here.
 
 \begin{table}[h]
     \centering
@@ -94,7 +94,7 @@ ImageNet-Sketch (Wang et al., 2019) emphasizes shape over texture, so it is a st
 \subsection{Non-ImageNet Domain-Shift Checks}
 \label{subsec:other_candidate_datasets}
 
-The shift datasets above are ImageNet-derived or ImageNet-aligned: ImageNet-V2 keeps the ImageNet label space under a new natural-image collection process, and ImageNet-Sketch keeps the label space but changes the visual style. For the distribution-shift chapter, the analysis also includes non-ImageNet domain checks: ObjectNet~\cite{barbu2019objectnet}, BloodMNIST and OrganAMNIST from MedMNIST v2~\cite{yang2023medmnist}, and RVL-CDIP~\cite{harley2015rvlcdip}. These datasets are not candidates for every experiment in the thesis; they are used to test whether codebook and reconstruction behavior changes when the visual domain itself changes, including controlled household objects, microscopic blood-cell images, abdominal CT slices, and scanned document pages.
+The shift datasets above are ImageNet-derived or ImageNet-aligned: ImageNet-V2 keeps the ImageNet label space under a new natural-image collection process, and ImageNet-Sketch keeps the label space but changes the visual style. For the distribution-shift chapter, the analysis also includes non-ImageNet domain checks: ObjectNet~\cite{barbu2019objectnet}, BloodMNIST and OrganAMNIST from MedMNIST v2~\cite{yang2023medmnist}, and RVL-CDIP~\cite{harley2015rvlcdip}. These datasets are not candidates for every experiment in the thesis; they are used to test whether codebook and reconstruction behavior changes when the visual domain itself changes, including controlled household objects, microscopic blood-cell images, abdominal CT slices, and scanned document pages. Table~\ref{tab:non_imagenet_datasets} summarizes these domain-shift checks.
 
 \begin{table}[h]
     \centering
@@ -111,7 +111,7 @@ The shift datasets above are ImageNet-derived or ImageNet-aligned: ImageNet-V2 k
     \label{tab:non_imagenet_datasets}
 \end{table}
 
-These datasets are not treated as replacements for the ImageNet-based severity ladder and are not used in the perturbation-locality chapters. They are used only as domain-shift checks: if a tokenizer's codebook statistics remain stable on ImageNet-V2 and ImageNet-Sketch but change strongly on medical or document images, the result suggests domain specialization rather than a generic failure of the measurement pipeline.
+These datasets are not treated as replacements for the ImageNet-based severity ladder and are not used in the perturbation-locality chapters. They are used only as domain-shift checks: if a tokenizer's codebook statistics remain stable on ImageNet-V2 and ImageNet-Sketch but change strongly on medical or document images, the result suggests domain specialization rather than a generic failure of the measurement pipeline. Figure~\ref{fig:dataset_shift_severity_ladder} shows the intended shift ordering.
 
 \begin{figure}[t]
     \centering

@@ -21,7 +21,7 @@ For text, this factorization aligns naturally with the representation used by th
 
 An autoregressive image model must therefore make two design choices before it can use a standard sequence model. First, it must choose a sequence order for a two-dimensional object, usually by flattening a spatial grid. Second, it must choose the unit of prediction. Pixel-level autoregressive models predict raw or discretized pixel values, but their sequences are long and the resulting model must learn both low-level image statistics and long-range structure. Modern autoregressive image generators often avoid this by introducing a learned image tokenizer. The tokenizer compresses an image into a shorter grid of discrete codes; the transformer then models this grid as a sequence.
 
-If a transformer receives a sequence of length $T$, full self-attention has $\mathcal{O}(T^2)$ time and memory cost. For image-like inputs, $T$ can be very large if we flatten at pixel level: a $256 \times 256$ RGB image has $196{,}608$ scalar values, while a $16 \times 16$ token grid has only $256$ tokens. This gap motivates the two-stage design used in VQ-based image generation: first learn a compact discrete representation, then model token dependencies autoregressively.
+If a transformer receives a sequence of length $T$, full self-attention has $\mathcal{O}(T^2)$ time and memory cost. For image-like inputs, $T$ can be very large if we flatten at pixel level: a $256 \times 256$ RGB image has $196{,}608$ scalar values, while a $16 \times 16$ token grid has only $256$ tokens. Figure~\ref{fig:pixel_vs_token_sequence} illustrates this difference. This gap motivates the two-stage design used in VQ-based image generation: first learn a compact discrete representation, then model token dependencies autoregressively.
 
 \begin{figure}[t]
     \centering
@@ -30,9 +30,9 @@ If a transformer receives a sequence of length $T$, full self-attention has $\ma
     \label{fig:pixel_vs_token_sequence}
 \end{figure}
 
-In this two-stage design, the first stage is an autoencoder-like tokenizer and the second stage is an autoregressive prior. The tokenizer determines the visual vocabulary and the spatial resolution of the sequence. For example, a tokenizer with downsampling factor $f = 16$ maps a $256 \times 256$ image to a $16 \times 16$ grid, which contains only $256$ image tokens. The autoregressive model then predicts a sequence of 256 discrete token IDs rather than hundreds of thousands of pixel-channel values.
+In this two-stage design, the first stage is an autoencoder-like tokenizer and the second stage is an autoregressive prior, as shown in Figure~\ref{fig:two_stage_autoregressive_pipeline}. The tokenizer determines the visual vocabulary and the spatial resolution of the sequence. For example, a tokenizer with downsampling factor $f = 16$ maps a $256 \times 256$ image to a $16 \times 16$ grid, which contains only $256$ image tokens. The autoregressive model then predicts a sequence of 256 discrete token IDs rather than hundreds of thousands of pixel-channel values.
 
-The quality and behavior of the tokenizer therefore constrain the whole generative system. If the tokenizer loses information, uses its codebook unevenly, or reacts unstably to small input changes, those properties become part of the data distribution seen by the autoregressive model.
+The quality and behavior of the tokenizer therefore constrain the whole generative system. If the tokenizer loses information, uses its codebook unevenly, or reacts unstably to small input changes, those properties become part of the data distribution seen by the autoregressive model. Figure~\ref{fig:local_features_vs_long_range_dependencies} shows the complementary roles of local feature extraction and long-range token modeling.
 
 \begin{figure}[t]
     \centering
@@ -85,7 +85,7 @@ where $\mathrm{sg}[\cdot]$ denotes stop-gradient and $\beta$ controls the commit
 
 The token grid can be interpreted in two equivalent ways. For the autoencoder, it is an index map telling the decoder which codebook vector to use at each spatial location. For the autoregressive prior, it is a sequence over a vocabulary of size $K$. This dual role is why codebook behavior matters: a code that is useful for reconstruction is also a symbol the transformer may need to predict.
 
-Vector quantization maps continuous latent vectors to a finite set of representative centroids: one learns a dictionary of visual prototypes (the codebook) and replaces each latent vector with the index of its nearest prototype. This gives the model a discrete alphabet without requiring pixel-level sequence modeling.
+Vector quantization maps continuous latent vectors to a finite set of representative centroids: one learns a dictionary of visual prototypes (the codebook) and replaces each latent vector with the index of its nearest prototype. This gives the model a discrete alphabet without requiring pixel-level sequence modeling. Figure~\ref{fig:vq_clustering_codebook} gives the corresponding clustering view.
 
 \begin{figure}[t]
     \centering
@@ -98,7 +98,7 @@ Two practical properties are especially important for this thesis.
 
 First, the nominal vocabulary and the empirical vocabulary can differ. A model may have $K = 16{,}384$ entries, but only a subset may appear on a dataset. This can happen because some codes are unused after training or because the evaluated data occupies only part of the learned visual space. The distinction between nominal and active codebook size is central to reconstruction analysis and distribution-shift analysis.
 
-Second, the quantization boundary can create discontinuities. A small image perturbation may move an encoder output across a nearest-neighbor boundary and change the token ID. This change can be local if only the affected spatial region crosses a boundary, or it can be non-local if the encoder architecture spreads information across a wider area. This motivates encoder-locality analysis.
+Second, the quantization boundary can create discontinuities. A small image perturbation may move an encoder output across a nearest-neighbor boundary and change the token ID. This change can be local if only the affected spatial region crosses a boundary, or it can be non-local if the encoder architecture spreads information across a wider area. Figure~\ref{fig:vq_boundary_crossing} illustrates the boundary-crossing mechanism. This motivates encoder-locality analysis.
 
 \begin{figure}[t]
     \centering
@@ -121,9 +121,9 @@ VQGAN extends vector-quantized autoencoding with perceptual and adversarial loss
 
 The main limitation of a pixel-loss autoencoder is that pixel fidelity and perceptual fidelity are not the same objective. Minimizing an average pixel error can encourage blurry reconstructions when several plausible high-frequency explanations exist. VQGAN addresses this by combining vector quantization with a perceptual reconstruction loss and an adversarial discriminator. The perceptual term compares images in a learned feature space, while the adversarial term encourages reconstructions to look realistic. Taming Transformers uses this improved first-stage model as the tokenizer for transformer-based high-resolution synthesis~\cite{esser2021taming}.
 
-Architecturally, the VQGAN tokenizer used in this work follows the standard first-stage design from Taming Transformers. An image is passed through a convolutional encoder, projected into the codebook embedding space, quantized by nearest-neighbor lookup, projected back into the decoder latent space, and reconstructed by a convolutional decoder. The pipeline moves from image space to continuous latent space, then to discrete codebook indices, and back to image space.
+Architecturally, the VQGAN tokenizer used in this work follows the standard first-stage design from Taming Transformers. An image is passed through a convolutional encoder, projected into the codebook embedding space, quantized by nearest-neighbor lookup, projected back into the decoder latent space, and reconstructed by a convolutional decoder. The pipeline moves from image space to continuous latent space, then to discrete codebook indices, and back to image space; Figure~\ref{fig:feature_map_to_token_sequence} shows the corresponding feature-map-to-sequence conversion.
 
-In practical implementations, this stage is trained with a reconstruction objective plus perceptual and adversarial terms. Pixel-level matching alone tends to blur fine details, while adversarial and perceptual losses produce sharper reconstructions.
+In practical implementations, this stage is trained with a reconstruction objective plus perceptual and adversarial terms. Pixel-level matching alone tends to blur fine details, while adversarial and perceptual losses produce sharper reconstructions, as summarized in Figure~\ref{fig:adversarial_and_perceptual_losses}.
 
 \begin{figure}[t]
     \centering
@@ -134,9 +134,9 @@ In practical implementations, this stage is trained with a reconstruction object
 
 This separation between encoding, quantization, and decoding makes it possible to intervene at different points in the tokenizer. Perturbations applied before encoding test the stability of the encoder and quantizer, while perturbations applied directly to token IDs test the spatial behavior of the decoder.
 
-The concrete configuration used in this thesis is specified in Chapter~\ref{ch:datasets_models_metrics}. VQGAN is an older perceptual-adversarial tokenizer: a first-stage model optimized to reconstruct images sharply enough for transformer-based generation.
+The concrete configuration used in this thesis is specified in Chapter~\ref{ch:datasets_models_metrics}. VQGAN is an older perceptual-adversarial tokenizer: a first-stage model optimized to reconstruct images sharply enough for transformer-based generation. Figure~\ref{fig:vqgan_first_stage_model} summarizes its first-stage path.
 
-One important methodological detail is that the nominal VQGAN codebook can be much larger than the empirically active set. This matters because a token replacement experiment should not silently replace a valid token with a dead code that the model rarely or never uses in the evaluated setting. For VQGAN, the decoder-locality experiments therefore define nearest, farthest, and orthogonal replacements over the observed active subset rather than over the full nominal vocabulary.
+One important methodological detail is that the nominal VQGAN codebook can be much larger than the empirically active set. This matters because a token replacement experiment should not silently replace a valid token with a dead code that the model rarely or never uses in the evaluated setting. For VQGAN, the decoder-locality experiments therefore define nearest, farthest, and orthogonal replacements over the observed active subset rather than over the full nominal vocabulary. The broader two-stage training schedule is shown in Figure~\ref{fig:two_stage_training_schedule}.
 
 \begin{figure}[t]
     \centering
@@ -167,7 +167,7 @@ It supports the same experimental decomposition as the VQGAN first stage: images
 
 The vector quantizer computes nearest-neighbor assignments in codebook space. When L2 normalization is enabled, both encoder outputs and codebook embeddings are normalized before distance computation. This changes the geometry of codebook interventions. On the unit sphere, Euclidean distance and cosine similarity are tightly linked: the farthest code under Euclidean distance is the one with the most negative cosine similarity, whereas an orthogonal intervention targets cosine similarity near zero. These are distinct operations and should not be conflated.
 
-For this thesis, the main LlamaGen comparison uses \texttt{VQ-16}. This makes the spatial token grid directly comparable to the VQGAN $f = 16$ baseline: both map a $256 \times 256$ image to $16 \times 16$ tokens with the same nominal vocabulary size. The two tokenizers differ, however, in codebook dimensionality, normalization, training recipe, and empirical code usage. These differences are informative. They allow the experiments to separate properties that are common to discrete image tokenizers from properties that depend on a particular tokenizer design.
+For this thesis, the main LlamaGen comparison uses \texttt{VQ-16}. This makes the spatial token grid directly comparable to the VQGAN $f = 16$ baseline: both map a $256 \times 256$ image to $16 \times 16$ tokens with the same nominal vocabulary size. The two tokenizers differ, however, in codebook dimensionality, normalization, training recipe, and empirical code usage. These differences are informative. They allow the experiments to separate properties that are common to discrete image tokenizers from properties that depend on a particular tokenizer design. Figure~\ref{fig:vqgan_vs_llamagen_comparison} summarizes this comparison.
 
 Unlike the VQGAN setup used here, LlamaGen shows near-full or full codebook usage in the evaluated setting. Therefore, codebook-relation maps for LlamaGen are computed over the full codebook. This difference matters for token-space perturbation analysis: a nearest-neighbor replacement in VQGAN is nearest among observed alive codes, while the corresponding LlamaGen replacement is nearest in the full normalized codebook.
 
@@ -194,7 +194,7 @@ However, reconstruction quality alone does not determine whether a tokenizer is 
 
 These behaviors are not secondary implementation details. They affect the sequence model trained on top of the tokenizer. Codebook concentration changes the effective vocabulary and token frequency distribution. Non-local encoder responses make token sequences sensitive to small image changes. Non-local decoder responses make local token prediction errors spread across the image. Distribution-shift changes can expose whether a tokenizer has learned a general visual vocabulary or a representation specialized to the training distribution.
 
-For the second-stage autoregressive model, training follows the same conditional factorization used in language models, but over visual token indices:
+For the second-stage autoregressive model, training follows the same conditional factorization used in language models, but over visual token indices. Figure~\ref{fig:next_token_prediction_visual_indices} illustrates this next-token prediction view.
 
 \begin{alignat}{2}
 \text{given sequence}\quad s      &= (s_0, s_1, \ldots, s_n), \\
