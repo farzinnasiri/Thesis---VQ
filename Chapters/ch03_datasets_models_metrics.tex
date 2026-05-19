@@ -93,22 +93,24 @@ ImageNet-Sketch (Wang et al., 2019) emphasizes shape over texture, so it is a st
 
 \begin{figure}[t]
     \centering
-    \setlength{\tabcolsep}{3pt}
-    \renewcommand{\arraystretch}{1.15}
-    \begin{tabular}{ccc}
-        \textbf{ImageNet validation} & \textbf{ImageNet-V2} & \textbf{ImageNet-Sketch} \\
-        \includegraphics[width=0.28\textwidth]{dataset_examples/imagenet_val_golden_retriever.jpeg} &
-        \includegraphics[width=0.28\textwidth]{dataset_examples/imagenet_v2_golden_retriever.jpeg} &
-        \includegraphics[width=0.28\textwidth]{dataset_examples/imagenet_sketch_golden_retriever.jpeg} \\
-        golden retriever & golden retriever & golden retriever \\
-        \includegraphics[width=0.28\textwidth]{dataset_examples/imagenet_val_macaw.jpeg} &
-        \includegraphics[width=0.28\textwidth]{dataset_examples/imagenet_v2_macaw.jpeg} &
-        \includegraphics[width=0.28\textwidth]{dataset_examples/imagenet_sketch_macaw.jpeg} \\
-        macaw & macaw & macaw \\
-        \includegraphics[width=0.28\textwidth]{dataset_examples/imagenet_val_strawberry.jpeg} &
-        \includegraphics[width=0.28\textwidth]{dataset_examples/imagenet_v2_strawberry.jpeg} &
-        \includegraphics[width=0.28\textwidth]{dataset_examples/imagenet_sketch_strawberry.jpeg} \\
-        strawberry & strawberry & strawberry \\
+    \setlength{\tabcolsep}{5pt}
+    \renewcommand{\arraystretch}{1.35}
+    \begin{tabular}{>{\raggedright\arraybackslash}p{0.13\textwidth} c c c}
+        & \makebox[0.235\textwidth][c]{\textbf{ImageNet validation}}
+        & \makebox[0.235\textwidth][c]{\textbf{ImageNet-V2}}
+        & \makebox[0.235\textwidth][c]{\textbf{ImageNet-Sketch}} \\
+        golden retriever
+        & \makebox[0.235\textwidth][c]{\includegraphics[width=0.235\textwidth,height=0.15\textheight,keepaspectratio]{dataset_examples/imagenet_val_golden_retriever.jpeg}}
+        & \makebox[0.235\textwidth][c]{\includegraphics[width=0.235\textwidth,height=0.15\textheight,keepaspectratio]{dataset_examples/imagenet_v2_golden_retriever.jpeg}}
+        & \makebox[0.235\textwidth][c]{\includegraphics[width=0.235\textwidth,height=0.15\textheight,keepaspectratio]{dataset_examples/imagenet_sketch_golden_retriever.jpeg}} \\
+        macaw
+        & \makebox[0.235\textwidth][c]{\includegraphics[width=0.235\textwidth,height=0.15\textheight,keepaspectratio]{dataset_examples/imagenet_val_macaw.jpeg}}
+        & \makebox[0.235\textwidth][c]{\includegraphics[width=0.235\textwidth,height=0.15\textheight,keepaspectratio]{dataset_examples/imagenet_v2_macaw.jpeg}}
+        & \makebox[0.235\textwidth][c]{\includegraphics[width=0.235\textwidth,height=0.15\textheight,keepaspectratio]{dataset_examples/imagenet_sketch_macaw.jpeg}} \\
+        strawberry
+        & \makebox[0.235\textwidth][c]{\includegraphics[width=0.235\textwidth,height=0.15\textheight,keepaspectratio]{dataset_examples/imagenet_val_strawberry.jpeg}}
+        & \makebox[0.235\textwidth][c]{\includegraphics[width=0.235\textwidth,height=0.15\textheight,keepaspectratio]{dataset_examples/imagenet_v2_strawberry.jpeg}}
+        & \makebox[0.235\textwidth][c]{\includegraphics[width=0.235\textwidth,height=0.15\textheight,keepaspectratio]{dataset_examples/imagenet_sketch_strawberry.jpeg}} \\
     \end{tabular}
     \caption{Representative examples from the ImageNet-aligned dataset ladder used for distribution-shift analysis. Each row keeps the same ImageNet class across the original validation set, ImageNet-V2, and ImageNet-Sketch, so the visual shift is style and collection process rather than label-space change.}
     \label{fig:dataset_shift_severity_ladder}
