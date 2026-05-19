@@ -4,7 +4,7 @@
 % For AI-assisted explanatory figures in this chapter, use \aifigurecaption{...}
 % so the standardized disclosure is included directly in the caption.
 
-The following sections fix the model instances, datasets, and measurement definitions used across all research-question chapters. Each RQ chapter then contains its own specific procedure and results.
+This chapter defines the models, datasets, and metrics used throughout the experiments. The later RQ chapters describe the specific procedures and results for each question.
 
 \section{Models Under Study}
 \label{sec:models_under_study}
@@ -16,15 +16,20 @@ This thesis compares two tokenizers that both support autoregressive modeling ov
 
 The first tokenizer is the ImageNet VQGAN first-stage model introduced in Taming Transformers (Esser et al., 2021). The configuration used in this work corresponds to the commonly used $f = 16$, $K = 16{,}384$ setting.
 
-Core configuration used in experiments:
-\begin{itemize}
-\item input image resolution: $256 \times 256$
-\item downsampling factor: $f = 16$
-\item token-grid resolution: $16 \times 16$
-\item nominal codebook size: $K = 16{,}384$
-\item codebook embedding dimension: $256$
-\item first-stage objective family: reconstruction + perceptual + adversarial terms
-\end{itemize}
+\begin{table}[h]
+    \centering
+    \begin{tabular}{ll}
+        \textbf{Parameter} & \textbf{Value} \\ \hline
+        Input resolution & $256 \times 256$ \\
+        Downsampling factor & $f = 16$ \\
+        Token grid & $16 \times 16$ \\
+        Codebook size & $K = 16{,}384$ \\
+        Embedding dimension & $256$ \\
+        Training objectives & reconstruction + perceptual + adversarial \\
+    \end{tabular}
+    \caption{VQGAN tokenizer configuration.}
+    \label{tab:vqgan_config}
+\end{table}
 
 The published Taming Transformers checkpoint provides reconstruction metrics for this setting and serves as a standard baseline at $256 \times 256$ resolution.
 
@@ -33,16 +38,21 @@ The published Taming Transformers checkpoint provides reconstruction metrics for
 
 The second tokenizer is LlamaGen~\cite{sun2024llamagen,llamagengithub}, which uses a Llama-style next-token objective for autoregressive image generation and provides both \texttt{VQ-16} and \texttt{VQ-8} tokenizers.
 
-Core configuration used in experiments:
-\begin{itemize}
-\item default comparison tokenizer: \texttt{VQ-16}
-\item alternative tokenizer for comparison context: \texttt{VQ-8}
-\item input image resolution: $256 \times 256$
-\item token-grid resolution for \texttt{VQ-16}: $16 \times 16$
-\item nominal codebook size: $K = 16{,}384$
-\item codebook embedding dimension: $8$
-\item codebook L2 normalization: enabled
-\end{itemize}
+\begin{table}[h]
+    \centering
+    \begin{tabular}{ll}
+        \textbf{Parameter} & \textbf{Value} \\ \hline
+        Default tokenizer & \texttt{VQ-16} \\
+        Alternative tokenizer & \texttt{VQ-8} \\
+        Input resolution & $256 \times 256$ \\
+        Token grid (\texttt{VQ-16}) & $16 \times 16$ \\
+        Codebook size & $K = 16{,}384$ \\
+        Embedding dimension & $8$ \\
+        Codebook normalization & L2 \\
+    \end{tabular}
+    \caption{LlamaGen tokenizer configuration.}
+    \label{tab:llamagen_config}
+\end{table}
 
 In published LlamaGen results, \texttt{VQ-16} and \texttt{VQ-8} report competitive reconstruction metrics, and codebook utilization is higher than the sparse-codebook behavior typical of older VQ settings.
 
