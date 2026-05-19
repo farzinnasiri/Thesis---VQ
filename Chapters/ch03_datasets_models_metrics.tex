@@ -65,6 +65,8 @@ However, the comparison is not architecture-neutral. Differences in codebook dim
 \section{Datasets}
 \label{sec:datasets}
 
+The datasets in this chapter do not all play the same role. ImageNet validation is the common reference set for baseline reconstruction and codebook analysis, while the remaining datasets are used only in the distribution-shift experiments. This distinction matters because the robustness and locality probes are not intended to compare every dataset in the full suite.
+
 \subsection{ImageNet Validation}
 \label{subsec:imagenet_validation}
 
@@ -79,20 +81,20 @@ All images are preprocessed as follows:
 
 For reproducibility, all models are evaluated with deterministic preprocessing and no data augmentation at test time.
 
-\subsection{ImageNet-V2}
+\subsection{ImageNet-Aligned Shift: ImageNet-V2}
 \label{subsec:imagenet_v2}
 
-ImageNet-V2 (Recht et al., 2019) follows the same collection protocol as the original ImageNet and provides new test images for the same label space. It is used here as a near-domain shift benchmark to measure whether codebook usage and reconstruction behavior remain stable under resampled natural-image statistics. The exact ImageNet-V2 variant used in each run (for example, matched-frequency style subsets) is reported with the corresponding results tables.
+ImageNet-V2 (Recht et al., 2019) follows the same collection protocol as the original ImageNet and provides new test images for the same label space. It is used in the distribution-shift analysis as a near-domain benchmark, measuring whether codebook usage and reconstruction behavior remain stable under resampled natural-image statistics. The exact ImageNet-V2 variant used in each run (for example, matched-frequency style subsets) is reported with the corresponding results tables.
 
-\subsection{ImageNet-Sketch}
+\subsection{ImageNet-Aligned Shift: ImageNet-Sketch}
 \label{subsec:imagenet_sketch}
 
-ImageNet-Sketch (Wang et al., 2019) emphasizes shape over texture, so it is a stronger shift benchmark than ImageNet-V2. It tests whether tokenizers fail when natural-image texture priors are absent, and whether codebook assignments remain stable under stylistic abstraction. Together, the two OOD sets form a severity ladder from mild resampling to pronounced distributional departure.
+ImageNet-Sketch (Wang et al., 2019) emphasizes shape over texture, so it is a stronger distribution-shift benchmark than ImageNet-V2. In this thesis it is used only for shift analysis, where it tests whether tokenizers fail when natural-image texture priors are absent and whether codebook assignments remain stable under stylistic abstraction. Together, ImageNet-V2 and ImageNet-Sketch form an ImageNet-aligned severity ladder from mild resampling to pronounced visual departure.
 
-\subsection{Other Candidate Datasets}
+\subsection{Non-ImageNet Domain-Shift Checks}
 \label{subsec:other_candidate_datasets}
 
-The three datasets above are all ImageNet-derived or ImageNet-aligned: ImageNet validation is the in-distribution reference, ImageNet-V2 keeps the same label space under a new natural-image collection process, and ImageNet-Sketch keeps the ImageNet label space but changes the visual style. To test whether conclusions depend only on ImageNet-like semantics, the broader dataset suite also includes non-ImageNet datasets: ObjectNet~\cite{barbu2019objectnet}, BloodMNIST and OrganAMNIST from MedMNIST v2~\cite{yang2023medmnist}, and RVL-CDIP~\cite{harley2015rvlcdip}. These datasets were chosen because they change not only appearance but also domain: controlled household objects, microscopic blood-cell images, abdominal CT slices, and scanned document pages.
+The shift datasets above are ImageNet-derived or ImageNet-aligned: ImageNet-V2 keeps the ImageNet label space under a new natural-image collection process, and ImageNet-Sketch keeps the label space but changes the visual style. For the distribution-shift chapter, the analysis also includes non-ImageNet domain checks: ObjectNet~\cite{barbu2019objectnet}, BloodMNIST and OrganAMNIST from MedMNIST v2~\cite{yang2023medmnist}, and RVL-CDIP~\cite{harley2015rvlcdip}. These datasets are not candidates for every experiment in the thesis; they are used to test whether codebook and reconstruction behavior changes when the visual domain itself changes, including controlled household objects, microscopic blood-cell images, abdominal CT slices, and scanned document pages.
 
 \begin{table}[h]
     \centering
@@ -105,11 +107,11 @@ The three datasets above are all ImageNet-derived or ImageNet-aligned: ImageNet 
         OrganAMNIST & abdominal CT slices, 11 organ classes & 57{,}187 & very high: grayscale medical imaging with different intensity statistics \\
         RVL-CDIP & scanned document pages, 16 document classes & 39{,}996 & very high: document layout and text-like structure rather than natural images \\
     \end{tabularx}
-    \caption{Non-ImageNet datasets used for additional distribution-shift analysis. The table reports the number of images used in the tokenizer experiments, not necessarily the full source-dataset size; RVL-CDIP, for example, is a 400{,}000-image dataset in full.}
+    \caption{Non-ImageNet datasets used as domain-shift checks in the distribution-shift analysis. The table reports the number of images used in the tokenizer experiments, not necessarily the full source-dataset size; RVL-CDIP, for example, is a 400{,}000-image dataset in full.}
     \label{tab:non_imagenet_datasets}
 \end{table}
 
-These datasets are not treated as replacements for the ImageNet-based severity ladder. Instead, they are used as domain-shift checks: if a tokenizer's codebook statistics remain stable on ImageNet-V2 and ImageNet-Sketch but change strongly on medical or document images, the result suggests domain specialization rather than a generic failure of the measurement pipeline.
+These datasets are not treated as replacements for the ImageNet-based severity ladder and are not used in the perturbation-locality chapters. They are used only as domain-shift checks: if a tokenizer's codebook statistics remain stable on ImageNet-V2 and ImageNet-Sketch but change strongly on medical or document images, the result suggests domain specialization rather than a generic failure of the measurement pipeline.
 
 \begin{figure}[t]
     \centering
