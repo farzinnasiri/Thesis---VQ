@@ -78,12 +78,12 @@ However, the comparison is not architecture-neutral. Differences in codebook dim
 
 The primary test set is ImageNet-1K validation (Deng et al., 2009; Russakovsky et al., 2015). This split provides 50,000 labeled images over 1,000 classes and is the standard benchmark for both tokenizers.
 
-Preprocessing protocol:
-\begin{itemize}
-\item convert image to RGB
-\item resize and center-crop to $256 \times 256$
-\item apply tokenizer-specific normalization
-\end{itemize}
+All images are preprocessed as follows:
+\begin{enumerate}
+\item convert to RGB;
+\item resize and center-crop to $256 \times 256$;
+\item apply tokenizer-specific normalization.
+\end{enumerate}
 
 For reproducibility, all models are evaluated with deterministic preprocessing and no data augmentation at test time.
 
