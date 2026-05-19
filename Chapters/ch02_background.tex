@@ -47,6 +47,7 @@ The quality and behavior of the tokenizer therefore constrain the whole generati
     \aifigurecaption{Local feature extraction and long-range dependency modeling play complementary roles: convolutional encoders capture local visual structure, while the autoregressive transformer models global token relationships.}
     \label{fig:local_features_vs_long_range_dependencies}
 \end{figure}
+\FloatBarrier
 
 This motivates the central choice in the thesis: rather than evaluating only final generated images, the experiments study the tokenizer itself.
 
@@ -113,6 +114,7 @@ Second, the quantization boundary can create discontinuities. A small image pert
     \aifigurecaption{From continuous feature map to discrete sequence: the encoder produces a latent grid, quantization replaces each latent vector with a codebook index, and the resulting token grid is flattened for autoregressive modeling.}
     \label{fig:feature_map_to_token_sequence}
 \end{figure}
+\FloatBarrier
 
 \section{VQGAN and Taming Transformers}
 \label{sec:vqgan_taming}
@@ -151,6 +153,7 @@ One important methodological detail is that the nominal VQGAN codebook can be mu
     \aifigurecaption{Two-stage training schedule for autoregressive image generation: first train the tokenizer, then freeze it and train the autoregressive model on token sequences.}
     \label{fig:two_stage_training_schedule}
 \end{figure}
+\FloatBarrier
 
 Reconstruction quality is the usual evaluation for this first stage, measured by rFID, LPIPS, and related perceptual metrics. Those metrics are necessary but incomplete for this thesis. A tokenizer can achieve strong average reconstruction while still having representational properties that are important for downstream autoregressive modeling: concentrated code usage, unstable token assignments, or decoder changes outside an edited token patch. The VQGAN baseline is therefore used both as a reconstruction model and as a system whose internal discrete representation can be probed.
 
@@ -177,6 +180,7 @@ Unlike the VQGAN setup used here, LlamaGen shows near-full or full codebook usag
     \aifigurecaption{Comparison of the two tokenizer families studied in this thesis, highlighting the shared token-grid resolution and codebook size together with differences in embedding geometry and codebook usage.}
     \label{fig:vqgan_vs_llamagen_comparison}
 \end{figure}
+\FloatBarrier
 
 \section{From Reconstruction Quality to Tokenizer Behavior}
 \label{sec:reconstruction_to_behavior}
@@ -210,5 +214,6 @@ This means that robustness or locality failures in the tokenizer modify the toke
     \aifigurecaption{Autoregressive visual modeling reduces to next-token prediction over discrete visual indices, analogous to next-token prediction in language models.}
     \label{fig:next_token_prediction_visual_indices}
 \end{figure}
+\FloatBarrier
 
 The next chapter defines the models, datasets, and metrics used in the experiments.

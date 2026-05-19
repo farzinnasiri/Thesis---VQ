@@ -31,6 +31,7 @@ The first tokenizer is the ImageNet VQGAN first-stage model introduced in Taming
 \end{table}
 
 The published Taming Transformers checkpoint provides reconstruction metrics for this setting and serves as a standard baseline at $256 \times 256$ resolution.
+\FloatBarrier
 
 \subsection{LlamaGen Tokenizer}
 \label{subsec:llamagen_tokenizer}
@@ -54,6 +55,7 @@ The second tokenizer is LlamaGen~\cite{sun2024llamagen,llamagengithub}, which us
 \end{table}
 
 In published LlamaGen results, \texttt{VQ-16} and \texttt{VQ-8} report competitive reconstruction metrics, and codebook utilization is higher than the sparse-codebook behavior typical of older VQ settings.
+\FloatBarrier
 
 \subsection{Comparability and Caveats}
 \label{subsec:comparability_caveats}
@@ -115,6 +117,7 @@ ImageNet-Sketch (Wang et al., 2019) emphasizes shape over texture, so it is a st
     \caption{Representative examples from the ImageNet-aligned dataset ladder used for distribution-shift analysis. Each row keeps the same ImageNet class across the original validation set, ImageNet-V2, and ImageNet-Sketch, so the visual shift is style and collection process rather than label-space change.}
     \label{fig:dataset_shift_severity_ladder}
 \end{figure}
+\FloatBarrier
 
 \subsection{Non-ImageNet Domain-Shift Checks}
 \label{subsec:other_candidate_datasets}
@@ -136,19 +139,29 @@ The shift datasets above are ImageNet-derived or ImageNet-aligned: ImageNet-V2 k
     \label{tab:non_imagenet_datasets}
 \end{table}
 
-These datasets are not treated as replacements for the ImageNet-based severity ladder in Figure~\ref{fig:dataset_shift_severity_ladder} and are not used in the perturbation-locality chapters. They are used only as domain-shift checks: if a tokenizer's codebook statistics remain stable on ImageNet-V2 and ImageNet-Sketch but change strongly on medical or document images, the result suggests domain specialization rather than a generic failure of the measurement pipeline. Figure~\ref{fig:non_imagenet_domain_examples} shows two representative examples from this non-ImageNet group.
+These datasets are not treated as replacements for the ImageNet-based severity ladder in Figure~\ref{fig:dataset_shift_severity_ladder} and are not used in the perturbation-locality chapters. They are used only as domain-shift checks: if a tokenizer's codebook statistics remain stable on ImageNet-V2 and ImageNet-Sketch but change strongly on medical or document images, the result suggests domain specialization rather than a generic failure of the measurement pipeline. Figure~\ref{fig:non_imagenet_domain_examples} shows two representative examples from each non-ImageNet domain used in this check.
 
 \begin{figure}[t]
     \centering
-    \setlength{\tabcolsep}{12pt}
-    \begin{tabular}{cc}
-        \includegraphics[width=0.34\textwidth]{dataset_examples/ood_objectnet_banana.png} &
-        \includegraphics[width=0.34\textwidth]{dataset_examples/ood_bloodmnist.png} \\
-        ObjectNet & BloodMNIST
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{c c c c}
+        \textbf{ObjectNet} & \textbf{BloodMNIST} & \textbf{OrganAMNIST} & \textbf{RVL-CDIP} \\
+        \makebox[0.22\textwidth][c]{\includegraphics[width=0.16\textwidth,height=0.105\textheight,keepaspectratio]{dataset_examples/ood_objectnet_kettle.png}} &
+        \makebox[0.22\textwidth][c]{\includegraphics[width=0.16\textwidth,height=0.105\textheight,keepaspectratio]{dataset_examples/ood_bloodmnist_class0.png}} &
+        \makebox[0.22\textwidth][c]{\includegraphics[width=0.16\textwidth,height=0.105\textheight,keepaspectratio]{dataset_examples/ood_organamnist_class0.png}} &
+        \makebox[0.22\textwidth][c]{\includegraphics[width=0.16\textwidth,height=0.105\textheight,keepaspectratio]{dataset_examples/ood_rvlcdip_email.png}} \\
+        kettle & class 0 & class 0 & email \\
+        \makebox[0.22\textwidth][c]{\includegraphics[width=0.16\textwidth,height=0.105\textheight,keepaspectratio]{dataset_examples/ood_objectnet_headphones.png}} &
+        \makebox[0.22\textwidth][c]{\includegraphics[width=0.16\textwidth,height=0.105\textheight,keepaspectratio]{dataset_examples/ood_bloodmnist_class5.png}} &
+        \makebox[0.22\textwidth][c]{\includegraphics[width=0.16\textwidth,height=0.105\textheight,keepaspectratio]{dataset_examples/ood_organamnist_class5.png}} &
+        \makebox[0.22\textwidth][c]{\includegraphics[width=0.16\textwidth,height=0.105\textheight,keepaspectratio]{dataset_examples/ood_rvlcdip_invoice.png}} \\
+        headphones & class 5 & class 5 & invoice
     \end{tabular}
-    \caption{Representative non-ImageNet domain-shift examples. ObjectNet remains a natural-object dataset but changes viewpoint and background statistics, while BloodMNIST moves to biomedical microscopy and therefore changes both texture and semantic domain.}
+    \caption{Representative non-ImageNet domain-shift examples. ObjectNet remains a natural-object dataset but changes viewpoint and background statistics; BloodMNIST and OrganAMNIST move to biomedical microscopy and CT imagery; RVL-CDIP moves to scanned document layouts.}
     \label{fig:non_imagenet_domain_examples}
 \end{figure}
+\FloatBarrier
 
 \section{Metrics}
 \label{sec:metrics}
@@ -161,6 +174,7 @@ No single scalar captures all of these properties simultaneously, so the metrics
     \aifigurecaption{Metric taxonomy used in this thesis. No single scalar captures tokenizer quality, so evaluation combines pixel, perceptual, distributional, codebook, and locality-oriented measures.}
     \label{fig:metric_taxonomy_matrix}
 \end{figure}
+\FloatBarrier
 
 \subsection{Evaluation Criteria}
 \label{subsec:evaluation_criteria}
@@ -312,5 +326,6 @@ Table~\ref{tab:metric_comparison_summary} summarizes the metrics used in this th
     \caption{Comparison of metrics used in this thesis. Direction arrows indicate preferred direction under fixed evaluation protocol.}
     \label{tab:metric_comparison_summary}
 \end{table}
+\FloatBarrier
 
 The next experimental chapters apply these metrics in sequence, moving from baseline reconstruction and codebook usage to perturbation robustness, locality, and distribution shift.
