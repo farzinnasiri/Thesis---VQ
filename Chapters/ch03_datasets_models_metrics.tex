@@ -63,13 +63,6 @@ The two tokenizers are directly comparable along one axis: both can represent $2
 
 However, the comparison is not architecture-neutral. Differences in codebook dimension, normalization, and training recipe can produce different internal geometries even when external metrics are similar. These differences are informative, not confounding: they allow the experiments to separate properties common to discrete image tokenizers from properties specific to a particular design.
 
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=0.92\textwidth]{ch03_fig_3_1a_experimental_model_comparison.png}
-    \aifigurecaption{Compact comparison of the tokenizer configurations discussed in this thesis, summarizing the main architectural quantities that matter for downstream robustness and locality analysis.}
-    \label{fig:experimental_model_comparison}
-\end{figure}
-
 \section{Datasets}
 \label{sec:datasets}
 
@@ -104,7 +97,7 @@ Additional OOD datasets may be used for ablations, but the core analysis uses th
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.94\textwidth]{ch03_fig_3_2a_dataset_shift_severity_ladder.png}
+    \includegraphics[width=0.94\textwidth]{ch03_fig_3_1_dataset_shift_severity_ladder.png}
     \aifigurecaption{The dataset suite forms a shift-severity ladder, from in-distribution ImageNet validation to the milder ImageNet-V2 shift and the stronger stylized shift of ImageNet-Sketch.}
     \label{fig:dataset_shift_severity_ladder}
 \end{figure}
@@ -116,7 +109,7 @@ No single scalar captures all of these properties simultaneously, so the metrics
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.94\textwidth]{ch03_fig_3_3a_metric_taxonomy_matrix.png}
+    \includegraphics[width=0.94\textwidth]{ch03_fig_3_2_metric_taxonomy_matrix.png}
     \aifigurecaption{Metric taxonomy used in this thesis. No single scalar captures tokenizer quality, so evaluation combines pixel, perceptual, distributional, codebook, and locality-oriented measures.}
     \label{fig:metric_taxonomy_matrix}
 \end{figure}
@@ -189,7 +182,7 @@ This separation is important when two models have similar FID but different mode
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.9\textwidth]{ch03_fig_3_3b_precision_recall_tradeoff.png}
+    \includegraphics[width=0.9\textwidth]{ch03_fig_3_3_precision_recall_tradeoff.png}
     \aifigurecaption{Precision and recall separate two different generative behaviors: fidelity to the real-data support and coverage of that support. Models can perform well on one axis while failing on the other.}
     \label{fig:precision_recall_tradeoff}
 \end{figure}
@@ -237,7 +230,7 @@ For global perturbation experiments, robustness is reported as metric degradatio
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.9\textwidth]{ch03_fig_3_3c_locality_leakage_curve.png}
+    \includegraphics[width=0.9\textwidth]{ch03_fig_3_4_locality_leakage_curve.png}
     \aifigurecaption{Schematic locality-leakage curve. A more localized tokenizer response decays rapidly with distance from the perturbation boundary, whereas broader leakage indicates a less spatially confined response.}
     \label{fig:locality_leakage_curve}
 \end{figure}
