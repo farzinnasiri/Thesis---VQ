@@ -98,7 +98,8 @@ The three datasets above are all ImageNet-derived or ImageNet-aligned: ImageNet 
 \begin{table}[h]
     \centering
     \small
-    \begin{tabularx}{\textwidth}{l l r l}
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.16\textwidth} >{\raggedright\arraybackslash}X >{\raggedleft\arraybackslash}p{0.13\textwidth} >{\raggedright\arraybackslash}X}
         \textbf{Dataset} & \textbf{Content} & \textbf{Images used} & \textbf{Hypothesized shift from ImageNet variants} \\ \hline
         ObjectNet & controlled object photos with varied viewpoints and backgrounds & 50{,}273 & medium--high: natural objects remain, but pose/background biases differ \\
         BloodMNIST & microscopic RGB blood-cell images, 8 classes & 17{,}092 & high: biomedical microscopy, local texture dominates over natural scenes \\
