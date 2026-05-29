@@ -40,7 +40,7 @@ The codebook analysis reports both raw and effective vocabulary use. The raw act
 
 Table~\ref{tab:rq1_reconstruction_metrics} reports the ImageNet reconstruction metrics for LlamaGen and VQGAN. LlamaGen has stronger reconstruction scores across the reported metrics: higher PSNR and SSIM, lower LPIPS, lower FID and sFID, and higher precision and recall. The difference is visible not only in full-reference image metrics but also in the distributional metrics.
 
-\begin{table}[h]
+\begin{table}[htbp]
     \centering
     \small
     \setlength{\tabcolsep}{4pt}
@@ -81,7 +81,7 @@ Figure~\ref{fig:rq1_reconstruction_triplets} shows qualitative examples. In a re
 
 LlamaGen reconstructs ImageNet images more accurately under the chosen metrics. The codebook analysis examines whether this advantage is accompanied by a different use of the discrete vocabulary. Table~\ref{tab:rq1_codebook_usage} reports the main usage statistics.
 
-\begin{table}[h]
+\begin{table}[htbp]
     \centering
     \small
     \setlength{\tabcolsep}{4pt}
@@ -124,10 +124,9 @@ Figure~\ref{fig:rq1_code_usage_concentration} gives a complementary view, report
 
 Table~\ref{tab:rq1_joint_summary} places the reconstruction and codebook results side by side. LlamaGen reconstructs better and uses the full codebook densely. VQGAN reconstructs less accurately under the chosen metrics and uses a much smaller active subset of the codebook.
 
-\begin{table}[h]
+\begin{table}[htbp]
     \centering
-    \small
-    \setlength{\tabcolsep}{4pt}
+    \scriptsize
     \begin{tabular}{lrrrrrrrr}
         \textbf{Tokenizer} & \textbf{PSNR} & \textbf{SSIM} & \textbf{LPIPS} & \textbf{FID} & \textbf{Active} & \textbf{Perplexity} & \textbf{Top-100} & \textbf{Codes for 99\%} \\ \hline
         LlamaGen & 20.79 & 0.558 & 0.228 & 2.19 & 16{,}384 & 16{,}179.19 & 0.012 & 16{,}144 \\

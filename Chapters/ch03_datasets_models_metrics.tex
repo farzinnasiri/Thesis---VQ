@@ -16,7 +16,7 @@ This thesis compares two tokenizers that both support autoregressive modeling ov
 
 The first tokenizer is the ImageNet VQGAN first-stage model introduced in Taming Transformers (Esser et al., 2021). The configuration used in this work corresponds to the commonly used $f = 16$, $K = 16{,}384$ setting, summarized in Table~\ref{tab:vqgan_config}.
 
-\begin{table}[h]
+\begin{table}[htbp]
     \centering
     \begin{tabular}{ll}
         \textbf{Parameter} & \textbf{Value} \\ \hline
@@ -38,7 +38,7 @@ The published Taming Transformers checkpoint provides reconstruction metrics for
 
 The second tokenizer is LlamaGen~\cite{sun2024llamagen,llamagengithub}, which uses a Llama-style next-token objective for autoregressive image generation and provides both \texttt{VQ-16} and \texttt{VQ-8} tokenizers. Table~\ref{tab:llamagen_config} gives the tokenizer configuration used here.
 
-\begin{table}[h]
+\begin{table}[htbp]
     \centering
     \begin{tabular}{ll}
         \textbf{Parameter} & \textbf{Value} \\ \hline
@@ -124,11 +124,11 @@ ImageNet-Sketch (Wang et al., 2019) emphasizes shape over texture, so it is a st
 
 The shift datasets above are ImageNet-derived or ImageNet-aligned: ImageNet-V2 keeps the ImageNet label space under a new natural-image collection process, and ImageNet-Sketch keeps the label space but changes the visual style. For the distribution-shift chapter, the analysis also includes non-ImageNet domain checks: ObjectNet~\cite{barbu2019objectnet}, BloodMNIST and OrganAMNIST from MedMNIST v2~\cite{yang2023medmnist}, and RVL-CDIP~\cite{harley2015rvlcdip}. These datasets are not candidates for every experiment in the thesis; they are used to test whether codebook and reconstruction behavior changes when the visual domain itself changes, including controlled household objects, microscopic blood-cell images, abdominal CT slices, and scanned document pages. Table~\ref{tab:non_imagenet_datasets} summarizes these domain-shift checks.
 
-\begin{table}[h]
+\begin{table}[htbp]
     \centering
-    \small
-    \setlength{\tabcolsep}{4pt}
-    \begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.16\textwidth} >{\raggedright\arraybackslash}X >{\raggedleft\arraybackslash}p{0.13\textwidth} >{\raggedright\arraybackslash}X}
+    \scriptsize
+    \setlength{\tabcolsep}{2pt}
+    \begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.14\textwidth} >{\raggedright\arraybackslash}X >{\raggedleft\arraybackslash}p{0.11\textwidth} >{\raggedright\arraybackslash}X}
         \textbf{Dataset} & \textbf{Content} & \textbf{Images used} & \textbf{Hypothesized shift from ImageNet variants} \\ \hline
         ObjectNet & controlled object photos with varied viewpoints and backgrounds & 50{,}273 & medium--high: natural objects remain, but pose/background biases differ \\
         BloodMNIST & microscopic RGB blood-cell images, 8 classes & 17{,}092 & high: biomedical microscopy, local texture dominates over natural scenes \\
@@ -184,7 +184,7 @@ The columns in Figure~\ref{fig:metric_taxonomy_matrix} refer to the following cr
 \begin{itemize}
 \item \textbf{Pixel fidelity}: agreement between an input image $x$ and reconstruction $\hat{x}$ at the level of aligned pixel intensities. This criterion is sensitive to small spatial shifts and low-level errors.
 \item \textbf{Perceptual fidelity}: agreement between $x$ and $\hat{x}$ in terms of visual structure or learned feature representations. This criterion is intended to better approximate human perceptual similarity than raw pixel error.
-\item \textbf{Distribution match}: similarity between the empirical distribution of reconstructed or generated images and the reference image distribution in a feature space.
+\item \textbf{Distribution match}: similarity between real and reconstructed or generated image distributions in a feature space.
 \item \textbf{Diversity/coverage}: the extent to which reconstructions or generated samples cover the modes of the reference distribution rather than concentrating on a narrow subset.
 \item \textbf{Codebook efficiency}: how effectively the tokenizer uses its discrete vocabulary, including active-code count, entropy, perplexity, and concentration in frequent codes.
 \item \textbf{Locality/stability}: how spatially confined and stable the tokenizer response is under perturbations, either in image space through the encoder or in token space through the decoder.
