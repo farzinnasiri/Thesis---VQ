@@ -1,17 +1,167 @@
 \chapter{Reconstruction Baseline and Codebook Usage}
 \label{ch:rq1}
 
+The first research question establishes the clean-image baseline for the two tokenizers studied in this thesis. Before introducing perturbations, token edits, or distribution shifts, it is necessary to measure what each tokenizer does under ordinary conditions: reconstructing ImageNet validation images through the full encode--quantize--decode pipeline.
+
+Two related questions follow. First, how well do VQGAN and LlamaGen reconstruct images under the same ImageNet protocol? Second, how do they use their nominally equal codebooks in doing so? Reconstruction metrics describe the quality of $\hat{x}$ relative to $x$; codebook statistics describe the empirical token distribution the image passes through before decoding. A tokenizer can score well on reconstruction while using only a narrow slice of its vocabulary, or spread assignments broadly while still introducing reconstruction error. This chapter examines both dimensions.
+
 \section{Motivation}
 \label{sec:rq1_motivation}
+
+The later chapters perturb the tokenizer in several ways: global image noise, local image-space perturbations, token-space edits, and dataset shifts. Those analyses are only interpretable if the unperturbed baseline is already understood. A robustness curve, for example, is meaningful only relative to the clean reconstruction quality of the model. Similarly, a token replacement experiment depends on which tokens are actually used by the tokenizer on the reference distribution.
+
+The baseline is also important because both tokenizers have the same nominal vocabulary size, $K = 16{,}384$, and the same spatial token grid, $16 \times 16$, for $256 \times 256$ images. At the level of external interface, both models produce 256 discrete image tokens per image. This makes them directly comparable as visual tokenizers. However, the same interface can hide very different internal behavior. A full codebook and a sparse codebook both expose a vocabulary of 16,384 possible indices, but the sequence model trained on top of the tokenizer sees only the empirical distribution of those indices.
+
+Reconstruction quality therefore answers one question: whether the autoencoder path preserves images well. Codebook usage answers a different one: what visual alphabet the tokenizer actually uses.
+
+\section{Experimental Setup}
+\label{sec:rq1_experimental_setup}
+
+The experiment uses the ImageNet validation set described in Chapter~\ref{ch:datasets_models_metrics}. Each image is resized and center-cropped to $256 \times 256$, converted to RGB, and passed through the tokenizer-specific preprocessing pipeline. Both tokenizers are evaluated in deterministic inference mode. No augmentation is applied at evaluation time.
+
+For each image $x$, the tokenizer produces a reconstruction:
+
+\begin{equation}
+\hat{x} = D(Q(E(x))),
+\end{equation}
+
+where $E$ is the encoder, $Q$ is the vector-quantization step, and $D$ is the decoder. Reconstruction quality is measured using the metrics defined in Chapter~\ref{ch:datasets_models_metrics}: PSNR, SSIM, LPIPS, FID, sFID, precision, recall, and Inception Score. Codebook usage is computed from the discrete token grids over all 50,000 validation images. Since each image produces a $16 \times 16$ grid, each tokenizer contributes:
+
+\begin{equation}
+50{,}000 \times 16 \times 16 = 12{,}800{,}000
+\end{equation}
+
+token assignments for the ImageNet baseline.
+
+The codebook analysis reports both raw and effective vocabulary use. The raw active count is the number of codebook entries assigned at least once. The effective active count uses the minimum-frequency criterion from Chapter~\ref{ch:datasets_models_metrics}, with a threshold of $10^{-6}$ of all token assignments. Entropy and perplexity summarize the effective size of the empirical distribution, and top-$k$ mass measures how much of the token stream is captured by the most frequent codes.
 
 \section{Reconstruction Baseline}
 \label{sec:rq1_reconstruction_baseline}
 
+Table~\ref{tab:rq1_reconstruction_metrics} reports the ImageNet reconstruction metrics for LlamaGen and VQGAN. LlamaGen has stronger reconstruction scores across the reported metrics: higher PSNR and SSIM, lower LPIPS, lower FID and sFID, and higher precision and recall. The difference is visible not only in full-reference image metrics but also in the distributional metrics.
+
+\begin{table}[h]
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabular}{lrrrrrrrr}
+        \textbf{Tokenizer} & \textbf{PSNR} & \textbf{SSIM} & \textbf{LPIPS} & \textbf{FID} & \textbf{sFID} & \textbf{Precision} & \textbf{Recall} & \textbf{IS} \\ \hline
+        LlamaGen & 20.79 & 0.558 & 0.228 & 2.19 & 5.01 & 0.978 & 0.995 & 52.70 \\
+        VQGAN    & 19.65 & 0.489 & 0.286 & 5.06 & 6.49 & 0.920 & 0.973 & 46.76 \\
+    \end{tabular}
+    \caption{ImageNet reconstruction metrics for the two tokenizers. PSNR and SSIM are higher-is-better; LPIPS, FID, and sFID are lower-is-better; precision, recall, and Inception Score are higher-is-better.}
+    \label{tab:rq1_reconstruction_metrics}
+\end{table}
+\FloatBarrier
+
+The PSNR gap is modest in absolute terms, but it is consistent with the other metrics. LlamaGen reaches a mean PSNR of 20.79 compared with 19.65 for VQGAN, and a mean SSIM of 0.558 compared with 0.489. The LPIPS difference is also substantial: 0.228 for LlamaGen and 0.286 for VQGAN. Since LPIPS is computed in a learned feature space, this suggests that the difference is not only pixel-level but also perceptual. The distributional metrics are consistent: LlamaGen obtains FID 2.19 and sFID 5.01, while VQGAN obtains FID 5.06 and sFID 6.49.
+
+Figure~\ref{fig:rq1_reconstruction_metric_comparison} visualizes the same comparison across metrics that differ in scale and direction; LlamaGen leads on every family.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.98\textwidth]{ch04_fig_reconstruction_metric_comparison.png}
+    \caption{ImageNet reconstruction metric comparison for VQGAN and LlamaGen.}
+    \label{fig:rq1_reconstruction_metric_comparison}
+\end{figure}
+\FloatBarrier
+
+Figure~\ref{fig:rq1_reconstruction_triplets} shows qualitative examples. In a reconstruction baseline, the relevant comparison is how much detail and structure survive the discrete bottleneck, not whether the output is semantically plausible in isolation.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.9\textwidth]{ch04_fig_reconstruction_triplets.png}
+    \caption{Qualitative ImageNet reconstruction examples. Each row shows the original image, the VQGAN reconstruction, and the LlamaGen reconstruction.}
+    \label{fig:rq1_reconstruction_triplets}
+\end{figure}
+\FloatBarrier
+
 \section{Codebook Usage}
 \label{sec:rq1_codebook_usage}
 
-\section{Experimental Results}
-\label{sec:rq1_results}
+LlamaGen reconstructs ImageNet images more accurately under the chosen metrics. The codebook analysis examines whether this advantage is accompanied by a different use of the discrete vocabulary. Table~\ref{tab:rq1_codebook_usage} reports the main usage statistics.
+
+\begin{table}[h]
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabular}{lrrrrrr}
+        \textbf{Tokenizer} & \textbf{Active} & \textbf{Effective active} & \textbf{Perplexity} & \textbf{Top-10} & \textbf{Top-100} & \textbf{Top-500} \\ \hline
+        LlamaGen & 16{,}384 & 16{,}384 & 16{,}179.19 & 0.003 & 0.012 & 0.046 \\
+        VQGAN    & 972      & 971      & 910.46    & 0.022 & 0.165 & 0.665 \\
+    \end{tabular}
+    \caption{ImageNet codebook usage summary. Active counts report how many of the 16,384 nominal codes appear on ImageNet. Effective active counts use the minimum-frequency threshold described in Chapter~\ref{ch:datasets_models_metrics}. Top-$k$ values report the fraction of all token assignments covered by the most frequent $k$ codes.}
+    \label{tab:rq1_codebook_usage}
+\end{table}
+\FloatBarrier
+
+The difference is large. LlamaGen uses all 16,384 codebook entries on ImageNet with a perplexity of 16,179, indicating that assignments are spread nearly uniformly across the full vocabulary. VQGAN uses only 972 of 16,384 codes (about 5.9\% of the nominal codebook), and its perplexity of 910 is close to that raw active count, meaning the active subset is both small and densely used.
+
+LlamaGen's top-500 codes account for only 4.6\% of all token assignments; VQGAN's top-500 account for 66.5\%. Despite identical nominal vocabulary sizes, the token stream VQGAN produces is far more concentrated.
+
+Figure~\ref{fig:rq1_code_usage_sorted} shows the full rank-frequency curve. The LlamaGen curve is much flatter; the VQGAN curve drops steeply and terminates because most of the nominal vocabulary goes unused on ImageNet. The two models differ not only in reconstruction quality but in the empirical vocabulary they present to an autoregressive prior.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.88\textwidth]{ch04_fig_code_usage_sorted.png}
+    \caption{Sorted ImageNet code-usage distribution. Codes are ranked by empirical frequency, so the plot shows how concentrated each tokenizer's assignments are across the codebook.}
+    \label{fig:rq1_code_usage_sorted}
+\end{figure}
+\FloatBarrier
+
+Figure~\ref{fig:rq1_code_usage_concentration} gives a complementary view, reporting the cumulative mass of the top-10, top-100, and top-500 codes. High top-$k$ mass means the second-stage autoregressive model repeatedly sees a small subset of token IDs while much of the nominal vocabulary remains rare or absent.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.82\textwidth]{ch04_fig_code_usage_concentration.png}
+    \caption{ImageNet code-usage concentration, measured as the fraction of all token assignments captured by the most frequent 10, 100, and 500 codes.}
+    \label{fig:rq1_code_usage_concentration}
+\end{figure}
+\FloatBarrier
+
+\subsection{Spatial Codebook Entropy}
+\label{subsec:rq1_spatial_entropy}
+
+The global codebook statistics collapse all token-grid positions into a single empirical distribution. This is useful for measuring overall vocabulary use, but it does not reveal whether different spatial positions use the vocabulary differently. To test this, positional entropy is computed at each location in the $16 \times 16$ token grid, using the empirical distribution of token IDs at that position across ImageNet images.
+
+Figure~\ref{fig:rq1_position_entropy} shows the resulting entropy maps. High entropy at a position means many codes appear there across the dataset; low entropy means that position draws from a restricted local vocabulary. Together with Table~\ref{tab:rq1_codebook_usage}, the maps separate overall vocabulary breadth from spatial specialization.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.86\textwidth]{ch04_fig_position_entropy.png}
+    \caption{Per-position code entropy over the ImageNet token grid. The heatmaps summarize whether the empirical vocabulary diversity changes across spatial token positions.}
+    \label{fig:rq1_position_entropy}
+\end{figure}
+\FloatBarrier
+
+\section{Joint Reconstruction--Codebook View}
+\label{sec:rq1_joint_view}
+
+Table~\ref{tab:rq1_joint_summary} places the reconstruction and codebook results side by side. LlamaGen reconstructs better and uses the full codebook densely. VQGAN reconstructs less accurately under the chosen metrics and uses a much smaller active subset of the codebook.
+
+\begin{table}[h]
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabular}{lrrrrrrrr}
+        \textbf{Tokenizer} & \textbf{PSNR} & \textbf{SSIM} & \textbf{LPIPS} & \textbf{FID} & \textbf{Active} & \textbf{Perplexity} & \textbf{Top-100} & \textbf{Codes for 99\%} \\ \hline
+        LlamaGen & 20.79 & 0.558 & 0.228 & 2.19 & 16{,}384 & 16{,}179.19 & 0.012 & 16{,}144 \\
+        VQGAN    & 19.65 & 0.489 & 0.286 & 5.06 & 972      & 910.46    & 0.165 & 946 \\
+    \end{tabular}
+    \caption{Joint ImageNet summary of reconstruction quality and codebook usage. The final column reports the number of most frequent codes required to cover 99\% of token assignments.}
+    \label{tab:rq1_joint_summary}
+\end{table}
+\FloatBarrier
+
+Despite identical sequence length and nominal vocabulary size, the two tokenizers produce very different empirical token distributions. Any token-space intervention must account for this asymmetry: drawing replacements from the full nominal codebook is appropriate for LlamaGen, whose empirical vocabulary covers it, but would inject dead codes for VQGAN.
+
+The result also rules out one simple explanation of the quality gap. LlamaGen does not reconstruct better because it concentrates on a few high-quality codes; it reconstructs better while distributing assignments across nearly the entire codebook. VQGAN's lower scores accompany a sparse empirical vocabulary. The baseline cannot attribute this to any single design choice (the two models differ along multiple dimensions), but establishes that reconstruction quality and codebook density pattern together here.
 
 \section{Discussion}
 \label{sec:rq1_discussion}
+
+LlamaGen's near-uniform codebook usage is notable in the context of discrete representation learning, where codebook collapse---many entries going unused---is a known failure mode. That LlamaGen avoids it on a 16,384-entry codebook suggests an effective training procedure or codebook initialization. VQGAN shows partial collapse: roughly 94\% of nominal codes are inactive on ImageNet, and the active subset carries nearly all the reconstruction load.
+
+The practical implication for subsequent chapters is asymmetric. Perturbations or token replacements drawn from the full nominal codebook are well-founded for LlamaGen, whose empirical vocabulary covers it. For VQGAN, the same procedure would inject codes the decoder rarely encounters at inference time. The token-space experiments in later chapters account for this by restricting VQGAN replacements to the active subset.
+
+Two limitations apply. First, the baseline is ImageNet-only: VQGAN may activate different code subsets on other domains, so a sparse pattern here does not imply global codebook collapse. Second, the reconstruction advantage cannot be attributed to any single design choice, since the two models differ in architecture, training objective, and codebook initialization. The correlation between codebook density and reconstruction quality observed here motivates, but does not resolve, the question of causation.
