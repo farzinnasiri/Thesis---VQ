@@ -1,0 +1,3 @@
+model,run_dir,n_samples,n_metadata_shards,first_sample,metadata_keys
+VQGAN,/exp/1765562245_robustness_dataset_vqgan,50000,8,ILSVRC2012_val_00000293,"image_id, indices_clean, indices_high, indices_low, indices_mid, noise_std, original_path"
+LlamaGen,/exp/1765559700_robustness_dataset_llamagen,50000,8,ILSVRC2012_val_00000293,"image_id, indices_clean, indices_high, indices_low, indices_mid, noise_std, original_path"

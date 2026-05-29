@@ -1,14 +1,267 @@
 \chapter{Robustness to Global Perturbations}
 \label{ch:rq2}
 
+Chapter~\ref{ch:rq1} measured reconstruction and codebook usage on clean ImageNet images. This chapter asks whether those clean-image properties remain stable when the whole image is perturbed before tokenization. The focus is the second research question: \emph{how robust are discrete image tokenizers to global image-space perturbations?}
+
+The experiment applies additive Gaussian noise to each input image, then compares VQGAN and LlamaGen along three complementary axes. The first axis is image-space fidelity: how much the decoded image changes as the input becomes noisier. The second axis is token identity: how often the discrete code assigned to a spatial position changes relative to the clean tokenization. The third axis is global codebook usage: whether noise changes the aggregate distribution over visual tokens. The main finding is that these axes do not move together. Reconstruction quality degrades gradually, but token identity changes sharply even at the lowest noise level tested.
+
 \section{Motivation}
 \label{sec:rq2_motivation}
+
+An image tokenizer sits between continuous image space and discrete sequence modeling. Robustness in this setting is therefore not only a question of whether the reconstructed image remains visually plausible. It is also a question of whether the symbolic representation exposed to an autoregressive model is stable under small changes to the input.
+
+Vector-quantized tokenizers are especially sensitive to this distinction. In the continuous encoder space, a perturbation may move a latent vector by a small Euclidean distance. In the discrete representation, however, the same movement can cross a nearest-neighbor boundary and replace one token by another. If many latent vectors lie near codebook cell boundaries, a global image perturbation may produce widespread token replacement even when the decoded image still resembles the original. This chapter tests that possibility directly.
+
+Global Gaussian noise is not intended here as a complete corruption benchmark. It is used as a controlled probe. Unlike local patch perturbations, which will be studied in Chapter~\ref{ch:rq3}, global noise affects the whole image and therefore tests the overall stability of the encoder-tokenizer-decoder pipeline. The experiment establishes whether the tokenizers are already unstable under a simple input perturbation before more localized mechanisms are isolated.
 
 \section{Experimental Setup}
 \label{sec:rq2_setup}
 
+\subsection{Perturbation Protocol}
+\label{subsec:rq2_perturbation_protocol}
+
+Let $x \in [0,1]^{H \times W \times 3}$ denote a preprocessed ImageNet validation image. For a noise level $\sigma$, the perturbed image is defined by Equation~\ref{eq:rq2_global_noise}:
+\begin{equation}
+    x_{\sigma} = \mathrm{clip}(x + \sigma \epsilon, 0, 1),
+    \qquad
+    \epsilon \sim \mathcal{N}(0, I).
+    \label{eq:rq2_global_noise}
+\end{equation}
+The clipping operation keeps the perturbed image in the valid pixel range. The experiment uses $\sigma \in \{0.1, 0.2, 0.5\}$, together with the clean baseline $\sigma=0$.
+
+For a tokenizer with encoder $E$, quantizer $q$, and decoder $D$, Equation~\ref{eq:rq2_reconstruction_tokenization} defines the reconstruction and discrete tokenization obtained from the perturbed image:
+\begin{equation}
+    \hat{x}_{\sigma} = D(q(E(x_{\sigma}))),
+    \qquad
+    z_{\sigma} = q(E(x_{\sigma})).
+    \label{eq:rq2_reconstruction_tokenization}
+\end{equation}
+The clean reconstruction and tokenization are $\hat{x}_0$ and $z_0$. Each $z_{\sigma}$ is a $16 \times 16$ token grid, so every image contributes 256 token positions at each noise level.
+
+The experiment was run on the full ImageNet validation set for both tokenizers. Table~\ref{tab:rq2_run_inventory} summarizes the run inventory. Both runs contain 50{,}000 images and eight metadata shards; each metadata record contains the clean tokenization and the three noisy tokenizations.
+
+\begin{table}[h]
+    \centering
+    \small
+    \begin{tabular}{lrrl}
+        \textbf{Tokenizer} & \textbf{Images} & \textbf{Metadata shards} & \textbf{Recorded token fields} \\ \hline
+        VQGAN & 50{,}000 & 8 & clean, low, mid, high \\
+        LlamaGen & 50{,}000 & 8 & clean, low, mid, high \\
+    \end{tabular}
+    \caption{Run inventory for the global-perturbation experiment. Each image contributes one clean tokenization and three noisy tokenizations, corresponding to $\sigma=0.1$, $\sigma=0.2$, and $\sigma=0.5$.}
+    \label{tab:rq2_run_inventory}
+\end{table}
+\FloatBarrier
+
+\subsection{Metrics}
+\label{subsec:rq2_metrics}
+
+The image-space metrics separate three effects. The first is the strength of the input corruption, $\mathrm{PSNR}(x,x_{\sigma})$. The second is how well the tokenizer reconstructs the corrupted input, $\mathrm{PSNR}(x_{\sigma},\hat{x}_{\sigma})$. The third, defined in Equation~\ref{eq:rq2_clean_psnr}, is the end-to-end fidelity to the original clean image:
+\begin{equation}
+    \mathrm{PSNR}_{\mathrm{clean}}(\sigma)
+    =
+    \mathrm{PSNR}(x,\hat{x}_{\sigma}).
+    \label{eq:rq2_clean_psnr}
+\end{equation}
+The third quantity is the main reconstruction metric in this chapter because it measures what remains of the original image after the perturbation has passed through the tokenizer.
+
+Token identity stability is measured by the fraction of token positions that change relative to the clean tokenization, as in Equation~\ref{eq:rq2_token_flip}:
+\begin{equation}
+    \mathrm{flip}_{\sigma}(x)
+    =
+    \frac{1}{N}
+    \sum_{i=1}^{N}
+    \mathbf{1}\!\left[z_{\sigma,i} \neq z_{0,i}\right],
+    \label{eq:rq2_token_flip}
+\end{equation}
+where $N=256$ is the number of positions in the $16 \times 16$ token grid. A value near zero indicates that most positions keep the same token under noise; a value near one indicates that nearly all token identities changed.
+
+Finally, the global token distribution is computed by aggregating token counts over the entire validation set at each noise level. For empirical token probabilities $p_k$, Equation~\ref{eq:rq2_perplexity} gives the entropy and corresponding perplexity:
+\begin{equation}
+    H(p) = -\sum_k p_k \log p_k,
+    \qquad
+    \mathrm{PPL}(p) = \exp(H(p)).
+    \label{eq:rq2_perplexity}
+\end{equation}
+The analysis also reports the number of active codes and the mass assigned to the most frequent 100 and 1000 codes.
+
 \section{Experimental Results}
 \label{sec:rq2_results}
 
+\subsection{Qualitative Behavior}
+\label{subsec:rq2_qualitative}
+
+Figures~\ref{fig:rq2_qual_vqgan} and~\ref{fig:rq2_qual_llamagen} show the same selected ImageNet examples for VQGAN and LlamaGen. The examples include a dog in snow, a car interior, and a knitted toy, giving a small qualitative check across natural texture, structured geometry, and fine object detail. Each example contains the clean image, three noisy inputs, the clean reconstruction, and three noisy-input reconstructions. The qualitative behavior is consistent with the intended perturbation protocol: noise is visible across the whole image, but object identity and global layout often remain recognizable, especially at $\sigma=0.1$ and $\sigma=0.2$.
+
+The qualitative figures also show why a purely visual inspection would miss part of the behavior. The reconstructions remain structured, but the token flip-rate results in Section~\ref{subsec:rq2_token_flip} show that the underlying discrete representation changes at most positions. In other words, the decoder can map substantially different token grids to images that still preserve coarse content.
+
+\begin{figure}[p]
+    \centering
+    \includegraphics[height=0.82\textheight,keepaspectratio]{ch05_fig_global_noise_qualitative_vqgan.png}
+    \caption{VQGAN qualitative examples under global Gaussian perturbations. For each sample, the first row shows the clean and noisy inputs, and the second row shows the corresponding reconstructions.}
+    \label{fig:rq2_qual_vqgan}
+\end{figure}
+\FloatBarrier
+
+\begin{figure}[p]
+    \centering
+    \includegraphics[height=0.82\textheight,keepaspectratio]{ch05_fig_global_noise_qualitative_llamagen.png}
+    \caption{LlamaGen qualitative examples under global Gaussian perturbations. The same selected ImageNet samples and perturbation levels are shown as in Figure~\ref{fig:rq2_qual_vqgan}.}
+    \label{fig:rq2_qual_llamagen}
+\end{figure}
+\FloatBarrier
+
+\subsection{Image-Space Degradation}
+\label{subsec:rq2_image_space}
+
+Table~\ref{tab:rq2_psnr_summary} reports $\mathrm{PSNR}(x,\hat{x}_{\sigma})$, the end-to-end fidelity of the noisy-input reconstruction to the original clean image. Figure~\ref{fig:rq2_psnr_x_xhat} visualizes the same trend. Both tokenizers degrade monotonically as $\sigma$ increases, and LlamaGen remains above VQGAN at every level. At the clean baseline, LlamaGen reaches $20.79$ dB and VQGAN reaches $19.65$ dB. At the highest perturbation level, LlamaGen remains at $16.22$ dB, while VQGAN falls to $14.90$ dB.
+
+The gap is therefore not introduced only by noise; it is already present in clean reconstruction and persists under perturbation. However, the high-noise regime widens the practical difference because both systems are pushed into a lower-fidelity range. The standard deviations also shrink at high noise, suggesting that severe global perturbation compresses the range of image-specific reconstruction outcomes.
+
+\begin{table}[h]
+    \centering
+    \small
+    \begin{tabular}{llrr}
+        \textbf{Tokenizer} & \textbf{Noise level} & $\boldsymbol{\sigma}$ & $\boldsymbol{\mathrm{PSNR}(x,\hat{x}_{\sigma})}$ \\ \hline
+        LlamaGen & clean & 0.0 & $20.79 \pm 3.18$ \\
+        LlamaGen & low & 0.1 & $20.32 \pm 2.71$ \\
+        LlamaGen & mid & 0.2 & $19.11 \pm 1.98$ \\
+        LlamaGen & high & 0.5 & $16.22 \pm 0.94$ \\
+        VQGAN & clean & 0.0 & $19.65 \pm 3.41$ \\
+        VQGAN & low & 0.1 & $19.23 \pm 2.92$ \\
+        VQGAN & mid & 0.2 & $18.11 \pm 2.27$ \\
+        VQGAN & high & 0.5 & $14.90 \pm 1.03$ \\
+    \end{tabular}
+    \caption{End-to-end reconstruction fidelity under global Gaussian perturbations. Values are mean PSNR in dB $\pm$ standard deviation over 50{,}000 ImageNet validation images.}
+    \label{tab:rq2_psnr_summary}
+\end{table}
+\FloatBarrier
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.86\textwidth]{ch05_fig_psnr_x_xhat_vs_sigma.png}
+    \caption{End-to-end PSNR between the clean image and reconstruction from the noisy input. Dashed horizontal lines show each tokenizer's clean reconstruction baseline.}
+    \label{fig:rq2_psnr_x_xhat}
+\end{figure}
+\FloatBarrier
+
+Figure~\ref{fig:rq2_psnr_xnoisy_xhat} reports $\mathrm{PSNR}(x_{\sigma},\hat{x}_{\sigma})$, which asks a different question: how closely does the decoded image follow the noisy input itself? LlamaGen again remains above VQGAN. At $\sigma=0.1$, the noisy-input reconstruction PSNR is $19.26$ dB for LlamaGen and $18.36$ dB for VQGAN. At $\sigma=0.5$, the values fall to $11.87$ dB and $11.31$ dB respectively. This confirms that LlamaGen's advantage is visible both when measuring fidelity to the original image and when measuring fidelity to the corrupted input.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.86\textwidth]{ch05_fig_psnr_xnoisy_xhat_vs_sigma.png}
+    \caption{PSNR between noisy input $x_{\sigma}$ and reconstruction $\hat{x}_{\sigma}$. This separates fidelity to the corrupted input from fidelity to the original clean image.}
+    \label{fig:rq2_psnr_xnoisy_xhat}
+\end{figure}
+\FloatBarrier
+
+\subsection{Token-Space Instability}
+\label{subsec:rq2_token_flip}
+
+The image-space degradation is gradual, but the token identities are not stable. Table~\ref{tab:rq2_token_flip} and Figure~\ref{fig:rq2_token_flip} show the fraction of token positions that differ from the clean tokenization. At $\sigma=0.1$, VQGAN changes $75.1\%$ of token positions on average, and LlamaGen changes $79.5\%$. At $\sigma=0.2$, the flip rates rise to $89.0\%$ and $91.0\%$. At $\sigma=0.5$, both tokenizers are close to complete replacement, with flip rates above $97\%$.
+
+This result is the most important observation in the chapter. LlamaGen reconstructs better in image space, but it does not have lower token identity turnover. In fact, its mean flip rate is slightly higher at each tested noise level. Therefore, token identity stability cannot be inferred from reconstruction quality alone. A tokenizer can preserve visual structure while changing most of the discrete sequence.
+
+\begin{table}[h]
+    \centering
+    \small
+    \begin{tabular}{llrr}
+        \textbf{Tokenizer} & \textbf{Noise level} & $\boldsymbol{\sigma}$ & \textbf{Token flip rate} \\ \hline
+        LlamaGen & low & 0.1 & $0.795 \pm 0.099$ \\
+        LlamaGen & mid & 0.2 & $0.910 \pm 0.054$ \\
+        LlamaGen & high & 0.5 & $0.979 \pm 0.017$ \\
+        VQGAN & low & 0.1 & $0.751 \pm 0.103$ \\
+        VQGAN & mid & 0.2 & $0.890 \pm 0.057$ \\
+        VQGAN & high & 0.5 & $0.975 \pm 0.017$ \\
+    \end{tabular}
+    \caption{Fraction of token positions changed relative to the clean tokenization. Values are mean $\pm$ standard deviation over ImageNet validation images.}
+    \label{tab:rq2_token_flip}
+\end{table}
+\FloatBarrier
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.86\textwidth]{ch05_fig_token_flip_vs_sigma.png}
+    \caption{Token flip rate under global Gaussian perturbations. The discrete token representation changes sharply even when the image-space reconstruction remains visually structured.}
+    \label{fig:rq2_token_flip}
+\end{figure}
+\FloatBarrier
+
+\subsection{Global Codebook Distribution}
+\label{subsec:rq2_codebook_distribution}
+
+The flip-rate metric is local to token positions: it counts how often a position changes its token. The global codebook statistics ask whether the aggregate distribution over token IDs changes as well. Table~\ref{tab:rq2_codebook_distribution} summarizes active-code counts, perplexity, and top-$k$ concentration; Figures~\ref{fig:rq2_active_codes},~\ref{fig:rq2_perplexity}, and~\ref{fig:rq2_top100_mass} visualize the main trends.
+
+The two tokenizers have very different baselines. LlamaGen uses the full codebook on clean ImageNet, with 16{,}384 active codes and a perplexity of 16{,}179. VQGAN uses only 972 active codes, with a perplexity of 910. This reproduces the codebook-usage contrast from Chapter~\ref{ch:rq1}. Under noise, LlamaGen's active-code count remains high but decreases slightly, reaching 16{,}203 at $\sigma=0.5$. VQGAN's active-code count stays essentially fixed around 972, as shown in Figure~\ref{fig:rq2_active_codes}.
+
+Perplexity is more sensitive than active-code count. LlamaGen's perplexity decreases from 16{,}179 to 6{,}434 as $\sigma$ increases from 0 to 0.5. VQGAN's perplexity decreases from 910 to 560. Thus, both distributions become more concentrated even when the number of active codes changes little. The top-100 mass confirms this concentration: LlamaGen increases from 0.012 to 0.115, while VQGAN increases from 0.165 to 0.388.
+
+\begin{table}[h]
+    \centering
+    \small
+    \begin{tabular}{llrrrr}
+        \textbf{Tokenizer} & \textbf{Level} & \textbf{Active codes} & \textbf{Perplexity} & \textbf{Top-100 mass} & \textbf{Top-1000 mass} \\ \hline
+        LlamaGen & clean & 16{,}384 & 16{,}179 & 0.012 & 0.084 \\
+        LlamaGen & low & 16{,}381 & 12{,}829 & 0.040 & 0.198 \\
+        LlamaGen & mid & 16{,}369 & 10{,}388 & 0.063 & 0.269 \\
+        LlamaGen & high & 16{,}203 & 6{,}434 & 0.115 & 0.416 \\
+        VQGAN & clean & 972 & 910 & 0.165 & 1.000 \\
+        VQGAN & low & 973 & 859 & 0.202 & 1.000 \\
+        VQGAN & mid & 971 & 780 & 0.249 & 1.000 \\
+        VQGAN & high & 972 & 560 & 0.388 & 1.000 \\
+    \end{tabular}
+    \caption{Global codebook distribution statistics under global perturbations. Top-$k$ mass is the fraction of all token assignments explained by the $k$ most frequent codes at that noise level.}
+    \label{tab:rq2_codebook_distribution}
+\end{table}
+\FloatBarrier
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.86\textwidth]{ch05_fig_active_codes_vs_sigma.png}
+    \caption{Active-code count under global perturbations. LlamaGen retains near-complete codebook coverage, while VQGAN remains sparse with roughly one thousand active codes.}
+    \label{fig:rq2_active_codes}
+\end{figure}
+\FloatBarrier
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.86\textwidth]{ch05_fig_perplexity_vs_sigma.png}
+    \caption{Effective codebook perplexity under global perturbations. LlamaGen remains much broader than VQGAN, but its effective vocabulary contracts substantially as noise increases.}
+    \label{fig:rq2_perplexity}
+\end{figure}
+\FloatBarrier
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.86\textwidth]{ch05_fig_top100_mass_vs_sigma.png}
+    \caption{Mass assigned to the 100 most frequent codes under global perturbations. Increasing top-100 mass indicates a more concentrated token distribution.}
+    \label{fig:rq2_top100_mass}
+\end{figure}
+\FloatBarrier
+
 \section{Discussion}
 \label{sec:rq2_discussion}
+
+\subsection{Reconstruction Robustness and Token Robustness Diverge}
+\label{subsec:rq2_reconstruction_token_divergence}
+
+The chapter establishes a clear separation between reconstruction robustness and token robustness. LlamaGen is more robust by image-space PSNR: it has a higher clean baseline and remains above VQGAN at every tested noise level. But it is not more stable in token identity. The token flip-rate curves show that both tokenizers replace most token positions even at low noise, and LlamaGen's flip rate is slightly higher than VQGAN's at each perturbation level.
+
+This matters for autoregressive modeling. A sequence model trained on clean token sequences does not observe the decoded image; it observes token identities. If small image-space changes induce large sequence-level changes, then the learned sequence distribution may be sensitive to perturbations in a way that is not captured by reconstruction metrics alone. The result also cautions against interpreting code indices as stable semantic labels. In these tokenizers, many code replacements can preserve broad visual content after decoding.
+
+\subsection{Noise Concentrates Codebook Usage}
+\label{subsec:rq2_noise_concentrates_usage}
+
+The codebook statistics add a second layer to the token flip result. Noise does not merely permute token identities while preserving the global distribution. It also makes usage more concentrated. This is visible in the perplexity decrease for both models and in the increasing top-100 mass. For LlamaGen, the broad clean distribution contracts substantially under noise, despite retaining almost all codes as active. For VQGAN, the active set is already small, and noise shifts more probability mass toward the most frequent codes.
+
+The distinction between active-code count and perplexity is important here. Active-code count alone would suggest that LlamaGen is almost unchanged and VQGAN is essentially unchanged. Perplexity and top-k mass show otherwise: the distribution over active codes changes even when the binary alive/dead status of codes is stable.
+
+\subsection{Connection to Later Probes}
+\label{subsec:rq2_later_chapters}
+
+The global perturbation experiment deliberately mixes several effects. A global noise field can change encoder activations everywhere, can move many latent vectors across codebook boundaries, and can produce decoder-level changes through the altered token grid. The later chapters decompose these mechanisms. Chapter~\ref{ch:rq3} studies whether local image-space perturbations remain local in the encoder-tokenizer response. Chapter~\ref{ch:rq4} studies how local token-space edits propagate through the decoder. The present chapter motivates both analyses by showing that, under global perturbation, token identity is highly unstable even when image reconstructions degrade smoothly.
+
+\subsection{Chapter Summary}
+\label{subsec:rq2_summary}
+
+The results answer RQ2 in three parts. First, image-space robustness is gradual, and LlamaGen maintains higher PSNR than VQGAN across all tested global noise levels. Second, token identity is highly unstable for both tokenizers: already at $\sigma=0.1$, approximately three quarters or more of token positions change. Third, global codebook usage becomes more concentrated under noise, as shown by decreasing perplexity and increasing top-100 mass. These findings support the broader thesis claim that reconstruction quality is only one part of tokenizer behavior; robustness must also be evaluated in token space and in the induced codebook distribution.
