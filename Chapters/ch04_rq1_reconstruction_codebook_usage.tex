@@ -119,21 +119,6 @@ Figure~\ref{fig:rq1_code_usage_concentration} gives a complementary view, report
 \end{figure}
 \FloatBarrier
 
-\subsection{Spatial Codebook Entropy}
-\label{subsec:rq1_spatial_entropy}
-
-The global codebook statistics collapse all token-grid positions into a single empirical distribution. This is useful for measuring overall vocabulary use, but it does not reveal whether different spatial positions use the vocabulary differently. To test this, positional entropy is computed at each location in the $16 \times 16$ token grid, using the empirical distribution of token IDs at that position across ImageNet images.
-
-Figure~\ref{fig:rq1_position_entropy} shows the resulting entropy maps. High entropy at a position means many codes appear there across the dataset; low entropy means that position draws from a restricted local vocabulary. Together with Table~\ref{tab:rq1_codebook_usage}, the maps separate overall vocabulary breadth from spatial specialization.
-
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=0.86\textwidth]{ch04_fig_position_entropy.png}
-    \caption{Per-position code entropy over the ImageNet token grid. The heatmaps summarize whether the empirical vocabulary diversity changes across spatial token positions.}
-    \label{fig:rq1_position_entropy}
-\end{figure}
-\FloatBarrier
-
 \section{Joint Reconstruction--Codebook View}
 \label{sec:rq1_joint_view}
 
