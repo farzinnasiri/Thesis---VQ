@@ -14,7 +14,7 @@ This thesis compares two tokenizers that both support autoregressive modeling ov
 \subsection{VQGAN Tokenizer (Taming Transformers)}
 \label{subsec:vqgan_tokenizer}
 
-The first tokenizer is the ImageNet VQGAN first-stage model introduced in Taming Transformers (Esser et al., 2021). The configuration used in this work corresponds to the commonly used $f = 16$, $K = 16{,}384$ setting, summarized in Table~\ref{tab:vqgan_config}.
+The first tokenizer is the ImageNet VQGAN first-stage model introduced in Taming Transformers~\cite{esser2021taming}. The configuration used in this work corresponds to the commonly used $f = 16$, $K = 16{,}384$ setting, summarized in Table~\ref{tab:vqgan_config}.
 
 \begin{table}[htbp]
     \centering
@@ -72,7 +72,7 @@ The datasets in this chapter do not all play the same role. ImageNet validation 
 \subsection{ImageNet Validation}
 \label{subsec:imagenet_validation}
 
-The primary test set is ImageNet-1K validation (Deng et al., 2009; Russakovsky et al., 2015). This split provides 50,000 labeled images over 1,000 classes and is the standard benchmark for both tokenizers.
+The primary test set is ImageNet-1K validation~\cite{deng2009imagenet,russakovsky2015imagenet}. This split provides 50,000 labeled images over 1,000 classes and is the standard benchmark for both tokenizers.
 
 All images are preprocessed as follows:
 \begin{enumerate}
@@ -86,12 +86,12 @@ For reproducibility, all models are evaluated with deterministic preprocessing a
 \subsection{ImageNet-Aligned Shift: ImageNet-V2}
 \label{subsec:imagenet_v2}
 
-ImageNet-V2 (Recht et al., 2019) follows the same collection protocol as the original ImageNet and provides new test images for the same label space. It is used in the distribution-shift analysis as a near-domain benchmark, measuring whether codebook usage and reconstruction behavior remain stable under resampled natural-image statistics. The exact ImageNet-V2 variant used in each run (for example, matched-frequency style subsets) is reported with the corresponding results tables.
+ImageNet-V2~\cite{recht2019imagenet} follows the same collection protocol as the original ImageNet and provides new test images for the same label space. It is used in the distribution-shift analysis as a near-domain benchmark, measuring whether codebook usage and reconstruction behavior remain stable under resampled natural-image statistics. The exact ImageNet-V2 variant used in each run (specifically, the Threshold-0.7 matched-frequency subset) is reported with the corresponding results tables.
 
 \subsection{ImageNet-Aligned Shift: ImageNet-Sketch}
 \label{subsec:imagenet_sketch}
 
-ImageNet-Sketch (Wang et al., 2019) emphasizes shape over texture, so it is a stronger distribution-shift benchmark than ImageNet-V2. In this thesis it is used only for shift analysis, where it tests whether tokenizers fail when natural-image texture priors are absent and whether codebook assignments remain stable under stylistic abstraction. Together, ImageNet-V2 and ImageNet-Sketch form an ImageNet-aligned severity ladder from mild resampling to pronounced visual departure.
+ImageNet-Sketch~\cite{wang2019learning} emphasizes shape over texture, so it is a stronger distribution-shift benchmark than ImageNet-V2. In this thesis it is used only for shift analysis, where it tests whether tokenizers fail when natural-image texture priors are absent and whether codebook assignments remain stable under stylistic abstraction. Together, ImageNet-V2 and ImageNet-Sketch form an ImageNet-aligned severity ladder from mild resampling to pronounced visual departure.
 
 \begin{figure}[t]
     \centering
@@ -207,10 +207,10 @@ For normalized images in $[0,1]$, $\mathrm{MAX}=1$. Lower MSE and higher PSNR in
 \subsection{Structural Similarity (SSIM)}
 \label{subsec:ssim}
 
-SSIM (Wang et al., 2004) compares local luminance, contrast, and structure instead of only pointwise pixel error. For local windows:
+SSIM~\cite{wang2004ssim} compares local luminance, contrast, and structure instead of only pointwise pixel error. For local windows:
 
 \begin{equation}
-\mathrm{SSIM}(x,y) = l(x,y)\,c(x,y)\,s(x,y)
+    \mathrm{SSIM}(x,y) = l(x,y)\,c(x,y)\,s(x,y)
 \end{equation}
 
 where $l$, $c$, and $s$ are luminance, contrast, and structure comparisons. Reported values are typically averaged across windows. SSIM is closer to perceptual structure than pixel-error metrics, but it is still a full-reference metric, not a learned perceptual model.
@@ -218,10 +218,10 @@ where $l$, $c$, and $s$ are luminance, contrast, and structure comparisons. Repo
 \subsection{Learned Perceptual Similarity (LPIPS)}
 \label{subsec:lpips}
 
-LPIPS (Zhang et al., 2018) compares deep feature activations between two images across multiple network layers:
+LPIPS~\cite{zhang2018unreasonable} compares deep feature activations between two images across multiple network layers:
 
 \begin{equation}
-\mathrm{LPIPS}(x,y) = \sum_l w_l\,\lVert \phi_l(x) - \phi_l(y) \rVert_2^2
+    \mathrm{LPIPS}(x,y) = \sum_l w_l\,\lVert \phi_l(x) - \phi_l(y) \rVert_2^2
 \end{equation}
 
 where $\phi_l$ are normalized deep features and $w_l$ are learned layer weights. Lower LPIPS indicates higher perceptual similarity. It correlates better with human judgments than shallow pixel metrics, but it depends on the backbone and calibration.
@@ -229,20 +229,20 @@ where $\phi_l$ are normalized deep features and $w_l$ are learned layer weights.
 \subsection{Distribution Metrics (FID, sFID, Inception Score)}
 \label{subsec:fid_sfid_is}
 
-FID (Heusel et al., 2017) compares two Gaussian approximations in Inception feature space, with means $\mu_r$, $\mu_g$ and covariances $\Sigma_r$, $\Sigma_g$:
+FID~\cite{heusel2017gans} compares two Gaussian approximations in Inception feature space, with means $\mu_r$, $\mu_g$ and covariances $\Sigma_r$, $\Sigma_g$:
 
 \begin{equation}
-\mathrm{FID} = \lVert \mu_r - \mu_g \rVert_2^2 + \mathrm{Tr}\!\left(\Sigma_r + \Sigma_g - 2(\Sigma_r\Sigma_g)^{1/2}\right)
+    \mathrm{FID} = \lVert \mu_r - \mu_g \rVert_2^2 + \mathrm{Tr}\!\left(\Sigma_r + \Sigma_g - 2(\Sigma_r\Sigma_g)^{1/2}\right)
 \end{equation}
 
 Lower FID indicates closer real-vs-generated (or real-vs-reconstructed) feature distributions.
 
-sFID is a spatial variant used in the OpenAI evaluator stack (Dhariwal and Nichol, 2021; \cite{openaiguideddiffusion,openaiguideddiffusionevals}). It is reported as an additional distribution-level check alongside FID, not as a replacement.
+sFID is a spatial variant used in the OpenAI evaluator stack~\cite{dhariwal2021diffusion,openaiguideddiffusion,openaiguideddiffusionevals}. It is reported as an additional distribution-level check alongside FID, not as a replacement.
 
-Inception Score (Salimans et al., 2016) evaluates generated samples by combining label confidence and marginal diversity:
+Inception Score~\cite{salimans2016improved} evaluates generated samples by combining label confidence and marginal diversity:
 
 \begin{equation}
-\mathrm{IS} = \exp\!\left(\mathbb{E}_x\left[\mathrm{KL}\big(p(y\mid x)\,\|\,p(y)\big)\right]\right)
+    \mathrm{IS} = \exp\!\left(\mathbb{E}_{x \sim p_g}\left[\mathrm{KL}\big(p(y\mid x)\,\|\,p(y)\big)\right]\right)
 \end{equation}
 
 Higher IS favors samples that are individually classifiable (low-entropy $p(y\mid x)$) while collectively diverse (high-entropy $p(y)$). FID and sFID measure distribution matching in feature space; IS measures a combination of sample quality and diversity but is not a direct real-vs-model distance.
@@ -250,13 +250,20 @@ Higher IS favors samples that are individually classifiable (low-entropy $p(y\mi
 \subsection{Precision and Recall for Generative Coverage}
 \label{subsec:precision_recall}
 
-Precision/recall for generative models (Kynk\"a\"anniemi et al., 2019) estimates fidelity and coverage separately in feature space:
+Precision/recall for generative models~\cite{kynkaanniemi2019improved} estimates fidelity and coverage separately in feature space:
 \begin{itemize}
 \item precision: fraction of generated samples that lie in the support region of real samples
 \item recall: fraction of real samples covered by the generated-sample support
 \end{itemize}
 
 This separation is important when two models have similar FID but different mode coverage.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.9\textwidth]{ch03_fig_3_3_precision_recall_tradeoff.png}
+    \caption{Fidelity and coverage manifolds for Precision and Recall. Precision measures the portion of generated support within the real data manifold; Recall measures the coverage of the real manifold. Source: reproduced from Kynk\"a\"anniemi et al.~\cite{kynkaanniemi2019improved}.}
+    \label{fig:precision_recall_tradeoff}
+\end{figure}
 
 \subsection{Codebook Usage Metrics}
 \label{subsec:codebook_usage_metrics}
@@ -298,6 +305,13 @@ For clean tokens $t$ and perturbed tokens $t'$, define token flip indicators $\m
 Encoder-locality metrics use token-space regions induced by image-space perturbation masks. Decoder-locality metrics use image-space change inside/outside edited token patches, together with patch/full-image PSNR, SSIM, and LPIPS.
 
 For global perturbation experiments, robustness is reported as metric degradation curves vs perturbation strength (for example, sigma levels for Gaussian noise).
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.9\textwidth]{ch03_fig_3_4_locality_leakage_curve.png}
+    \caption{Locality and leakage curve mapping spatial image perturbations to token flips. A strictly local tokenizer limits changes to the perturbed region, whereas spatial leakage affects distant grid positions.}
+    \label{fig:locality_leakage_curve}
+\end{figure}
 
 \subsection{Metric Comparison Summary}
 \label{subsec:metric_comparison_summary}

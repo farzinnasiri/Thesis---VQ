@@ -6,7 +6,7 @@
 
 Autoregressive models generate structured data by predicting one element at a time from the elements that came before it. This simple factorization has been especially successful for language, where the data is already naturally represented as a sequence of discrete tokens. Applying the same idea to images requires an additional representational step, because images are spatial, continuous, and much longer when flattened at the pixel level.
 
-Autoregressive visual generation therefore often rests on methods that compress images into discrete visual tokens and then model those tokens as sequences. This review covers that line of work: VQ-VAE (van den Oord et al., 2017), VQGAN/Taming Transformers~\cite{esser2021taming,tamingtransformersgithub}, DALL-E-style discrete autoencoders (Ramesh et al., 2021), and LlamaGen~\cite{sun2024llamagen,llamagengithub}. Diffusion models are not reviewed in detail because the experiments do not compare generative sampling methods; they compare the behavior of the tokenizers that make autoregressive image generation possible.
+Autoregressive visual generation therefore often rests on methods that compress images into discrete visual tokens and then model those tokens as sequences. This review covers that line of work: VQ-VAE~\cite{oord2017neural}, VQGAN/Taming Transformers~\cite{esser2021taming,tamingtransformersgithub}, DALL-E-style discrete autoencoders~\cite{ramesh2021zero}, and LlamaGen~\cite{sun2024llamagen,llamagengithub}. Diffusion models are not reviewed in detail because the experiments do not compare generative sampling methods; they compare the behavior of the tokenizers that make autoregressive image generation possible.
 
 \section{Autoregressive Models: From Text to Images}
 \label{sec:ar_models_text_to_images}
@@ -54,7 +54,7 @@ This motivates the central choice in the thesis: rather than evaluating only fin
 \section{Image Tokens and Vector Quantization}
 \label{sec:image_tokens_vq}
 
-The Vector Quantised Variational Autoencoder (VQ-VAE) introduced a discrete latent bottleneck for representation learning (van den Oord et al., 2017). The encoder produces continuous latent vectors, each vector is assigned to its nearest codebook entry, and the decoder reconstructs from the quantized representation. This avoids the purely continuous latent representation of standard VAEs and allows a learned prior to model the discrete latent space.
+The Vector Quantised Variational Autoencoder (VQ-VAE) introduced a discrete latent bottleneck for representation learning~\cite{oord2017neural}. The encoder produces continuous latent vectors, each vector is assigned to its nearest codebook entry, and the decoder reconstructs from the quantized representation. This avoids the purely continuous latent representation of standard VAEs and allows a learned prior to model the discrete latent space.
 
 In simplified form:
 
@@ -76,10 +76,14 @@ z_q(x)_{u,v} &= e_{k_{u,v}}
 
 The decoder receives $z_q$, not the original continuous encoder output. This forces image information through a finite vocabulary. The codebook size $K$ controls the nominal number of possible visual symbols, while the spatial grid size controls how many symbols represent one image.
 
-Training a VQ model requires handling the non-differentiable nearest-neighbor assignment. VQ-VAE uses a straight-through estimator so gradients from the decoder can update the encoder even though the forward pass uses discrete code assignments. The loss also includes a codebook term and a commitment term, pulling codebook vectors toward encoder outputs and keeping encoder outputs from fluctuating arbitrarily around the codebook. Following the VQ-VAE formulation, the usual objective can be summarized as:
+Training a VQ model requires handling the non-differentiable nearest-neighbor assignment. VQ-VAE uses a straight-through estimator (STE) so gradients from the decoder can update the encoder even though the forward pass uses discrete code assignments. Mathematically, the STE approximates the gradient flow through the quantization operation by copying the gradient from the quantizer output directly to its input during the backward pass:
+\begin{equation}
+    \frac{\partial \mathcal{L}}{\partial z_e(x)} \approx \frac{\partial \mathcal{L}}{\partial z_q(x)}
+\end{equation}
+This allows gradients from the reconstruction loss to bypass the non-differentiable argmin step. The loss also includes a codebook term and a commitment term, pulling codebook vectors toward encoder outputs and keeping encoder outputs from fluctuating arbitrarily around the codebook. Following the VQ-VAE formulation, the usual objective can be summarized as:
 
 \begin{equation}
-\mathcal{L} = \mathcal{L}_{\mathrm{rec}} + \lVert \mathrm{sg}[z_e(x)] - e \rVert_2^2 + \beta\,\lVert z_e(x) - \mathrm{sg}[e] \rVert_2^2
+\mathcal{L} = \mathcal{L}_{\mathrm{rec}} + \lVert \mathrm{sg}[z_e(x)] - z_q(x) \rVert_2^2 + \beta\,\lVert z_e(x) - \mathrm{sg}[z_q(x)] \rVert_2^2
 \end{equation}
 
 where $\mathrm{sg}[\cdot]$ denotes stop-gradient and $\beta$ controls the commitment penalty. The exact reconstruction loss depends on the model family. Early VQ-VAE work used reconstruction objectives suitable for representation learning and likelihood modeling. VQGAN later added perceptual and adversarial components to improve image sharpness.
@@ -166,6 +170,8 @@ Sun et al.~\cite{sun2024llamagen} ask whether the next-token prediction paradigm
 
 The LlamaGen tokenizer is structurally similar to the VQGAN first stage but was designed with stronger reconstruction and denser codebook usage as prerequisites for scalable next-token image modeling. The concrete hyperparameters used in this thesis are specified in Chapter~\ref{ch:datasets_models_metrics}.
 
+Unlike traditional VQ setups that suffer from codebook collapse, LlamaGen avoids this through two main design features. First, it uses a low codebook dimensionality ($d=8$), projecting features down before quantization. This mitigates the curse of dimensionality, as clustering centroids in high-dimensional spaces (such as VQGAN's $d=256$) is notoriously sparse and prone to collapse. Second, it applies L2 normalization to both the encoder output projections and the codebook embeddings, calculating assignments on a unit hypersphere. This normalization bounds the vector spaces, preventing individual centroids from capturing a disproportionate share of the latent space volume or collapsing to zero.
+
 It supports the same experimental decomposition as the VQGAN first stage: images can be encoded and decoded, and token IDs can be decoded after direct token-space intervention.
 
 The vector quantizer computes nearest-neighbor assignments in codebook space. When L2 normalization is enabled, both encoder outputs and codebook embeddings are normalized before distance computation. This changes the geometry of codebook interventions. On the unit sphere, Euclidean distance and cosine similarity are tightly linked: the farthest code under Euclidean distance is the one with the most negative cosine similarity, whereas an orthogonal intervention targets cosine similarity near zero. These are distinct operations and should not be conflated.
@@ -185,7 +191,7 @@ Unlike the VQGAN setup used here, LlamaGen shows near-full or full codebook usag
 \section{From Reconstruction Quality to Tokenizer Behavior}
 \label{sec:reconstruction_to_behavior}
 
-The common evaluation of image tokenizers begins with reconstruction. Given an input image $x$, the tokenizer produces $\hat{x} = D(Q(E(x)))$. The reconstruction can be compared against $x$ using full-reference metrics such as MSE, PSNR, SSIM (Wang et al., 2004), and LPIPS (Zhang et al., 2018), and the distribution of reconstructions can be compared with the distribution of real images using FID or rFID (Heusel et al., 2017). These metrics answer whether the tokenizer preserves the image well enough for downstream use.
+The common evaluation of image tokenizers begins with reconstruction. Given an input image $x$, the tokenizer produces $\hat{x} = D(Q(E(x)))$. The reconstruction can be compared against $x$ using full-reference metrics such as MSE, PSNR, SSIM~\cite{wang2004ssim}, and LPIPS~\cite{zhang2018unreasonable}, and the distribution of reconstructions can be compared with the distribution of real images using FID or rFID~\cite{heusel2017gans}. These metrics answer whether the tokenizer preserves the image well enough for downstream use.
 
 However, reconstruction quality alone does not determine whether a tokenizer is a good discrete representation for autoregressive modeling. A tokenizer also defines its vocabulary and token distribution, as well as how it responds spatially. The same rFID can hide different internal behaviors:
 

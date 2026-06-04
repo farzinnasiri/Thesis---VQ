@@ -1,16 +1,16 @@
 \chapter{Local Perturbations in Image Space}
 \label{ch:rq3}
 
-Chapter~\ref{ch:rq2} studied perturbations applied to the whole image. This chapter narrows the intervention to a single image patch and asks the third research question: \emph{how local is the response of a discrete image tokenizer to a local image-space perturbation?} The question is not only whether the corrupted patch is reconstructed faithfully. It is whether the encoder and quantizer confine the induced token changes to the corresponding region of the token grid.
+Global noise, as shown in Chapter~\ref{ch:rq2}, makes token identities highly unstable across the whole image. That experiment cannot separate the effect of perturbing the input everywhere from the tokenizer's inherent sensitivity to small changes. This chapter isolates the question: when a bounded image region is corrupted, how far do the token changes spread?
 
-The experiment adds Gaussian noise to a square patch, tokenizes the perturbed image, and compares the resulting token grid with the clean tokenization. Token changes are measured inside the perturbed patch, outside it, and as a function of distance from the patch. Both VQGAN and LlamaGen react most strongly inside the patch, but neither response is confined there. Even at the lowest patch-noise level, roughly 30\% of outside tokens change; at the highest reported level, the outside response is close to one half.
+The experiment adds Gaussian noise to a square patch covering one quarter of the token grid, then compares the resulting token grid with the clean tokenization. Token changes are measured inside the patch and outside it, and as a function of distance from the patch boundary. Both tokenizers react most strongly within the patch, but the response does not stop there: even at the lowest noise level tested, roughly 30\% of outside positions carry a different token than in the clean encoding.
 
 \section{Motivation}
 \label{sec:rq3_motivation}
 
 A convolutional tokenizer is spatial in an architectural sense: nearby pixels contribute to nearby latent positions, and the output is arranged as a two-dimensional grid. That does not guarantee locality under perturbation. Encoder receptive fields, normalization, and nearest-neighbor quantization can all make a local change cross token boundaries outside the visibly corrupted region.
 
-For autoregressive generation, the relevant input is the token sequence rather than the image itself. A perturbation that is local in image space may therefore become a broader change in the sequence presented to the transformer. If most token changes remain near the affected patch, the tokenizer preserves spatial locality at the discrete level. If many distant tokens change as well, the discrete representation is less local than the image-domain perturbation suggests.
+For autoregressive generation, the relevant input is the token sequence rather than the image. A local image-space change that causes widespread token changes is therefore a more disruptive perturbation than image-space metrics alone would suggest.
 
 The global-noise experiment in Chapter~\ref{ch:rq2} cannot separate these cases, because every part of the input was perturbed. The patch experiment does: only part of the image is changed, so outside-patch token changes directly measure leakage through the tokenizer.
 
@@ -228,7 +228,7 @@ The outside response also changes in spatial distribution. If a few outside posi
 \subsection{Masked Patch Intervention}
 \label{subsec:rq3_masked_results}
 
-The masked-patch variant tests whether the same pattern appears under a stronger local intervention. Table~\ref{tab:rq3_masked_summary} shows that masking nearly saturates the inside response for both tokenizers. The outside response remains large: 56.3\% for VQGAN and 49.5\% for LlamaGen. This is consistent with the Gaussian patch-noise result: a strong local image-space intervention can change roughly half of the token grid outside the perturbed region.
+The masked-patch variant tests whether the same pattern appears under a stronger local intervention. Table~\ref{tab:rq3_masked_summary} shows that masking nearly saturates the inside response for both tokenizers, while the outside response remains large: 56.3\% for VQGAN and 49.5\% for LlamaGen. The masked result sharpens the patch-noise finding: even when the intervention is confined to one quarter of the image, the tokenizer can carry disruption to roughly half of the remaining token grid.
 
 \begin{table}[h]
     \centering
@@ -246,8 +246,14 @@ The masked-patch variant tests whether the same pattern appears under a stronger
 \section{Discussion}
 \label{sec:rq3_discussion}
 
-The results give a clear answer to RQ3. Both tokenizers preserve a spatial gradient of response, but not strict spatial locality. The response is strongest inside the perturbed patch and near its boundary, yet far-field tokens change at every noise level. VQGAN and LlamaGen are also closer to each other here than in the clean reconstruction and codebook-usage results. LlamaGen has a slightly higher inside response at low noise and a slightly lower leakage ratio at each reported level, but the overall pattern is shared.
+Both tokenizers preserve a spatial gradient of response, but not strict spatial locality. The response is strongest inside the perturbed patch and near its boundary, yet far-field tokens change at every noise level. VQGAN and LlamaGen are also closer to each other here than in the clean reconstruction and codebook-usage results. LlamaGen has a slightly higher inside response at low noise and a slightly lower leakage ratio at each reported level, but the overall pattern is shared.
 
-This result complements Chapter~\ref{ch:rq2}. Global noise showed that token identity is unstable when the whole image is perturbed. The patch experiment shows that the instability is not merely a consequence of perturbing every pixel. A bounded image-space perturbation can still alter many tokens outside the patch. For downstream autoregressive generation, locality in pixel space therefore does not translate directly into locality in the discrete sequence.
+This non-local leakage of a local pixel-space perturbation is driven by three architectural and mathematical mechanisms in the encoder-tokenizer pipeline:
+\begin{enumerate}
+    \item \textbf{Receptive Field Overlap}: Standard convolutional encoders downsample the image by a factor of $f=16$ through multiple stacked layers. Because these convolutions use overlapping kernel windows (typically size $3 \times 3$ or $4 \times 4$ with stride and padding), the mathematical receptive field of a single latent grid cell $(u,v)$ is much larger than $16 \times 16$ pixels (often exceeding $100 \times 100$ pixels). Consequently, pixel-space modifications inside the patch directly alter the continuous features of surrounding cells far beyond the nominal patch boundary.
+    \item \textbf{Spatial Normalization Layers}: Convolutional encoders utilize spatial normalization layers (such as GroupNorm or BatchNorm) to stabilize training. Because these normalization operations compute mean and variance statistics across spatial dimensions, a large perturbation in a localized region shifts the normalization statistics for the entire feature activation map. This leaks the perturbation globally across all channels and grid positions.
+    \item \textbf{Quantization Boundary Amplification}: Finally, nearest-neighbor quantization is a discontinuous, non-linear step. A very small feature shift (leaked through receptive fields or normalization) that would be negligible in a continuous latent representation is amplified by the argmin lookup: if the feature vector was already close to a cell boundary, the small shift pushes it across, causing a discrete token flip.
+\end{enumerate}
+Together, these mechanisms explain why local visual changes inevitably alter the discrete sequence representation outside the corrupted patch.
 
-The next chapter moves from image-space perturbations to token-space interventions. Instead of asking how the encoder maps local pixel changes into token changes, Chapter~\ref{ch:rq4} asks how the decoder responds when individual token IDs are changed directly.
+This result complements Chapter~\ref{ch:rq2}. Global noise showed that token identity is unstable when the whole image is perturbed. The patch experiment shows that the instability is not merely a consequence of perturbing every pixel. A bounded image-space perturbation can still alter many tokens outside the patch. For downstream autoregressive generation, locality in pixel space does not translate directly into locality in the discrete sequence.

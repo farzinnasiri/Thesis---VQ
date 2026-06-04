@@ -1,9 +1,7 @@
 \chapter{Reconstruction Baseline and Codebook Usage}
 \label{ch:rq1}
 
-The first research question establishes the clean-image baseline for the two tokenizers studied in this thesis. Before introducing perturbations, token edits, or distribution shifts, it is necessary to measure what each tokenizer does under ordinary conditions: reconstructing ImageNet validation images through the full encode--quantize--decode pipeline.
-
-Two related questions follow. First, how well do VQGAN and LlamaGen reconstruct images under the same ImageNet protocol? Second, how do they use their nominally equal codebooks in doing so? Reconstruction metrics describe the quality of $\hat{x}$ relative to $x$; codebook statistics describe the empirical token distribution the image passes through before decoding. A tokenizer can score well on reconstruction while using only a narrow slice of its vocabulary, or spread assignments broadly while still introducing reconstruction error. This chapter examines both dimensions.
+Before any perturbation is introduced, this chapter establishes what the two tokenizers do under ordinary conditions: reconstructing ImageNet validation images through the full encode--quantize--decode pipeline. Two questions are examined jointly. How well do VQGAN and LlamaGen reconstruct images under a shared protocol? And how do they use their nominally equal codebooks in doing so? Reconstruction metrics capture the quality of $\hat{x}$ relative to $x$; codebook statistics capture the empirical token distribution the image passes through before decoding. The two dimensions are related but not redundant: a tokenizer can score well on reconstruction while using only a narrow slice of its vocabulary, or spread assignments broadly while still introducing reconstruction error.
 
 \section{Motivation}
 \label{sec:rq1_motivation}
@@ -12,7 +10,7 @@ The later chapters perturb the tokenizer in several ways: global image noise, lo
 
 The baseline is also important because both tokenizers have the same nominal vocabulary size, $K = 16{,}384$, and the same spatial token grid, $16 \times 16$, for $256 \times 256$ images. At the level of external interface, both models produce 256 discrete image tokens per image. This makes them directly comparable as visual tokenizers. However, the same interface can hide very different internal behavior. A full codebook and a sparse codebook both expose a vocabulary of 16,384 possible indices, but the sequence model trained on top of the tokenizer sees only the empirical distribution of those indices.
 
-Reconstruction quality therefore answers one question: whether the autoencoder path preserves images well. Codebook usage answers a different one: what visual alphabet the tokenizer actually uses.
+Reconstruction quality measures whether the autoencoder path preserves images well. Codebook usage characterizes what visual alphabet the tokenizer actually presents to the downstream model. The two are not redundant: a high-fidelity reconstruction tells nothing about whether the underlying token sequence is diverse or degenerate.
 
 \section{Experimental Setup}
 \label{sec:rq1_experimental_setup}
@@ -144,8 +142,8 @@ The result also rules out one simple explanation of the quality gap. LlamaGen do
 \section{Discussion}
 \label{sec:rq1_discussion}
 
-LlamaGen's near-uniform codebook usage is notable in the context of discrete representation learning, where codebook collapse---many entries going unused---is a known failure mode. That LlamaGen avoids it on a 16,384-entry codebook suggests an effective training procedure or codebook initialization. VQGAN shows partial collapse: roughly 94\% of nominal codes are inactive on ImageNet, and the active subset carries nearly all the reconstruction load.
+In discrete representation learning, codebook collapse---many entries going unused---is a well-documented failure mode, and one that LlamaGen demonstrably avoids on a 16,384-entry codebook. VQGAN shows partial collapse: roughly 94\% of nominal codes are inactive on ImageNet, and the active subset carries nearly all the reconstruction load.
 
-The practical implication for subsequent chapters is asymmetric. Perturbations or token replacements drawn from the full nominal codebook are well-founded for LlamaGen, whose empirical vocabulary covers it. For VQGAN, the same procedure would inject codes the decoder rarely encounters at inference time. The token-space experiments in later chapters account for this by restricting VQGAN replacements to the active subset.
+The practical consequence for subsequent chapters is asymmetric. Token replacements drawn from the full nominal codebook are appropriate for LlamaGen, whose empirical vocabulary covers it; for VQGAN, the same procedure would inject codes the decoder rarely encounters at inference time. The token-space experiments in later chapters account for this by restricting VQGAN replacements to the active subset.
 
-Two limitations apply. First, the baseline is ImageNet-only: VQGAN may activate different code subsets on other domains, so a sparse pattern here does not imply global codebook collapse. Second, the reconstruction advantage cannot be attributed to any single design choice, since the two models differ in architecture, training objective, and codebook initialization. The correlation between codebook density and reconstruction quality observed here motivates, but does not resolve, the question of causation.
+The baseline is ImageNet-specific: VQGAN may activate a different code subset on other domains, so the sparse pattern observed here does not imply global codebook collapse. The reconstruction advantage cannot be attributed to any single design choice either---the two models differ in architecture, training objective, and codebook initialization---and the correlation between codebook density and reconstruction quality observed here motivates, but does not resolve, the question of causation.

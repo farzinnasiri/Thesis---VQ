@@ -4,17 +4,34 @@
 \section{Motivation}
 \label{sec:introduction_motivation}
 
+Recent advances in generative computer vision have established two-stage autoregressive models as a competitive alternative to diffusion-based architectures. These models operate by converting continuous image space into a sequence of discrete visual tokens using a learned tokenizer, and then modeling those tokens using a next-token prediction objective. While the performance of the second-stage sequence prior has been studied extensively, the first-stage tokenizer is typically treated as a static, frozen black box. Standard tokenizer evaluations rely almost exclusively on aggregate reconstruction metrics, such as Peak Signal-to-Noise Ratio (PSNR) and Fr\'echet Inception Distance (FID). However, these metrics average over spatial dimensions and fail to characterize the tokenizer's internal behavior. This thesis is motivated by the premise that a tokenizer's discrete representation has structural, spatial, and stability properties that directly govern the data distribution seen by the autoregressive transformer, and that these properties cannot be inferred from reconstruction quality alone.
+
 \section{Context}
 \label{sec:introduction_context}
+
+This work is situated within the paradigm of vector-quantized representation learning, beginning with the Vector Quantised Variational Autoencoder (VQ-VAE) and extending to modern formulations such as VQGAN and the LlamaGen tokenizer stack. These architectures project continuous convolutional features onto a finite set of learned representative centroids (the codebook). The index of the nearest centroid becomes the discrete token ID. Autoregressive modeling over these indices requires flattening the 2D grid into a 1D sequence. Within this context, the tokenizer acts as the interface between continuous physical space and discrete symbolic space. The geometric distribution of codebook vectors and the spatial sensitivity of the encoder-decoder mappings determine the stability and semantic integrity of the flattened sequences.
 
 \section{Problem Statement}
 \label{sec:introduction_problem_statement}
 
+Existing tokenizer evaluations assume that higher reconstruction fidelity implies a better discrete representation. This assumption overlooks several failure modes. First, nearest-neighbor quantization boundaries in the latent space can introduce extreme instabilities: small input perturbations may push features across boundaries, causing widespread token replacements (flips). Second, convolutional structures and spatial normalization layers can distribute local changes globally, meaning a local perturbation in pixel space can corrupt distant sequence elements. Third, decoder structures may fail to restrict their response locally when token IDs are edited directly. If a tokenizer exhibits high instability or poor locality, it forces the downstream autoregressive model to learn a highly sensitive, chaotic distribution, leading to error propagation during sequential generation. This thesis aims to systematically probe and characterize these behavioral properties.
+
 \section{Scope}
 \label{sec:introduction_scope}
 
+The scope of this thesis is a comparative behavioral evaluation of two prominent tokenizer families under controlled perturbations: the classic VQGAN (Taming Transformers) baseline and the modern, normalized LlamaGen tokenizer. Both tokenizers are evaluated under a shared interface ($16 \times 16$ token grids and a nominal vocabulary size $K = 16{,}384$) on the ImageNet-1K validation set. We restrict our analysis to the tokenizer itself—isolating the encoder, vector-quantizer, and decoder paths—rather than evaluating joint sample quality from the autoregressive model. The probing suite covers baseline reconstruction, global Gaussian perturbations, local image-space patch corruptions, direct token-space edits, and codebook behavior under out-of-domain distribution shifts.
+
 \section{Contributions}
 \label{sec:contributions}
+
+The primary contributions of this thesis are:
+\begin{enumerate}
+    \item A systematic probing framework for evaluating discrete image tokenizers across baseline fidelity, global stability, encoder locality, decoder locality, and distribution shift robustness.
+    \item An empirical demonstration that reconstruction quality and token-sequence stability are decoupled: a tokenizer can produce highly accurate decoded outputs while exhibiting extreme token-identity turnover under minor input noise.
+    \item A detailed analysis of encoder leakage, showing that local image-space perturbations propagate to distant token positions due to receptive field overlap and spatial normalization.
+    \item A characterization of decoder response to token edits, illustrating that codebook geometry governs edit severity, and that absolute and relative leakage metrics must be evaluated jointly.
+\end{enumerate}
+
 
 \section{Research Questions and Thesis Overview}
 \label{sec:research_questions}
