@@ -1,0 +1,46 @@
+\chapter{Computational Environment}
+\label{app:computational_environment}
+
+\section{Containerized Execution}
+\label{sec:appendix_containerized_execution}
+
+The two tokenizer implementations have incompatible software requirements and
+were therefore executed in separate Docker images on a CUDA-enabled server.
+The ImageNet datasets and pretrained checkpoints were mounted into the
+containers, while experiment directories were mounted into persistent storage.
+Long-running full-dataset exports were launched in background terminal
+sessions. Random seeds, perturbation modes, patch sizes, and output locations
+were fixed by script arguments or environment variables and recorded in run
+directory names and metadata.
+
+\section{Tokenizer Environments}
+\label{sec:appendix_tokenizer_environments}
+
+The VQGAN environment is based on Ubuntu 20.04 with CUDA 11.7, Python 3.8,
+PyTorch 1.13.1, and torchvision 0.14.1. It retains the older dependencies
+required by Taming Transformers, including PyTorch Lightning 1.0.8,
+OmegaConf 2.0.0, and scikit-image 0.18.3.
+
+The LlamaGen environment uses Ubuntu 20.04 with CUDA 12.2, PyTorch 2.1.2, and
+torchvision 0.16.2. Its analysis dependencies include NumPy, Pillow,
+scikit-image, pandas, Matplotlib, and LPIPS. Both environments expose the same
+dataset and checkpoint mounts, allowing the model-specific exporters to
+produce compatible image and metadata layouts.
+
+\section{Evaluation and Analysis Environment}
+\label{sec:appendix_evaluator_environment}
+
+Distribution-level reconstruction metrics are computed in a separate
+evaluator image containing TensorFlow CPU 2.9, PyTorch, torchvision, and
+\texttt{torch-fidelity}. Reconstructions are exported as uint8 NPZ arrays and
+compared with reference statistics generated from the same ImageNet validation
+preprocessing. Using a separate evaluator avoids changing either tokenizer
+environment solely to satisfy metric dependencies.
+
+The chapter notebooks run in the Jupyter environment associated with
+\texttt{vq-explore}. They use pandas and NumPy for aggregation, Matplotlib for
+figures, scikit-image for pixel metrics, and batched LPIPS evaluation where
+required. Full ImageNet experiments use 50{,}000 validation images. DataLoader
+workers, asynchronous image writers, process pools, and GPU metric batches are
+used to keep model inference and analysis practical without changing the
+experimental definitions.

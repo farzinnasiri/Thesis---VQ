@@ -166,9 +166,6 @@ Qui va l'Abstract in lingua italiana della tesi seguito dalla lista di parole ch
 \\
 \textbf{Parole chiave:} qui, vanno, le parole chiave, della tesi % Keywords (italian)
 
-\chapter*{Note on AI-Assisted Illustrations}
-Some explanatory figures in this thesis were generated with AI assistance and then selected, edited, and integrated by the author. These figures are used only as pedagogical illustrations of architectures, workflows, or evaluation concepts; they do not constitute experimental evidence. Every AI-assisted figure caption is marked explicitly with the standardized credit ``Source: author-created with AI assistance.''
-
 %----------------------------------------------------------------------------
 %	LIST OF CONTENTS/FIGURES/TABLES/SYMBOLS
 %----------------------------------------------------------------------------
@@ -210,30 +207,55 @@ Some explanatory figures in this thesis were generated with AI assistance and th
 \input{Chapters/ch08_rq5_distribution_shift}
 \input{Chapters/ch09_cross_question_discussion}
 \input{Chapters/ch10_limitations}
-\input{Chapters/ch11_implementation_code_organization}
-\input{Chapters/ch12_computational_environment}
 \input{Chapters/ch13_conclusion}
 
+% --------------------------------------------------------------------------
+% APPENDICES
+% --------------------------------------------------------------------------
+\appendix
+\input{Chapters/app_a_implementation_code_organization}
+\input{Chapters/app_b_computational_environment}
+
 % REFERENCES
+\cleardoublepage
 \bibliography{Thesis_bibliography}
 
 % LIST OF FIGURES
+\cleardoublepage
 \listoffigures
 
 % LIST OF TABLES
+\cleardoublepage
 \listoftables
 
 % LIST OF SYMBOLS
-% Write out the List of Symbols in this page
-\chapter*{List of Symbols} % You have to include a chapter for your list of symbols (
-\begin{table}[H]
-    \centering
-    \begin{tabular}{lll}
-        \textbf{Variable} & \textbf{Description} & \textbf{SI unit} \\\hline\\[-9px]
-        $\bm{u}$ & solid displacement & m \\[2px]
-        $\bm{u}_f$ & fluid displacement & m \\[2px]
-    \end{tabular}
-\end{table}
+\cleardoublepage
+\chapter*{List of Symbols}
+\addcontentsline{toc}{chapter}{List of Symbols}
+\begin{longtable}{p{0.20\textwidth}p{0.70\textwidth}}
+    \textbf{Symbol} & \textbf{Description} \\ \hline
+    $x$ & Input image. \\[2px]
+    $\hat{x}$ & Reconstructed image. \\[2px]
+    $x_{\sigma}$ & Image perturbed by Gaussian noise with standard deviation $\sigma$. \\[2px]
+    $E$, $Q$, $D$ & Encoder, vector quantizer, and decoder. \\[2px]
+    $z_e$, $z_q$ & Continuous encoder output and quantized latent representation. \\[2px]
+    $z_0$, $z_{\sigma}$ & Clean and perturbed discrete token grids. \\[2px]
+    $e_k$ & Embedding vector associated with codebook entry $k$. \\[2px]
+    $K$ & Nominal codebook size. \\[2px]
+    $h,w$ & Height and width of the token grid. \\[2px]
+    $p_k$ & Empirical assignment probability of codebook entry $k$. \\[2px]
+    $H(p)$ & Entropy of the empirical token distribution. \\[2px]
+    $\operatorname{PPL}$ & Effective codebook perplexity, $\exp(H(p))$. \\[2px]
+    $\sigma$ & Standard deviation of an applied Gaussian perturbation. \\[2px]
+    $M_P$ & Binary image-space mask for patch $P$. \\[2px]
+    $I_P$, $O_P$ & Token positions inside and outside patch $P$. \\[2px]
+    $R_{\mathrm{in}}$, $R_{\mathrm{out}}$ & Mean encoder-side token response inside and outside a perturbed patch. \\[2px]
+    $\lambda$ & Encoder leakage ratio, $R_{\mathrm{out}}/(R_{\mathrm{in}}+\varepsilon)$. \\[2px]
+    $B_{\mathrm{tok}}$, $B_{\mathrm{px}}$ & Edited token-space region and its corresponding image-space region. \\[2px]
+    $\Delta_{\mathrm{in}}$, $\Delta_{\mathrm{out}}$ & Mean decoder-side image response inside and outside an edited region. \\[2px]
+    $\rho$ & Decoder leakage ratio, $\Delta_{\mathrm{out}}/(\Delta_{\mathrm{in}}+\varepsilon)$. \\[2px]
+    $\varepsilon$ & Small positive constant used to stabilize ratio denominators. \\[2px]
+\end{longtable}
 
 % ACKNOWLEDGEMENTS
 \chapter*{Acknowledgements}

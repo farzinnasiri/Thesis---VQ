@@ -1,0 +1,57 @@
+\chapter{Implementation and Code Organization}
+\label{app:implementation_code_organization}
+
+\section{Repository Structure}
+\label{sec:appendix_repositories}
+
+The experimental implementation is divided across three repositories. The
+\texttt{taming-transformers} repository contains the VQGAN model and its
+experiment scripts, while \texttt{LlamaGen} contains the corresponding
+LlamaGen tokenizer implementation. The \texttt{vq-explore} repository contains
+the comparative analysis notebooks and the decoder-locality analysis utility.
+This separation keeps model-specific inference code close to each model while
+placing cross-model analysis in one location.
+
+\section{Experiment Scripts}
+\label{sec:appendix_experiment_scripts}
+
+Equivalent scripts were implemented for the two tokenizers. The reconstruction
+scripts encode and decode image-folder datasets and export per-image fidelity
+metrics and reconstructed images. The code-usage scripts accumulate global and
+position-dependent token counts. The robustness exporters implement the three
+interventions used in this thesis: global Gaussian noise, local image-space
+patch perturbations, and local token-space replacement.
+
+For each robustness run, images are processed in batches on the GPU. Image
+writing and metadata export are delegated to worker processes so that disk
+operations do not block inference. Each sample is stored under its dataset
+class and image identifier. Sharded JSONL metadata records the perturbation
+parameters, patch coordinates, and clean and perturbed token grids. This format
+allows later analyses to recompute metrics without rerunning either tokenizer.
+
+The token-space experiments additionally require mappings from each token to a
+closest, farthest, and approximately orthogonal alternative. LlamaGen mappings
+are computed over its full, L2-normalized codebook. VQGAN mappings are computed
+over the empirically active subset used by the experiment, as described in
+Chapter~\ref{ch:rq4}.
+
+\section{Analysis Notebooks and Outputs}
+\label{sec:appendix_notebook_analysis}
+
+One notebook consolidates the analysis for each experimental chapter:
+\texttt{ch04\_rq1\_reconstruction\_codebook\_usage.ipynb},
+\texttt{ch05\_rq2\_global\_robustness.ipynb},
+\texttt{ch06\_rq3\_local\_image\_perturbations.ipynb}, and
+\texttt{ch07\_rq4\_token\_space\_perturbations.ipynb}. The notebooks read the
+exported images and metadata, compute chapter-level summaries, and save the
+tables and figures cited in the thesis. Expensive per-image calculations are
+cached as CSV, Parquet, or NPZ files where appropriate. CPU-bound image metrics
+are parallelized across workers, while LPIPS is evaluated in GPU batches.
+
+Chapter outputs follow a common layout:
+\texttt{chapterN\_outputs/data} contains summary tables,
+\texttt{chapterN\_outputs/figures} contains final plots, and
+\texttt{chapterN\_outputs/qualitative\_samples} contains the source images used
+for visual comparisons. The tables and figures copied into the thesis
+repository are therefore derived artifacts; the exported run metadata remains
+the primary experimental record.
