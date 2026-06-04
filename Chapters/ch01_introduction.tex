@@ -4,57 +4,102 @@
 \section{Motivation}
 \label{sec:introduction_motivation}
 
-Recent advances in generative computer vision have established two-stage autoregressive models as a competitive alternative to diffusion-based architectures. These models operate by converting continuous image space into a sequence of discrete visual tokens using a learned tokenizer, and then modeling those tokens using a next-token prediction objective. While the performance of the second-stage sequence prior has been studied extensively, the first-stage tokenizer is typically treated as a static, frozen black box. Standard tokenizer evaluations rely almost exclusively on aggregate reconstruction metrics, such as Peak Signal-to-Noise Ratio (PSNR) and Fr\'echet Inception Distance (FID). However, these metrics average over spatial dimensions and fail to characterize the tokenizer's internal behavior. This thesis is motivated by the premise that a tokenizer's discrete representation has structural, spatial, and stability properties that directly govern the data distribution seen by the autoregressive transformer, and that these properties cannot be inferred from reconstruction quality alone.
+Large language models have shown that a single next-token prediction objective
+can support increasingly capable systems as models and datasets scale. This
+progress has motivated extending the same machinery beyond text. Images,
+however, are continuous arrays of pixel values rather than sequences of
+discrete symbols. One way to bridge this difference is to first encode an image
+as a short sequence of visual tokens. A language-model-style autoregressive
+network can then read or generate those tokens, and a decoder can convert the
+generated sequence back into an image.
 
-\section{Context}
-\label{sec:introduction_context}
+Vector-quantized image tokenizers provide this interface. An encoder maps an
+image to a grid of continuous feature vectors; each vector is replaced by the
+index of a nearby entry in a learned codebook; and a decoder reconstructs the
+image from the resulting token grid. This reduces a $256 \times 256$ image to a
+much shorter sequence, making autoregressive image modeling practical. The
+tokenizer is therefore not only a compression stage. It determines which
+visual distinctions are preserved, which images receive similar token
+sequences, and how errors in image or token space propagate through the
+representation.
 
-This work is situated within the paradigm of vector-quantized representation learning, beginning with the Vector Quantised Variational Autoencoder (VQ-VAE) and extending to modern formulations such as VQGAN and the LlamaGen tokenizer stack. These architectures project continuous convolutional features onto a finite set of learned representative centroids (the codebook). The index of the nearest centroid becomes the discrete token ID. Autoregressive modeling over these indices requires flattening the 2D grid into a 1D sequence. Within this context, the tokenizer acts as the interface between continuous physical space and discrete symbolic space. The geometric distribution of codebook vectors and the spatial sensitivity of the encoder-decoder mappings determine the stability and semantic integrity of the flattened sequences.
+Many tokenizers have been proposed using different architectural and training
+choices. They are commonly compared using reconstruction quality, but similar
+reconstruction scores can hide very different discrete representations. A
+tokenizer may use only a small part of its nominal vocabulary, change many
+token IDs after a small image perturbation, or spread a local intervention
+across distant spatial positions. Since the downstream autoregressive model
+learns the token sequences produced by the tokenizer, these properties define
+the learning problem it receives.
 
-\section{Problem Statement}
-\label{sec:introduction_problem_statement}
+\section{Problem Statement and Research Questions}
+\label{sec:research_questions}
 
-Existing tokenizer evaluations assume that higher reconstruction fidelity implies a better discrete representation. This assumption overlooks several failure modes. First, nearest-neighbor quantization boundaries in the latent space can introduce extreme instabilities: small input perturbations may push features across boundaries, causing widespread token replacements (flips). Second, convolutional structures and spatial normalization layers can distribute local changes globally, meaning a local perturbation in pixel space can corrupt distant sequence elements. Third, decoder structures may fail to restrict their response locally when token IDs are edited directly. If a tokenizer exhibits high instability or poor locality, it forces the downstream autoregressive model to learn a highly sensitive, chaotic distribution, leading to error propagation during sequential generation. This thesis aims to systematically probe and characterize these behavioral properties.
+This thesis studies the behavioral properties of the discrete bottleneck
+introduced by visual tokenization. The objective is to understand how
+different tokenizer designs represent images, how stable their token
+assignments are, and how locally their encoders and decoders respond to
+controlled interventions. Reconstruction metrics remain part of the
+evaluation, but they are considered together with codebook usage, token
+stability, and spatial response.
+
+The experiments address five research questions:
+
+\begin{enumerate}
+\item How do the tokenizers compare in reconstruction quality and empirical
+codebook usage? This establishes the clean baseline in
+Chapter~\ref{ch:rq1}.
+\item How stable are their reconstructions and token assignments under global
+image perturbations? Chapter~\ref{ch:rq2} compares clean and noisy processing
+paths.
+\item How local is the encoder response when a perturbation is applied to a
+local image patch? Chapter~\ref{ch:rq3} measures token changes both inside and
+outside the perturbed region.
+\item How local is the decoder response when a local patch of visual tokens is
+edited directly? Chapter~\ref{ch:rq4} measures image changes both inside and
+outside the corresponding image region.
+\item How do reconstruction quality and codebook usage change under
+distribution shift? Chapter~\ref{ch:rq5} compares the tokenizers across input
+domains.
+\end{enumerate}
+
+Figure~\ref{fig:tokenizer_probe_taxonomy} summarizes the five probes. For the
+global-noise experiment, the original and noisy images are processed in
+parallel; reconstruction metrics compare images, while token flips compare the
+two token grids. The local experiments separately measure the response inside
+and outside the intervened region.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\textwidth]{ch01_fig_tokenizer_probe_taxonomy.png}
+    \aifigurecaption{Overview of the five tokenizer probes. Reconstruction metrics are
+    computed between images, token flips are computed between token grids, and
+    the local probes measure responses both inside and outside the intervened
+    region.}
+    \label{fig:tokenizer_probe_taxonomy}
+\end{figure}
+\FloatBarrier
 
 \section{Scope}
 \label{sec:introduction_scope}
 
-The scope of this thesis is a comparative behavioral evaluation of two prominent tokenizer families under controlled perturbations: the classic VQGAN (Taming Transformers) baseline and the modern, normalized LlamaGen tokenizer. Both tokenizers are evaluated under a shared interface ($16 \times 16$ token grids and a nominal vocabulary size $K = 16{,}384$) on the ImageNet-1K validation set. We restrict our analysis to the tokenizer itself—isolating the encoder, vector-quantizer, and decoder paths—rather than evaluating joint sample quality from the autoregressive model. The probing suite covers baseline reconstruction, global Gaussian perturbations, local image-space patch corruptions, direct token-space edits, and codebook behavior under out-of-domain distribution shifts.
+The study compares two tokenizers built using different architectural choices:
+VQGAN and the LlamaGen VQ-16 tokenizer. Both map $256 \times 256$ images to a
+$16 \times 16$ token grid with a nominal vocabulary of $K=16{,}384$, which
+provides a shared external interface for comparison. The analysis isolates the
+tokenizer itself---the encoder, vector quantizer, and decoder---rather than the
+autoregressive model trained on its output. ImageNet-1K validation is the main
+reference dataset, with additional datasets used for distribution-shift
+analysis.
 
-\section{Contributions}
-\label{sec:contributions}
+\section{Thesis Outline}
+\label{sec:thesis_outline}
 
-The primary contributions of this thesis are:
-\begin{enumerate}
-    \item A systematic probing framework for evaluating discrete image tokenizers across baseline fidelity, global stability, encoder locality, decoder locality, and distribution shift robustness.
-    \item An empirical demonstration that reconstruction quality and token-sequence stability are decoupled: a tokenizer can produce highly accurate decoded outputs while exhibiting extreme token-identity turnover under minor input noise.
-    \item A detailed analysis of encoder leakage, showing that local image-space perturbations propagate to distant token positions due to receptive field overlap and spatial normalization.
-    \item A characterization of decoder response to token edits, illustrating that codebook geometry governs edit severity, and that absolute and relative leakage metrics must be evaluated jointly.
-\end{enumerate}
-
-
-\section{Research Questions and Thesis Overview}
-\label{sec:research_questions}
-
-This thesis studies discrete image tokenizers used in autoregressive visual generation. The central premise is that reconstruction quality alone is not enough to characterize a tokenizer. A tokenizer also defines a visual vocabulary, a token distribution, and a spatial response to perturbations. These properties determine what the downstream autoregressive model sees and how local or global its errors may become.
-
-The experiments are organized around five research questions:
-
-\begin{enumerate}
-\item How do the tokenizers compare in reconstruction quality and empirical codebook usage?
-\item How stable are their reconstructions and token assignments under global perturbations?
-\item How local is the encoder response when a perturbation is applied to a local image patch?
-\item How local is the decoder response when a local patch of visual tokens is edited directly?
-\item How do reconstruction quality and codebook usage change under distribution shift?
-\end{enumerate}
-
-These questions decompose the tokenizer into the functional boundaries relevant to autoregressive image generation: reconstruction behavior, codebook behavior, encoder-side stability, decoder-side locality, and robustness under distribution shift. Figure~\ref{fig:tokenizer_probe_taxonomy} summarizes this experimental taxonomy.
-
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=0.9\textwidth]{ch02_fig_2_5_tokenizer_probe_taxonomy.png}
-    \aifigurecaption{Taxonomy of the tokenizer probes used in this thesis, covering reconstruction, global robustness, encoder locality, decoder locality, and codebook behavior under shift.}
-    \label{fig:tokenizer_probe_taxonomy}
-\end{figure}
-
-The remainder of the thesis follows this decomposition. Chapter~\ref{ch:background} gives the conceptual background on autoregressive image modeling and vector-quantized tokenizers. Chapter~\ref{ch:datasets_models_metrics} defines the models, datasets, and metrics. The subsequent experimental chapters evaluate reconstruction and codebook usage, global perturbation robustness, local image-space perturbations, token-space perturbations, and distribution shift, before the final discussion synthesizes the results across these probes.
+The thesis is structured as follows. Chapter~\ref{ch:background} introduces
+autoregressive image modeling and vector-quantized tokenizers.
+Chapter~\ref{ch:datasets_models_metrics} defines the evaluated models,
+datasets, and metrics. Chapters~\ref{ch:rq1}--\ref{ch:rq5} address the five
+research questions in sequence. Chapter~\ref{ch:cross_question_discussion}
+compares the findings across experiments, Chapter~\ref{ch:limitations}
+discusses the limitations of the study, and Chapter~\ref{ch:conclusion}
+concludes the thesis.
