@@ -1,0 +1,15 @@
+model,dataset,dataset_label,n_images,grid_height,grid_width,total_tokens,active_codes,counts_consistent
+LlamaGen,imagenet,ImageNet,50000,16,16,12800000,16384,True
+LlamaGen,imagenet_v2,ImageNet-V2,10000,16,16,2560000,16384,True
+LlamaGen,imagenet_sketch,ImageNet-Sketch,50889,16,16,13027584,16383,True
+LlamaGen,objectnet,ObjectNet,50273,16,16,12869888,16384,True
+LlamaGen,organamnist,OrganAMNIST,57187,16,16,14639872,16383,True
+LlamaGen,bloodmnist,BloodMNIST,17092,16,16,4375552,16124,True
+LlamaGen,rvlcdip,RVL-CDIP,39996,16,16,10238976,16288,True
+VQGAN,imagenet,ImageNet,50000,16,16,12800000,972,True
+VQGAN,imagenet_v2,ImageNet-V2,10000,16,16,2560000,972,True
+VQGAN,imagenet_sketch,ImageNet-Sketch,50889,16,16,13027584,972,True
+VQGAN,objectnet,ObjectNet,50273,16,16,12869888,972,True
+VQGAN,organamnist,OrganAMNIST,57187,16,16,14639872,972,True
+VQGAN,bloodmnist,BloodMNIST,17092,16,16,4375552,966,True
+VQGAN,rvlcdip,RVL-CDIP,39996,16,16,10238976,971,True
