@@ -78,7 +78,6 @@
 % OTHER PACKAGES
 \usepackage{pdfpages} % To include a pdf file
 \usepackage{afterpage}
-\usepackage{lipsum} % DUMMY PACKAGE
 \usepackage{fancyhdr} % For the headers
 \fancyhf{}
 
@@ -141,30 +140,69 @@
 
 % ABSTRACT IN ENGLISH
 \chapter*{Abstract} 
-Here goes the Abstract in English of your thesis followed by a list of keywords.
-The Abstract is a concise summary of the content of the thesis (single page of text)
-and a guide to the most important contributions included in your thesis.
-The Abstract is the very last thing you write.
-It should be a self-contained text and should be clear to someone who hasn't (yet) read the whole manuscript.
-The Abstract should contain the answers to the main scientific questions that have been addressed in your thesis.
-It needs to summarize the adopted motivations and the adopted methodological approach as well as the findings of your work and their relevance and impact.
-The Abstract is the part appearing in the record of your thesis inside POLITesi,
-the Digital Archive of PhD and Master Theses (Laurea Magistrale) of Politecnico di Milano.
-The Abstract will be followed by a list of four to six keywords.
-Keywords are a tool to help indexers and search engines to find relevant documents.
-To be relevant and effective, keywords must be chosen carefully.
-They should represent the content of your work and be specific to your field or sub-field.
-Keywords may be a single word or two to four words. 
+Autoregressive image models operate on discrete visual tokens, so the tokenizer
+that produces those tokens determines both reconstruction quality and the token
+sequences learned by the downstream model. This thesis compares VQGAN and the
+LlamaGen VQ-16 tokenizer through five behavioral probes. The analysis combines
+reconstruction metrics with empirical codebook usage, token changes under
+global noise, encoder response to local image perturbations, decoder response
+to local token edits, and distribution shift across natural, medical, and
+document-image datasets.
+
+On ImageNet validation, LlamaGen obtains better reconstruction scores and uses
+nearly all 16{,}384 nominal codebook entries. VQGAN uses about 972 active codes
+under the same protocol. Global Gaussian noise causes extensive token
+replacement in both models even when reconstructions remain visually
+structured, and it concentrates code usage without greatly changing the raw
+number of active codes. Local image perturbations change token assignments well
+beyond the perturbed patch. Direct token edits have a more concentrated decoder
+response, but still produce measurable changes outside the corresponding image
+region. Under distribution shift, the active vocabulary remains largely fixed
+for both models while code frequencies and positional diversity change,
+especially for sketches, medical images, and document pages.
+
+The results show that reconstruction quality alone does not characterize a
+discrete image tokenizer. Codebook utilization, token stability, spatial
+response, and distribution-dependent token usage expose different properties of
+the representation. The study does not train or evaluate a downstream
+autoregressive model; it identifies tokenizer-level quantities that such a
+model would inherit.
 \\
 \\
-\textbf{Keywords:} here, the keywords, of your thesis % Keywords
+\textbf{Keywords:} vector quantization, image tokenization, VQGAN, LlamaGen, robustness, autoregressive image generation % Keywords
 
 % ABSTRACT IN ITALIAN
 \chapter*{Abstract in lingua italiana}
-Qui va l'Abstract in lingua italiana della tesi seguito dalla lista di parole chiave.
+I modelli autoregressivi per immagini operano su token visivi discreti. Il
+tokenizer che produce tali token determina quindi sia la qualita' della
+ricostruzione sia le sequenze che il modello autoregressivo deve apprendere.
+Questa tesi confronta VQGAN e il tokenizer VQ-16 di LlamaGen mediante cinque
+sonde comportamentali. L'analisi combina metriche di ricostruzione, utilizzo
+empirico del codebook, cambiamenti dei token sotto rumore globale, risposta
+dell'encoder a perturbazioni locali dell'immagine, risposta del decoder a
+modifiche locali dei token e variazioni di distribuzione su dataset naturali,
+medici e documentali.
+
+Su ImageNet validation, LlamaGen ottiene metriche di ricostruzione migliori e
+utilizza quasi tutti i 16{,}384 elementi nominali del codebook. VQGAN utilizza
+circa 972 codici attivi nello stesso protocollo. Il rumore gaussiano globale
+provoca una sostituzione estesa dei token in entrambi i modelli anche quando le
+ricostruzioni restano visivamente strutturate e concentra l'uso dei codici
+senza modificare in modo rilevante il numero grezzo di codici attivi. Le
+perturbazioni locali dell'immagine modificano le assegnazioni dei token anche
+oltre la regione perturbata. Le modifiche dirette dei token producono una
+risposta del decoder piu' concentrata, ma con effetti misurabili anche fuori
+dalla regione corrispondente. In presenza di shift di distribuzione, il
+vocabolario attivo rimane quasi invariato per entrambi i modelli, mentre
+cambiano le frequenze dei codici e la loro diversita' posizionale.
+
+I risultati mostrano che la qualita' della ricostruzione non descrive da sola
+un tokenizer discreto per immagini. Utilizzo del codebook, stabilita' dei token,
+risposta spaziale e uso dei token sotto shift di distribuzione misurano
+proprieta' diverse della rappresentazione.
 \\
 \\
-\textbf{Parole chiave:} qui, vanno, le parole chiave, della tesi % Keywords (italian)
+\textbf{Parole chiave:} quantizzazione vettoriale, tokenizzazione di immagini, VQGAN, LlamaGen, robustezza, generazione autoregressiva di immagini % Keywords (italian)
 
 %----------------------------------------------------------------------------
 %	LIST OF CONTENTS/FIGURES/TABLES/SYMBOLS
@@ -179,18 +217,6 @@ Qui va l'Abstract in lingua italiana della tesi seguito dalla lista di parole ch
 %-------------------------------------------------------------------------
 %	THESIS MAIN TEXT
 %-------------------------------------------------------------------------
-% In the main text of your thesis you can write the chapters in two different ways:
-%
-%(1) As presented in this template you can write:
-%    \chapter{Title of the chapter}
-%    *body of the chapter*
-%
-%(2) You can write your chapter in a separated .tex file and then include it in the main file with the following command:
-%    \chapter{Title of the chapter}
-%    \input{chapter_file.tex}
-%
-% Especially for long thesis, we recommend you the second option.
-
 \addtocontents{toc}{\vspace{2em}} % Add a gap in the Contents, for aesthetics
 \mainmatter % Begin numeric (1,2,3...) page numbering
 
@@ -205,9 +231,8 @@ Qui va l'Abstract in lingua italiana della tesi seguito dalla lista di parole ch
 \input{Chapters/ch06_rq3_local_image_perturbations}
 \input{Chapters/ch07_rq4_token_space_perturbations}
 \input{Chapters/ch08_rq5_distribution_shift}
-\input{Chapters/ch09_cross_question_discussion}
-\input{Chapters/ch10_limitations}
-\input{Chapters/ch13_conclusion}
+\input{Chapters/ch09_limitations}
+\input{Chapters/ch10_conclusion}
 
 % --------------------------------------------------------------------------
 % APPENDICES
@@ -259,7 +284,8 @@ Qui va l'Abstract in lingua italiana della tesi seguito dalla lista di parole ch
 
 % ACKNOWLEDGEMENTS
 \chapter*{Acknowledgements}
-Here you might want to acknowledge someone.
+I thank Professor Matteo Matteucci for his supervision and Paolo Cudrano for
+his guidance and support throughout this work.
 
 \cleardoublepage
 

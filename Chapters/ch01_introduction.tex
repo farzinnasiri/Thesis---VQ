@@ -58,9 +58,10 @@ outside the perturbed region.
 \item How local is the decoder response when a local patch of visual tokens is
 edited directly? Chapter~\ref{ch:rq4} measures image changes both inside and
 outside the corresponding image region.
-\item How do reconstruction quality and codebook usage change under
-distribution shift? Chapter~\ref{ch:rq5} compares the tokenizers across input
-domains.
+\item How do reconstruction quality, codebook usage, and spatial token
+allocation change under distribution shift? Chapter~\ref{ch:rq5} compares the
+tokenizers across input domains and treats code-specific spatial movement as
+an exploratory analysis.
 \end{enumerate}
 
 Figure~\ref{fig:tokenizer_probe_taxonomy} summarizes the five probes. For the
@@ -99,7 +100,6 @@ The thesis is structured as follows. Chapter~\ref{ch:background} introduces
 autoregressive image modeling and vector-quantized tokenizers.
 Chapter~\ref{ch:datasets_models_metrics} defines the evaluated models,
 datasets, and metrics. Chapters~\ref{ch:rq1}--\ref{ch:rq5} address the five
-research questions in sequence. Chapter~\ref{ch:cross_question_discussion}
-compares the findings across experiments, Chapter~\ref{ch:limitations}
-discusses the limitations of the study, and Chapter~\ref{ch:conclusion}
-concludes the thesis.
+research questions in sequence. Chapter~\ref{ch:limitations} discusses the
+scope and limitations of the study, and Chapter~\ref{ch:conclusion} concludes
+the thesis.

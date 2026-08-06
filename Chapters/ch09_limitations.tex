@@ -1,0 +1,83 @@
+\chapter{Limitations and Scope}
+\label{ch:limitations}
+
+This thesis evaluates tokenizer behavior, not a complete autoregressive image
+generation system. The experiments make several comparisons possible, but they
+also set clear limits on what can be concluded.
+
+\section{Comparative Scope}
+\label{sec:limitations_comparative_scope}
+
+The study compares one VQGAN tokenizer and one LlamaGen VQ-16 tokenizer. They
+share the same external interface, a $16\times16$ grid and a nominal
+16{,}384-code vocabulary for $256\times256$ images, but they differ in
+architecture, training procedure, loss functions, codebook dimensionality, and
+normalization. The observed differences therefore describe the evaluated models
+as complete systems. They do not isolate the effect of any one architectural
+choice, nor do they establish that the results generalize to all VQGAN-style or
+LlamaGen-style tokenizers.
+
+The codebook analysis also distinguishes nominal and empirical vocabulary size.
+VQGAN's sparse active subset is an observed property of this checkpoint on the
+tested data. It should not be read as a statement about every possible input
+distribution or every VQGAN checkpoint. Conversely, LlamaGen's broad code usage
+does not by itself establish that its individual code IDs are more semantic or
+more stable.
+
+\section{Experimental Protocol}
+\label{sec:limitations_protocol}
+
+All reconstructions use a fixed $256\times256$ preprocessing pipeline. This
+provides a common interface but can change the statistics of datasets with
+different native resolutions, aspect ratios, or visual structure. In
+particular, document pages and medical images are not naturally distributed like
+ImageNet photographs. Their results should be interpreted as the response to
+the processed inputs used here, rather than as a general assessment of either
+tokenizer on the underlying application domain.
+
+The perturbation experiments use selected noise levels, patch sizes, and token
+replacement rules. Global noise measures stability under one image-space
+corruption family. The local image-space experiments use fixed regions, while
+the token-space experiments edit a fixed fraction of tokens. These interventions
+are useful controlled probes, but they do not span the full set of natural
+corruptions, adversarial changes, or semantic image edits that may occur in
+practice.
+
+The study also reports aggregate quantities. Token flips are averaged over all
+positions and images, while codebook statistics pool assignments over each
+dataset. These summaries reveal distributional changes but do not identify what
+visual concept each individual code represents. The analysis does not train a
+downstream autoregressive model, so its claims concern the token distributions
+and token stability presented to such a model rather than the final generation
+quality of a full system.
+
+\section{Metrics and Spatial Analysis}
+\label{sec:limitations_metrics}
+
+PSNR, SSIM, LPIPS, and FID measure different properties of reconstructions and
+do not provide a complete account of perceptual or semantic quality. They can
+also rank datasets differently because a structured medical image or document
+page can be easy to reconstruct while still being far from ImageNet in token
+distribution. For this reason, reconstruction quality and distribution shift
+are presented as complementary rather than interchangeable measurements.
+
+The global distribution-shift results are the strongest evidence in
+Chapter~\ref{ch:rq5}. The per-position entropy maps and code-specific spatial
+maps are more tentative. Positional entropy is sensitive to sample size: for
+example, ImageNet-V2 has 10{,}000 images, so its entropy is bounded by fewer
+observations than the 50{,}000-image ImageNet reference. Code-specific maps are
+especially sparse for LlamaGen because its assignments are distributed over
+16{,}384 codes. The maps suggest that shift changes where some codes appear,
+but they do not yet support a code-level semantic interpretation.
+
+\section{Implications for Future Work}
+\label{sec:limitations_future_work}
+
+The next step is to connect tokenizer-level probes to downstream generation.
+Training or evaluating autoregressive priors on the measured token streams would
+test whether high flip rates, concentrated usage, or distribution-dependent
+spatial allocation predict generation quality and robustness. Controlled
+ablations that vary one tokenizer design choice at a time would also separate
+codebook size, training objective, and architecture. Finally, larger and
+matched-size domain datasets would make the spatial analyses less dependent on
+finite-sample effects.

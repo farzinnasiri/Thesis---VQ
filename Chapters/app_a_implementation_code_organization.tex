@@ -6,10 +6,11 @@
 
 The experimental implementation is divided across three repositories. The
 \texttt{taming-transformers} repository contains the VQGAN model and its
-experiment scripts, while \texttt{LlamaGen} contains the corresponding
-LlamaGen tokenizer implementation. The \texttt{vq-explore} repository contains
-the comparative analysis notebooks and the decoder-locality analysis utility.
-This separation keeps model-specific inference code close to each model while
+experiment scripts~\cite{tamingtransformersgithub}, while \texttt{LlamaGen}
+contains the corresponding tokenizer implementation~\cite{llamagengithub}.
+The \texttt{vq-explore} repository contains the
+comparative analysis notebooks and the decoder-locality analysis utility. This
+separation keeps model-specific inference code close to each model while
 placing cross-model analysis in one location.
 
 \section{Experiment Scripts}
@@ -41,17 +42,51 @@ Chapter~\ref{ch:rq4}.
 One notebook consolidates the analysis for each experimental chapter:
 \texttt{ch04\_rq1\_reconstruction\_codebook\_usage.ipynb},
 \texttt{ch05\_rq2\_global\_robustness.ipynb},
-\texttt{ch06\_rq3\_local\_image\_perturbations.ipynb}, and
-\texttt{ch07\_rq4\_token\_space\_perturbations.ipynb}. The notebooks read the
+\texttt{ch06\_rq3\_local\_image\_perturbations.ipynb},
+\texttt{ch07\_rq4\_token\_space\_perturbations.ipynb}, and
+\texttt{ch08\_rq5\_distribution\_shift.ipynb}. The notebooks read the
 exported images and metadata, compute chapter-level summaries, and save the
 tables and figures cited in the thesis. Expensive per-image calculations are
 cached as CSV, Parquet, or NPZ files where appropriate. CPU-bound image metrics
 are parallelized across workers, while LPIPS is evaluated in GPU batches.
 
-Chapter outputs follow a common layout:
+On the analysis host, chapter outputs follow a common layout:
 \texttt{chapterN\_outputs/data} contains summary tables,
-\texttt{chapterN\_outputs/figures} contains final plots, and
+\texttt{chapterN\_outputs/figures} contains plots, and
 \texttt{chapterN\_outputs/qualitative\_samples} contains the source images used
-for visual comparisons. The tables and figures copied into the thesis
-repository are therefore derived artifacts; the exported run metadata remains
-the primary experimental record.
+for visual comparisons. Compact source artifacts are copied into
+\texttt{Assets/rqN/data} and \texttt{Assets/rqN/figures} in the thesis
+repository, where \texttt{rqN} denotes the research-question number. Figures
+included by LaTeX are copied into \texttt{Images}. Raw reconstructions and
+complete run exports remain outside the thesis repository.
+
+\section{Reproducibility Record}
+\label{sec:appendix_reproducibility}
+
+The file \texttt{Assets/reproducibility\_manifest.csv} records the repository
+revision, working-tree state, and SHA-256 digest of each experiment script and
+analysis notebook in the audited snapshot. The revision identifies the last
+commit that changed the file. The digest identifies its exact local contents.
+Most entries match their committed revision. The two reconstruction exporters
+and the RQ2 notebook contain later uncommitted changes, so the manifest marks
+them as modified rather than presenting the listed commit as an exact snapshot.
+
+Both tokenizers process RGB images at $256\times256$ resolution using a
+shortest-side resize followed by a center crop. Both expose a nominal
+16{,}384-entry codebook and produce a $16\times16$ token grid. The VQGAN runs
+load \texttt{/checkpoints/vqgan\_imagenet\_f16\_16384/model.yaml} and
+\texttt{last.ckpt}; the LlamaGen runs load
+\texttt{/checkpoints/vq\_ds16\_c2i.pt} with the VQ-16 architecture, embedding
+dimension 8, and codebook size 16{,}384. Robustness exporters set the Python,
+NumPy, and PyTorch random seeds to 0. Code-usage exports are deterministic with
+respect to input order: class directories and file names are sorted, data
+loading uses \texttt{shuffle=False}, and no token sampling is performed.
+
+For each code-usage run, \texttt{global\_counts.npy} stores one count per
+codebook index and \texttt{position\_counts.npy} stores counts with shape
+$K\times16\times16$. The exporter also writes \texttt{usage.csv}, the 500 most
+frequent codes, and \texttt{summary.json}. When enabled,
+\texttt{indices.npz} stores one token grid and source path per image. The
+Chapter~\ref{ch:rq5} artifact inventory verifies image counts, token-grid shape,
+total token counts, and active-code counts for every model--dataset pair. These
+checks are archived in \texttt{Assets/rq5/data/ch08\_artifact\_inventory.csv}.

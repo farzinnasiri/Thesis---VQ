@@ -75,7 +75,7 @@ The clean and edited reconstructions are
 \end{equation}
 where $D$ is the tokenizer decoder. The edited token patch covers
 $10\%$, $25\%$, $50\%$, or $75\%$ of the token grid. The main analysis uses
-ImageNet validation; ImageNetV2 is used to test whether the observed trends
+ImageNet validation; ImageNet-V2 is used to test whether the observed trends
 remain stable under a natural distribution shift.
 
 Both tokenizers produce a $16 \times 16$ grid. For each image, a square patch
@@ -361,27 +361,27 @@ the more reliable description of that edit mode.
 \subsection{Robustness under Dataset Shift}
 \label{subsec:rq4_dataset_shift}
 
-Figure~\ref{fig:rq4_dataset_shift_lpips} compares patch LPIPS on ImageNetV2
+Figure~\ref{fig:rq4_dataset_shift_lpips} compares patch LPIPS on ImageNet-V2
 with the ImageNet validation baseline. The differences are small across both
 models, all four edit modes, and all patch fractions. The largest absolute
 LPIPS difference is 0.0068. Closest replacement is slightly more disruptive on
-ImageNetV2, with positive deltas between 0.000 and 0.002. Orthogonal and
+ImageNet-V2, with positive deltas between 0.000 and 0.002. Orthogonal and
 farthest replacement generally have small negative deltas, indicating
-marginally lower perceptual change on ImageNetV2.
+marginally lower perceptual change on ImageNet-V2.
 
 The other metrics are similarly stable. Across the full comparison, the
 largest absolute change in mean outside response is 0.0016. At the 25\% patch
 level, leakage-ratio differences range from $-0.0030$ to $-0.0080$, and
 patch-PSNR differences remain within 0.17 dB. These differences are small
-relative to those among edit modes and tokenizers. ImageNetV2 preserves the
+relative to those among edit modes and tokenizers. ImageNet-V2 preserves the
 ordering and approximate magnitude found on ImageNet validation.
 
 \begin{figure}[t]
     \centering
     \includegraphics[width=0.92\textwidth]{ch07_fig_dataset_shift_lpips_patch.png}
-    \caption{Difference in mean patch LPIPS between ImageNetV2 and ImageNet
+    \caption{Difference in mean patch LPIPS between ImageNet-V2 and ImageNet
     validation. Positive values indicate greater perceptual change on
-    ImageNetV2.}
+    ImageNet-V2.}
     \label{fig:rq4_dataset_shift_lpips}
 \end{figure}
 \section{Discussion}
@@ -434,6 +434,6 @@ image perturbations can alter token identities far outside the patch, while
 direct token edits produce a decoded response that is concentrated near the
 edited region but still extends beyond it.
 
-The ImageNetV2 results preserve the same edit-mode ordering and differ only
+The ImageNet-V2 results preserve the same edit-mode ordering and differ only
 slightly in magnitude. Within this natural resampling shift, the measured
 decoder response is stable.

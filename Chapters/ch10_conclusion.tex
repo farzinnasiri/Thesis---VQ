@@ -1,0 +1,72 @@
+\chapter{Conclusion}
+\label{ch:conclusion}
+
+This thesis studied discrete image tokenizers as representations in their own
+right. Reconstruction quality is one part of that evaluation, but it does not
+describe how a tokenizer uses its vocabulary, how stable its token assignments
+are, or how local its encoder and decoder responses are. The five research
+questions examine these properties for VQGAN and LlamaGen VQ-16.
+
+\section{Answers to the Research Questions}
+
+\textbf{RQ1: reconstruction quality and empirical codebook usage.}
+LlamaGen reconstructs ImageNet validation images more accurately than VQGAN on
+all four reported metrics: $20.79$ versus $19.65$ PSNR, $0.558$ versus $0.489$
+SSIM, $0.228$ versus $0.286$ LPIPS, and $2.19$ versus $5.06$ FID. Their
+empirical vocabularies differ more sharply than their nominal configurations
+suggest. LlamaGen activates all 16{,}384 codebook entries on ImageNet, whereas
+VQGAN activates about 972. Nominal codebook size is therefore not an adequate
+description of the representation used by a checkpoint.
+
+\textbf{RQ2: stability under global image perturbations.}
+Neither tokenizer preserves exact token identity under modest Gaussian noise.
+At $\sigma=0.1$, 79.5\% of LlamaGen token positions and 75.1\% of VQGAN token
+positions differ from their clean assignments. The decoded images nevertheless
+retain broad visual structure, and LlamaGen remains better on reconstruction
+metrics at every tested noise level. Token identity can therefore change much
+more rapidly than image-level structure. Noise also concentrates usage in both
+models, reducing their effective vocabularies even when raw active-code counts
+change little.
+
+\textbf{RQ3: encoder locality under local image perturbations.}
+The encoder response is not confined to the perturbed patch. At low patch
+noise, the far-field token flip rate is 17.4\% for VQGAN and 17.8\% for
+LlamaGen; at higher noise levels, roughly one third of far-field positions
+change. Masking one image patch changes 56.3\% of VQGAN token positions and
+49.5\% of LlamaGen token positions outside the corresponding token region. A
+local image-space intervention can therefore produce a spatially extended
+change in the discrete representation.
+
+\textbf{RQ4: decoder locality under local token edits.}
+Directly editing a local token patch produces a more spatially concentrated
+response than perturbing an image patch before encoding. The largest
+perceptual changes occur near the edited region, but measurable changes remain
+outside it. The encoder and decoder are thus asymmetric: local image evidence
+can alter a nonlocal token sequence, while a local token edit has a more
+localized, though not perfectly bounded, effect in image space. This ordering
+is preserved on ImageNet-V2.
+
+\textbf{RQ5: reconstruction, vocabulary usage, and spatial allocation under
+distribution shift.}
+Both models retain almost all codes that are active on ImageNet across the
+tested shifted datasets. Distribution shift mainly reallocates probability
+mass within the active vocabulary rather than activating a different one.
+ImageNet-V2 and ObjectNet remain closest to the ImageNet token distribution,
+while sketches, medical images, and document pages produce larger changes;
+RVL-CDIP has the largest Jensen--Shannon divergence for both tokenizers.
+Reconstruction quality and token-distribution shift do not follow the same
+ordering. The code-specific spatial analysis suggests movement for selected
+tokens, but it remains exploratory because the result depends on token choice
+and frequency.
+
+\section{Overall Conclusion}
+
+The experiments support evaluating a discrete image tokenizer through a set of
+complementary probes: reconstruction quality, empirical codebook usage, token
+stability, spatial response, and distributional behavior. LlamaGen is stronger
+on the measured reconstruction metrics and uses a much broader vocabulary, but
+that breadth does not make its exact token identities more stable under noise.
+VQGAN uses a much smaller active subset, yet its token probabilities still
+change under perturbation and domain shift. A tokenizer should therefore be
+treated as a component that shapes the representation and input distribution
+seen by an autoregressive model, not only as a reconstruction module.
