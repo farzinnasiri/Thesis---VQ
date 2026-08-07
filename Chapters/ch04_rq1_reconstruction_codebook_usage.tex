@@ -85,11 +85,13 @@ The metrics above show that LlamaGen reconstructs ImageNet validation images mor
     \centering
     \small
     \setlength{\tabcolsep}{4pt}
+    \resizebox{\textwidth}{!}{%
     \begin{tabular}{lrrrrrrr}
         \textbf{Tokenizer} & \textbf{Codebook size} & \textbf{Active} & \textbf{Effective active} & \textbf{Perplexity} & \textbf{Top-10} & \textbf{Top-100} & \textbf{Top-500} \\ \hline
         LlamaGen & 16{,}384 & 16{,}384 (100.0\%) & 16{,}384 (100.0\%) & 16{,}179.19 & 0.003 & 0.012 & 0.046 \\
         VQGAN    & 16{,}384 & 972 (5.9\%)       & 971 (5.9\%)       & 910.46    & 0.022 & 0.165 & 0.665 \\
     \end{tabular}
+    }
     \caption{ImageNet codebook usage summary. Active counts report how many nominal codes appear on ImageNet; effective active counts use the threshold of at least 13 assignments. Top-$k$ values report the fraction of all token assignments covered by the most frequent $k$ codes.}
     \label{tab:rq1_codebook_usage}
 \end{table}
