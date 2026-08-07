@@ -39,7 +39,7 @@ Table~\ref{tab:model_config_summary} summarizes the shared and differing configu
 \section{Datasets}
 \label{sec:datasets}
 
-The datasets serve two roles. ImageNet validation is the reference set: it is used for reconstruction baselines, codebook usage, global perturbation robustness, and locality experiments. The remaining datasets are used in Chapter 8 to test how reconstruction and codebook statistics change when the input distribution moves away from ImageNet.
+The datasets serve two roles. ImageNet validation is the reference set: it is used for reconstruction baselines, codebook usage, global perturbation robustness, and locality experiments. ImageNet-V2 is additionally used in Chapter~\ref{ch:rq4} as a near-domain check of decoder locality. Chapter~\ref{ch:rq5} uses all shifted datasets to test how reconstruction and codebook statistics change when the input distribution moves away from ImageNet.
 
 \subsection{ImageNet Validation}
 \label{subsec:imagenet_validation}
@@ -51,7 +51,7 @@ The primary reference set in this thesis is the ImageNet-1K validation split. It
 \subsection{Shifted Datasets}
 \label{subsec:shifted_datasets}
 
-The shifted datasets are not used to repeat every experiment in the thesis. Their purpose is narrower: Chapter 8 uses them to ask whether the codebook and reconstruction behavior observed on ImageNet validation remains stable when the visual distribution changes. The datasets form two groups.
+The shifted datasets are not used to repeat every experiment in the thesis. ImageNet-V2 is used in the decoder-locality analysis of Chapter~\ref{ch:rq4}; Chapter~\ref{ch:rq5} then uses all shifted datasets to test whether the codebook and reconstruction behavior observed on ImageNet validation remains stable when the visual distribution changes. The datasets form two groups.
 
 \paragraph{ImageNet-aligned shifts.}
 ImageNet-V2 was collected as a new test set for the same 1,000 ImageNet classes, with the goal of measuring robustness to natural resampling of the benchmark distribution~\cite{recht2019imagenet}. It keeps the label space and natural-image setting close to ImageNet while changing the sampled images. This makes it a near-domain shift: changes in tokenizer behavior should mostly reflect resampled natural-image statistics rather than a new visual domain.
@@ -174,11 +174,20 @@ SSIM compares local luminance, contrast, and structure rather than only pointwis
 \end{equation}
 where $l$, $c$, and $s$ denote luminance, contrast, and structure comparisons computed over local windows. SSIM values are then averaged across the image. Higher SSIM indicates stronger structural similarity.
 
-LPIPS compares deep network activations between two images~\cite{zhang2018unreasonable}:
+LPIPS compares normalized deep-network activations between two images~\cite{zhang2018unreasonable}:
 \begin{equation}
-    \mathrm{LPIPS}(x,y) = \sum_l w_l \left\lVert \phi_l(x)-\phi_l(y)\right\rVert_2^2,
+    \mathrm{LPIPS}(x,y)
+    = \sum_l \frac{1}{H_lW_l}\sum_{h,w}
+    \left\lVert
+    w_l \odot \left(\hat\phi_l(x)_{h,w}-\hat\phi_l(y)_{h,w}\right)
+    \right\rVert_2^2,
 \end{equation}
-where $\phi_l$ denotes normalized features at layer $l$ and $w_l$ are learned weights. Lower LPIPS indicates greater perceptual similarity. Unlike MSE and PSNR, LPIPS is explicitly calibrated against human perceptual judgments, but its value depends on the chosen backbone and calibration.
+where $\hat\phi_l$ denotes channel-normalized features at layer $l$, $w_l$
+contains learned channel weights, and the distance is averaged over the
+$H_l\times W_l$ spatial locations. Lower LPIPS indicates greater perceptual
+similarity. Unlike MSE and PSNR, LPIPS is explicitly calibrated against human
+perceptual judgments, but its value depends on the chosen backbone and
+calibration.
 
 \subsection{Distribution-Level Image Metrics}
 \label{subsec:distribution_metrics}
@@ -260,15 +269,15 @@ Locality experiments use spatial masks. For encoder locality in Chapter~\ref{ch:
 \end{equation}
 where $t_i$ and $t'_i$ are the clean and perturbed token IDs. For a set of token positions $R$,
 \begin{equation}
-    \rho(R) = \mathbb{E}_{i\in R}[F_i].
+    r(R) = \mathbb{E}_{i\in R}[F_i].
 \end{equation}
 The leakage ratio compares outside-patch and inside-patch flip rates:
 \begin{equation}
     \lambda_{\mathrm{enc}} =
-    \frac{\rho(R_{\mathrm{out}})}
-         {\rho(R_{\mathrm{in}})+\epsilon}.
+    \frac{r(R_{\mathrm{out}})}
+         {r(R_{\mathrm{in}})+\varepsilon}.
 \end{equation}
-The small constant $\epsilon$ avoids division by zero when no inside-patch flips occur. A low leakage ratio means that token changes are mostly confined to the perturbed region; a high value means that the encoder or quantizer has propagated the perturbation to distant token positions.
+The small constant $\varepsilon$ avoids division by zero when no inside-patch flips occur. A low leakage ratio means that token changes are mostly confined to the perturbed region; a high value means that the encoder or quantizer has propagated the perturbation to distant token positions.
 
 For decoder locality in Chapter~\ref{ch:rq4}, the intervention is applied directly to a bounded token patch and the decoded images are compared inside and outside the corresponding image-space region. The same idea is used: inside-region change measures whether the edit had an effect, while outside-region change measures leakage beyond the intended region.
 

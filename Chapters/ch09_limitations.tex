@@ -37,11 +37,13 @@ tokenizer on the underlying application domain.
 
 The perturbation experiments use selected noise levels, patch sizes, and token
 replacement rules. Global noise measures stability under one image-space
-corruption family. The local image-space experiments use fixed regions, while
-the token-space experiments edit a fixed fraction of tokens. These interventions
-are useful controlled probes, but they do not span the full set of natural
-corruptions, adversarial changes, or semantic image edits that may occur in
-practice.
+corruption family. Local image-space and token-space patches are placed at
+seeded, uniformly sampled valid locations. The two model implementations use
+the same seeds and intervention levels, but the random noise arrays and patch
+locations were not exported as a shared cross-model intervention manifest.
+These interventions are useful controlled probes, but they do not span the
+full set of natural corruptions, adversarial changes, or semantic image edits
+that may occur in practice.
 
 The study also reports aggregate quantities. Token flips are averaged over all
 positions and images, while codebook statistics pool assignments over each
@@ -50,6 +52,12 @@ visual concept each individual code represents. The analysis does not train a
 downstream autoregressive model, so its claims concern the token distributions
 and token stability presented to such a model rather than the final generation
 quality of a full system.
+
+Absolute token-flip rates should also not be read as a calibrated robustness
+ranking across the two tokenizers. Their codebooks induce different latent
+partitions and have very different empirical vocabulary sizes. The rates are
+most directly interpretable as within-tokenizer changes over perturbation
+strength.
 
 \section{Metrics and Spatial Analysis}
 \label{sec:limitations_metrics}
@@ -69,6 +77,13 @@ observations than the 50{,}000-image ImageNet reference. Code-specific maps are
 especially sparse for LlamaGen because its assignments are distributed over
 16{,}384 codes. The maps suggest that shift changes where some codes appear,
 but they do not yet support a code-level semantic interpretation.
+
+Some spatial patterns can also reflect preprocessing rather than learned
+semantics. Resizing and center cropping interact with aspect ratio, and the
+boundary pattern observed for ObjectNet is consistent with
+preprocessing-induced borders. The spatial maps therefore describe the
+tokenizers' response to the evaluated tensors, not an invariant property of
+the source datasets.
 
 \section{Implications for Future Work}
 \label{sec:limitations_future_work}

@@ -1,0 +1,3 @@
+model,dataset,n_images,token_grid_hw,total_tokens,strict_active_codes,effective_active_codes_1e-6,dead_codes,active_fraction_full,entropy_nats,perplexity,top_10_mass,top_100_mass,top_500_mass,codes_for_90pct_mass,codes_for_95pct_mass,codes_for_99pct_mass,codes_for_99.9pct_mass
+LlamaGen,ImageNet,50000,"[16, 16]",12800000,16384,16384,0,1.0,9.691481089124274,16179.189378227627,0.0029328125000000005,0.011967187499999999,0.045642265625,14305,15294,16144,16358
+VQGAN,ImageNet,50000,"[16, 16]",12800000,972,971,15412,0.059326171875,6.813955088196708,910.4646632966759,0.021548828125,0.16476875000000002,0.664882109375,791,872,946,966

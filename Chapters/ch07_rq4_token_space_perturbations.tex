@@ -78,6 +78,13 @@ $10\%$, $25\%$, $50\%$, or $75\%$ of the token grid. The main analysis uses
 ImageNet validation; ImageNet-V2 is used to test whether the observed trends
 remain stable under a natural distribution shift.
 
+Images are resized and center-cropped to $256\times256$ using the
+model-specific preprocessing described in Appendix~\ref{app:computational_environment}.
+Decoder outputs are converted from the models' internal $[-1,1]$ range to
+$[0,1]$ before metrics are computed. Both runs use seed zero. Patch locations
+are reproducible within each exporter, but random replacement draws were not
+exported as a shared cross-model intervention.
+
 Both tokenizers produce a $16 \times 16$ grid. For each image, a square patch
 is sampled at a random valid position for the largest target fraction. The
 smaller patches are nested within that patch, so comparisons across fractions
@@ -139,7 +146,7 @@ token patch. Mean inside and outside responses are
 \end{equation}
 The decoder leakage ratio is
 \begin{equation}
-    \rho^{(m)}
+    \lambda_{\mathrm{dec}}^{(m)}
     =
     \frac{\Delta_{\mathrm{out}}^{(m)}}
          {\Delta_{\mathrm{in}}^{(m)} + \varepsilon}.
@@ -150,11 +157,13 @@ region. $\Delta_{\mathrm{in}}$ measures local edit strength, while
 $\Delta_{\mathrm{out}}$ measures leakage outside the intended image region. The analysis also reports the 99th and 99.9th percentiles of
 outside-patch change to capture strong but spatially sparse leakage.
 
-The leakage ratio is calculated per image and then averaged. It can become
+The leakage ratio is calculated per image. Its distribution can become
 unstable when
 $\Delta_{\mathrm{in}}^{(m)}$ is close to zero: a small outside response divided
-by an even smaller inside response can yield a large ratio. The absolute
-inside and outside responses are reported alongside $\rho^{(m)}$.
+by an even smaller inside response can yield a large ratio. The median is
+therefore the primary summary of proportional leakage; means and standard
+deviations are retained in the archived per-image tables. The absolute inside
+and outside responses are reported alongside $\lambda_{\mathrm{dec}}^{(m)}$.
 
 \subsection{Fidelity Metrics}
 \label{subsec:rq4_fidelity_metrics}
@@ -287,12 +296,12 @@ outside response ranges from 0.013 for closest replacement to 0.050 for
 farthest replacement. For VQGAN, it ranges from 0.019 to 0.090. The decoder
 response is spatially concentrated, but not confined to the edited region.
 
-The proportional leakage values give a different ordering. Farthest
+The median proportional leakage values give a different ordering. Farthest
 replacement has the largest absolute outside response, but one of the lowest
-leakage ratios: 0.145 for LlamaGen and 0.150 for VQGAN at the 25\% level. Its
+leakage ratios: 0.141 for LlamaGen and 0.148 for VQGAN at the 25\% level. Its
 inside response grows even more strongly than its outside response. Closest
 replacement is mild in absolute terms, yet has a higher proportional leakage
-ratio, especially for VQGAN at 0.269. Absolute leakage and proportional leakage
+ratio, especially for VQGAN at 0.263. Absolute leakage and proportional leakage
 describe different aspects of the response.
 
 The outside response also contains localized high-amplitude changes that are
@@ -312,18 +321,18 @@ pixels even when the average outside response remains low.
         \textbf{Tokenizer} & \textbf{Edit mode} &
         $\boldsymbol{\Delta_{\mathrm{in}}}$ &
         $\boldsymbol{\Delta_{\mathrm{out}}}$ &
-        $\boldsymbol{\rho}$ \\ \hline
-        LlamaGen & Closest & 0.067 & 0.013 & 0.199 \\
-        LlamaGen & Orthogonal & 0.222 & 0.039 & 0.180 \\
-        LlamaGen & Random & 0.220 & 0.038 & 0.180 \\
-        LlamaGen & Farthest & 0.356 & 0.050 & 0.145 \\
-        VQGAN & Closest & 0.072 & 0.019 & 0.269 \\
-        VQGAN & Orthogonal & 0.239 & 0.046 & 0.194 \\
-        VQGAN & Random & 0.200 & 0.050 & 0.264 \\
-        VQGAN & Farthest & 0.607 & 0.090 & 0.150 \\
+        $\boldsymbol{\widetilde{\lambda}_{\mathrm{dec}}}$ \\ \hline
+        LlamaGen & Closest & 0.067 & 0.013 & 0.193 \\
+        LlamaGen & Orthogonal & 0.222 & 0.039 & 0.176 \\
+        LlamaGen & Random & 0.220 & 0.038 & 0.175 \\
+        LlamaGen & Farthest & 0.356 & 0.050 & 0.141 \\
+        VQGAN & Closest & 0.072 & 0.019 & 0.263 \\
+        VQGAN & Orthogonal & 0.239 & 0.046 & 0.187 \\
+        VQGAN & Random & 0.200 & 0.050 & 0.249 \\
+        VQGAN & Farthest & 0.607 & 0.090 & 0.148 \\
     \end{tabular}
-    \caption{Inside response, outside response, and decoder leakage ratio for a
-    25\% token patch on ImageNet validation.}
+    \caption{Mean inside and outside response and median decoder leakage ratio
+    for a 25\% token patch on ImageNet validation.}
     \label{tab:rq4_patch25_locality}
 \end{table}
 \begin{figure}[t]
@@ -336,8 +345,8 @@ pixels even when the average outside response remains low.
 \begin{figure}[t]
     \centering
     \includegraphics[width=\textwidth]{ch07_fig_leakage_ratio_imagenet_val.png}
-    \caption{Decoder leakage ratio as a function of token-patch fraction and
-    edit mode.}
+    \caption{Median decoder leakage ratio as a function of token-patch
+    fraction and edit mode.}
     \label{fig:rq4_leakage_ratio}
 \end{figure}
 Figure~\ref{fig:rq4_decoder_locality} shows how these quantities change with
@@ -350,12 +359,13 @@ replacement, the outside response rises from 0.053 to 0.213; for LlamaGen it
 rises from 0.030 to 0.120.
 
 The same growth appears in Figure~\ref{fig:rq4_leakage_ratio}. At the 75\%
-level, leakage ratios range from 0.301 to 0.422 for LlamaGen and from 0.353 to
-0.532 for VQGAN. The closest and random VQGAN edits have the highest
+level, median leakage ratios range from 0.299 to 0.418 for LlamaGen and from
+0.352 to 0.531 for VQGAN. The closest and random VQGAN edits have the highest
 proportional leakage at large patch sizes. One small-patch point should not be
 overinterpreted: for LlamaGen closest replacement at the nominal 10\% level,
-the averaged ratio is inflated because some images have almost no inside
-change. The absolute response curves, and the ratio from 25\% onward, provide
+the mean of the per-image ratios is inflated because some images have almost
+no inside change. This is why the median is the primary proportional summary.
+The absolute response curves, and the median ratio from 25\% onward, provide
 the more reliable description of that edit mode.
 
 \subsection{Robustness under Dataset Shift}

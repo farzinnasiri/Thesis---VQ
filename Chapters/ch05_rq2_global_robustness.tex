@@ -38,6 +38,13 @@ The clean reconstruction and tokenization are $\hat{x}_0$ and $z_0$. Each $z_{\s
 
 The experiment was run on the full ImageNet validation set for both tokenizers. Each of the 50{,}000 images contributes one clean tokenization and three noisy tokenizations, corresponding to $\sigma=0.1$, $\sigma=0.2$, and $\sigma=0.5$.
 
+Both exporters set the Python, NumPy, and PyTorch seeds to zero. The runs are
+reproducible within each implementation, but the Gaussian arrays were not
+exported and reused across tokenizers; model-to-model comparisons are matched
+by image and noise level, not by an identical realization of every noise
+value. Inputs are transformed to each model's internal $[-1,1]$ range and
+outputs are converted to $[0,1]$ for image metrics.
+
 \subsection{Metrics}
 \label{subsec:rq2_metrics}
 
@@ -60,6 +67,13 @@ Token identity stability is measured by the fraction of token positions that cha
     \label{eq:rq2_token_flip}
 \end{equation}
 where $N=256$ is the number of positions in the $16 \times 16$ token grid. A value near zero indicates that most positions keep the same token under noise; a value near one indicates that nearly all token identities changed.
+
+Flip rates are directly comparable across noise levels within a tokenizer.
+Their absolute values are only descriptive across tokenizers: LlamaGen uses
+almost the full nominal vocabulary, whereas VQGAN quantizes into a much
+smaller empirical subset, and the two codebooks induce different partitions
+of latent space. A higher cross-model flip rate therefore does not by itself
+imply a worse representation.
 
 Finally, the global token distribution is computed by aggregating token counts over the entire validation set at each noise level. For empirical token probabilities $p_k$, Equation~\ref{eq:rq2_perplexity} gives the entropy and corresponding perplexity:
 \begin{equation}

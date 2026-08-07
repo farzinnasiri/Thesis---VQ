@@ -34,7 +34,7 @@ The codebook analysis reports both raw and effective vocabulary use. The raw act
 \section{Reconstruction Baseline}
 \label{sec:rq1_reconstruction_baseline}
 
-Table~\ref{tab:rq1_reconstruction_metrics} reports the ImageNet reconstruction metrics for LlamaGen and VQGAN. The reader should focus on two points: LlamaGen improves the paired-image metrics (PSNR, SSIM, LPIPS) and also improves the distribution-level reconstruction metrics (FID, sFID, precision, recall, and Inception Score). This makes it the stronger clean reconstruction baseline on ImageNet.
+Table~\ref{tab:rq1_reconstruction_metrics} reports the ImageNet reconstruction metrics for LlamaGen and VQGAN. LlamaGen improves the paired-image metrics (PSNR, SSIM, LPIPS) and the reference-conditioned distribution metrics (FID, sFID, precision, and recall). Inception Score is retained as a diagnostic of classifier confidence and class diversity, not treated as a paired reconstruction metric or as having a universally preferred direction. The remaining metrics make LlamaGen the stronger clean reconstruction baseline on ImageNet.
 
 \begin{table}[t]
     \centering
@@ -45,13 +45,20 @@ Table~\ref{tab:rq1_reconstruction_metrics} reports the ImageNet reconstruction m
         LlamaGen & 20.79 & 0.558 & 0.228 & 2.19 & 5.01 & 0.978 & 0.995 & 52.70 \\
         VQGAN    & 19.65 & 0.489 & 0.286 & 5.06 & 6.49 & 0.920 & 0.973 & 46.76 \\
     \end{tabular}
-    \caption{ImageNet reconstruction metrics for the two tokenizers. Arrows indicate preferred direction: PSNR, SSIM, precision, recall, and Inception Score $\uparrow$; LPIPS, FID, and sFID $\downarrow$.}
+    \caption{ImageNet reconstruction metrics for the two tokenizers. Higher PSNR, SSIM, precision, and recall are preferred; lower LPIPS, FID, and sFID are preferred. Inception Score is reported as a diagnostic and is not assigned a preferred reconstruction direction.}
     \label{tab:rq1_reconstruction_metrics}
 \end{table}
 
 The PSNR gap is modest in absolute terms, but it is consistent with the other metrics. LlamaGen reaches a mean PSNR of 20.79 compared with 19.65 for VQGAN, and a mean SSIM of 0.558 compared with 0.489. LPIPS also favors LlamaGen: 0.228 compared with 0.286 for VQGAN. Since LPIPS is computed in a learned feature space, this indicates that the reconstruction difference is not only a pixel-level effect. The distributional metrics agree with the same direction: LlamaGen obtains FID 2.19 and sFID 5.01, while VQGAN obtains FID 5.06 and sFID 6.49.
 
-Figure~\ref{fig:rq1_reconstruction_metric_comparison} visualizes the same comparison across metrics that differ in scale and direction. The important pattern is consistency: LlamaGen is better on metrics where higher values are preferred and lower on metrics where lower values are preferred.
+The corresponding per-image standard deviations are 3.18 dB, 0.167, and
+0.058 for LlamaGen PSNR, SSIM, and LPIPS, and 3.41 dB, 0.176, and 0.066 for
+VQGAN. The distributions therefore overlap substantially even though all
+three dataset means favor LlamaGen. FID and related distribution metrics do
+not decompose into per-image observations and are consequently reported as
+dataset-level estimates.
+
+Figure~\ref{fig:rq1_reconstruction_metric_comparison} visualizes the same comparison across metrics that differ in scale and direction. Excluding Inception Score, whose interpretation is not paired to a reference image, the reconstruction metrics consistently favor LlamaGen.
 
 \begin{figure}[t]
     \centering
@@ -90,6 +97,15 @@ The metrics above show that LlamaGen reconstructs ImageNet validation images mor
 LlamaGen uses all 16,384 codebook entries on ImageNet with a perplexity of 16,179. This means that the empirical token distribution is close to uniform over the full nominal vocabulary. VQGAN uses only 972 of 16,384 codes, or about 5.9\% of the nominal codebook. This drop is caused by dead or inactive codes: most nominal entries are never assigned to any ImageNet validation patch. Its perplexity of 910 is close to the raw active count, so the active subset is small but not dominated by only a handful of codes.
 
 LlamaGen's top-500 codes account for only 4.6\% of all token assignments; VQGAN's top-500 account for 66.5\%. Thus, although the two tokenizers expose the same nominal vocabulary size, the sequences they would provide to a downstream autoregressive model have very different empirical vocabularies. The downstream model is trained on this empirical token stream, not on the unused portion of the nominal codebook.
+
+Entropy gives an idealized coding interpretation of the same result. Since
+$H=\log(\operatorname{PPL})$, the observed perplexities correspond to about
+$9.69$ nats ($13.98$ bits) per token for LlamaGen and $6.81$ nats ($9.83$
+bits) per token for VQGAN. For a 256-token grid, these are approximately
+$3{,}579$ and $2{,}516$ idealized bits per image under an optimal code matched
+to each empirical marginal distribution. LlamaGen's empirical marginal
+entropy is therefore about 42\% higher. This is a coding-rate statement, not a
+claim that individual LlamaGen tokens contain 42\% more semantic information.
 
 Figure~\ref{fig:rq1_code_usage_sorted} shows the full rank-frequency curve. LlamaGen assigns probability mass across the full codebook. VQGAN has a shorter curve because most nominal codes are inactive on ImageNet, and its active codes carry substantially higher average frequency.
 
@@ -131,6 +147,6 @@ These results define the reference point for later chapters. They do not identif
 \section{Discussion}
 \label{sec:rq1_discussion}
 
-In discrete representation learning, codebook collapse---many entries going unused---is a well-documented failure mode. LlamaGen avoids this behavior on the 16,384-entry codebook evaluated here: every code appears on ImageNet, and the perplexity is close to the nominal vocabulary size. VQGAN shows partial collapse on the same dataset: roughly 94\% of nominal codes are inactive, and the active subset carries the reconstruction load.
+In discrete representation learning, codebook collapse---many entries going unused---is a well-documented failure mode~\cite{lancucki2020robust,yu2021vector,mentzer2023finite}. LlamaGen avoids this behavior on the 16,384-entry codebook evaluated here: every code appears on ImageNet, and the perplexity is close to the nominal vocabulary size. VQGAN shows partial collapse on the same dataset: roughly 94\% of nominal codes are inactive, and the active subset carries the reconstruction load.
 
 The baseline is ImageNet-specific. VQGAN may activate a different code subset on other domains, so the sparse pattern observed here does not imply global codebook collapse across all possible inputs. The reconstruction advantage also cannot be attributed to any single design choice. At this stage, the result is a baseline: LlamaGen reconstructs ImageNet validation images better and uses the nominal codebook more fully; VQGAN reconstructs less accurately and uses a much smaller empirical vocabulary. Later chapters use this clean reference point when measuring robustness, locality, and distribution shift.

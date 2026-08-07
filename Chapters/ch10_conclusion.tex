@@ -38,13 +38,11 @@ local image-space intervention can therefore produce a spatially extended
 change in the discrete representation.
 
 \textbf{RQ4: decoder locality under local token edits.}
-Directly editing a local token patch produces a more spatially concentrated
-response than perturbing an image patch before encoding. The largest
-perceptual changes occur near the edited region, but measurable changes remain
-outside it. The encoder and decoder are thus asymmetric: local image evidence
-can alter a nonlocal token sequence, while a local token edit has a more
-localized, though not perfectly bounded, effect in image space. This ordering
-is preserved on ImageNet-V2.
+Directly editing a local token patch produces its largest pixel response near
+the edited region, but measurable changes remain outside it. This decoder-side
+result is preserved on ImageNet-V2. It should not be numerically ranked against
+the encoder-side token-flip ratio from RQ3: the two chapters intervene in
+different spaces and measure different response variables.
 
 \textbf{RQ5: reconstruction, vocabulary usage, and spatial allocation under
 distribution shift.}

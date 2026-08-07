@@ -150,7 +150,7 @@ to local token edits, and distribution shift across natural, medical, and
 document-image datasets.
 
 On ImageNet validation, LlamaGen obtains better reconstruction scores and uses
-nearly all 16{,}384 nominal codebook entries. VQGAN uses about 972 active codes
+all 16{,}384 nominal codebook entries observed in this evaluation. VQGAN uses about 972 active codes
 under the same protocol. Global Gaussian noise causes extensive token
 replacement in both models even when reconstructions remain visually
 structured, and it concentrates code usage without greatly changing the raw
@@ -174,7 +174,7 @@ model would inherit.
 % ABSTRACT IN ITALIAN
 \chapter*{Abstract in lingua italiana}
 I modelli autoregressivi per immagini operano su token visivi discreti. Il
-tokenizer che produce tali token determina quindi sia la qualita' della
+tokenizer che produce tali token determina quindi sia la qualit\`a della
 ricostruzione sia le sequenze che il modello autoregressivo deve apprendere.
 Questa tesi confronta VQGAN e il tokenizer VQ-16 di LlamaGen mediante cinque
 sonde comportamentali. L'analisi combina metriche di ricostruzione, utilizzo
@@ -184,19 +184,20 @@ modifiche locali dei token e variazioni di distribuzione su dataset naturali,
 medici e documentali.
 
 Su ImageNet validation, LlamaGen ottiene metriche di ricostruzione migliori e
-utilizza quasi tutti i 16{,}384 elementi nominali del codebook. VQGAN utilizza
+utilizza tutti i 16.384 elementi nominali del codebook osservati in questa
+valutazione. VQGAN utilizza
 circa 972 codici attivi nello stesso protocollo. Il rumore gaussiano globale
 provoca una sostituzione estesa dei token in entrambi i modelli anche quando le
 ricostruzioni restano visivamente strutturate e concentra l'uso dei codici
 senza modificare in modo rilevante il numero grezzo di codici attivi. Le
 perturbazioni locali dell'immagine modificano le assegnazioni dei token anche
 oltre la regione perturbata. Le modifiche dirette dei token producono una
-risposta del decoder piu' concentrata, ma con effetti misurabili anche fuori
+risposta del decoder pi\`u concentrata, ma con effetti misurabili anche fuori
 dalla regione corrispondente. In presenza di shift di distribuzione, il
 vocabolario attivo rimane quasi invariato per entrambi i modelli, mentre
 cambiano le frequenze dei codici e la loro diversita' posizionale.
 
-I risultati mostrano che la qualita' della ricostruzione non descrive da sola
+I risultati mostrano che la qualit\`a della ricostruzione non descrive da sola
 un tokenizer discreto per immagini. Utilizzo del codebook, stabilita' dei token,
 risposta spaziale e uso dei token sotto shift di distribuzione misurano
 proprieta' diverse della rappresentazione.
@@ -275,11 +276,11 @@ proprieta' diverse della rappresentazione.
     $M_P$ & Binary image-space mask for patch $P$. \\[2px]
     $I_P$, $O_P$ & Token positions inside and outside patch $P$. \\[2px]
     $R_{\mathrm{in}}$, $R_{\mathrm{out}}$ & Mean encoder-side token response inside and outside a perturbed patch. \\[2px]
-    $\lambda$ & Encoder leakage ratio, $R_{\mathrm{out}}/(R_{\mathrm{in}}+\varepsilon)$. \\[2px]
+    $\lambda_{\mathrm{enc}}$ & Encoder leakage ratio, $R_{\mathrm{out}}/(R_{\mathrm{in}}+\varepsilon)$. \\[2px]
     $B_{\mathrm{tok}}$, $B_{\mathrm{px}}$ & Edited token-space region and its corresponding image-space region. \\[2px]
     $\Delta_{\mathrm{in}}$, $\Delta_{\mathrm{out}}$ & Mean decoder-side image response inside and outside an edited region. \\[2px]
-    $\rho$ & Decoder leakage ratio, $\Delta_{\mathrm{out}}/(\Delta_{\mathrm{in}}+\varepsilon)$. \\[2px]
-    $\varepsilon$ & Small positive constant used to stabilize ratio denominators. \\[2px]
+    $\lambda_{\mathrm{dec}}$ & Decoder leakage ratio, $\Delta_{\mathrm{out}}/(\Delta_{\mathrm{in}}+\varepsilon)$. \\[2px]
+    $\varepsilon$ & Fixed small positive constant that prevents division by zero in leakage ratios. \\[2px]
 \end{longtable}
 
 % ACKNOWLEDGEMENTS

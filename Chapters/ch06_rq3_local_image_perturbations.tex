@@ -31,7 +31,12 @@ Let $x \in [0,1]^{H \times W \times 3}$ be a preprocessed ImageNet validation im
 \end{equation}
 Only pixels inside $P$ receive additive noise. The clipping operation keeps the image in the valid pixel range.
 
-Both tokenizers produce a $16 \times 16$ token grid. The main Gaussian-noise analysis uses an $8 \times 8$ token-space patch, corresponding to one quarter of the token grid and approximately one quarter of the image area under the tokenizer downsampling. The patch location is recorded for each image in both pixel and token coordinates, so inside/outside regions are measured from the actual perturbation mask. The reported noise levels are $\sigma \in \{0.1, 0.25, 0.5\}$. A masked-occlusion variant is reported separately as a stronger local intervention.
+Both tokenizers produce a $16 \times 16$ token grid. The main Gaussian-noise analysis uses an $8 \times 8$ token-space patch, corresponding to one quarter of the token grid and approximately one quarter of the image area under the tokenizer downsampling. Its top-left corner is sampled uniformly from the valid grid locations using a seeded pseudorandom generator. The patch location is recorded for each image in both pixel and token coordinates, so inside/outside regions are measured from the actual perturbation mask. The reported noise levels are $\sigma \in \{0.1, 0.25, 0.5\}$. A masked-occlusion variant is reported separately as a stronger local intervention. Both exporters set the Python, NumPy, and PyTorch seeds to zero. This makes each implementation reproducible, but the sampled noise tensors were not exported and shared between implementations; the two tokenizer runs are therefore not paired by identical random arrays.
+
+The equations use the common $[0,1]$ image convention. In the implementation,
+images are transformed to the $[-1,1]$ range expected by each tokenizer,
+perturbations are clipped in that range, and reconstructions are returned to
+$[0,1]$ before image metrics are computed.
 
 \subsection{Inside and Outside Response}
 \label{subsec:rq3_inside_outside_metrics}
@@ -56,16 +61,16 @@ The outside response is the same quantity measured outside the perturbed region:
 \end{equation}
 The ratio
 \begin{equation}
-    \lambda(\sigma,P)
+    \lambda_{\mathrm{enc}}(\sigma,P)
     =
     \frac{R_{\mathrm{out}}(\sigma,P)}
          {R_{\mathrm{in}}(\sigma,P) + \varepsilon}
     \label{eq:rq3_leakage_ratio}
 \end{equation}
 is used as a compact leakage measure. A value near zero means that token changes are mostly confined to the patch. A value near one means that outside tokens change almost as often as inside tokens. In this chapter, all response values are token-flip probabilities: they are fractions of token positions whose discrete ID differs from the clean encoding.
-Thus, $R_{\mathrm{in}}$ measures direct sensitivity to the corrupted patch, while $R_{\mathrm{out}}$ measures leakage outside the patch. The ratio $\lambda$ is useful only together with the two absolute rates, because a ratio can be large either because the outside response is large or because the inside response is small.
+Thus, $R_{\mathrm{in}}$ measures direct sensitivity to the corrupted patch, while $R_{\mathrm{out}}$ measures leakage outside the patch. The ratio $\lambda_{\mathrm{enc}}$ is useful only together with the two absolute rates, because a ratio can be large either because the outside response is large or because the inside response is small.
 
-\subsection{Distance Profile and Concentration}
+\subsection{Distance Profile}
 \label{subsec:rq3_distance_metrics}
 
 The inside/outside split is useful but coarse. It says how much response leaves the patch, but not how far it goes. Each token position $i$ is therefore assigned a Manhattan grid distance $d(i,P)$ to the nearest token in $I_P$: distance zero is inside the patch, distance one is the first ring of neighboring token cells, and larger values move farther across the token grid. The distance profile is
@@ -78,16 +83,6 @@ The inside/outside split is useful but coarse. It says how much response leaves 
     \label{eq:rq3_distance_profile}
 \end{equation}
 The results report the full profile and a small set of bands: inside tokens ($d=0$), boundary-neighbor tokens ($d=1$), near tokens ($d \in \{1,2\}$), and far-field tokens ($d \geq 6$).
-
-The outside response can also be diffuse or concentrated. For each outside token position, the analysis estimates its flip frequency across the validation set. Let $a_i$ denote this empirical response value for position $i \in O_P$, and let $T_{0.05}(O_P)$ be the 5\% of outside positions with the largest response values. The outside concentration score is
-\begin{equation}
-    C_{0.05}(\sigma,P)
-    =
-    \frac{\sum_{i \in T_{0.05}(O_P)} a_i}
-         {\sum_{i \in O_P} a_i + \varepsilon}.
-    \label{eq:rq3_outside_concentration}
-\end{equation}
-This top-5\% outside mass is used only as a diagnostic. It tells whether outside-patch changes are spread over many positions or dominated by a small subset of high-response positions.
 
 \section{Experimental Results}
 \label{sec:rq3_results}
@@ -120,7 +115,7 @@ Outside the patch, the response is already approximately 30\% at the lowest nois
     \centering
     \small
     \begin{tabular}{llrrrrr}
-        \textbf{Tokenizer} & \textbf{Level} & $\boldsymbol{\sigma}$ & $\boldsymbol{R_{\mathrm{in}}}$ & $\boldsymbol{R_{\mathrm{out}}}$ & $\boldsymbol{\lambda}$ & \textbf{Far field} \\ \hline
+        \textbf{Tokenizer} & \textbf{Level} & $\boldsymbol{\sigma}$ & $\boldsymbol{R_{\mathrm{in}}}$ & $\boldsymbol{R_{\mathrm{out}}}$ & $\boldsymbol{\lambda_{\mathrm{enc}}}$ & \textbf{Far field} \\ \hline
         VQGAN & low & 0.10 & 0.788 & 0.299 & 0.375 & 0.174 \\
         VQGAN & mid & 0.25 & 0.952 & 0.441 & 0.462 & 0.265 \\
         VQGAN & high & 0.50 & 0.988 & 0.521 & 0.527 & 0.333 \\
@@ -163,38 +158,6 @@ Figure~\ref{fig:rq3_distance_profile_flip} plots token flip probability as a fun
     \caption{Token flip probability as a function of distance from the perturbed patch. The response is strongest inside and near the patch, but remains measurable far from it.}
     \label{fig:rq3_distance_profile_flip}
 \end{figure}
-\subsection{Outside-Response Concentration}
-\label{subsec:rq3_concentration_results}
-
-The outside response also changes in spatial distribution. If a few outside positions explained most of the response, the leakage would be sparse. Instead, the top-5\% outside mass decreases as the perturbation becomes stronger, as shown in Table~\ref{tab:rq3_outside_concentration_summary}. For VQGAN, the top-5\% outside mass is 0.198 at $\sigma=0.1$, 0.123 at $\sigma=0.25$, and 0.102 at $\sigma=0.5$. LlamaGen follows the same pattern, with values 0.198, 0.127, and 0.106. Lower top-5\% mass means that the outside response is spread across more outside positions rather than concentrated in a few hotspots.
-
-\begin{table}[t]
-    \centering
-    \small
-    \begin{tabular}{llrrrr}
-        \textbf{Tokenizer} & \textbf{Level} & $\boldsymbol{\sigma}$ & $\boldsymbol{R_{\mathrm{out}}}$ & \textbf{Top-5\% mass} & \textbf{Top-5\% median} \\ \hline
-        VQGAN & low & 0.10 & 0.299 & 0.198 & 0.179 \\
-        VQGAN & mid & 0.25 & 0.441 & 0.123 & 0.119 \\
-        VQGAN & high & 0.50 & 0.521 & 0.102 & 0.100 \\
-        LlamaGen & low & 0.10 & 0.302 & 0.198 & 0.175 \\
-        LlamaGen & mid & 0.25 & 0.428 & 0.127 & 0.122 \\
-        LlamaGen & high & 0.50 & 0.505 & 0.106 & 0.104 \\
-    \end{tabular}
-    \caption{Outside-response concentration. Top-5\% mass is the fraction of outside changed-token mass explained by the most responsive 5\% of outside positions.}
-    \label{tab:rq3_outside_concentration_summary}
-\end{table}
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=0.86\textwidth]{ch06_fig_outside_concentration_boxplot.png}
-    \caption{Distribution of top-5\% outside response mass across ImageNet validation images. Lower values indicate a more diffuse outside response.}
-    \label{fig:rq3_outside_concentration_boxplot}
-\end{figure}
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=0.82\textwidth]{ch06_fig_outside_concentration_vs_leakage.png}
-    \caption{Relationship between mean outside response and outside-response concentration. The plot separates the amount of outside token change from how spatially concentrated that change is.}
-    \label{fig:rq3_outside_concentration_vs_leakage}
-\end{figure}
 \subsection{Masked Patch Intervention}
 \label{subsec:rq3_masked_results}
 
@@ -204,7 +167,7 @@ The masked-patch variant tests whether the same pattern appears under a stronger
     \centering
     \small
     \begin{tabular}{lrrr}
-        \textbf{Tokenizer} & $\boldsymbol{R_{\mathrm{in}}}$ & $\boldsymbol{R_{\mathrm{out}}}$ & $\boldsymbol{\lambda}$ \\ \hline
+        \textbf{Tokenizer} & $\boldsymbol{R_{\mathrm{in}}}$ & $\boldsymbol{R_{\mathrm{out}}}$ & $\boldsymbol{\lambda_{\mathrm{enc}}}$ \\ \hline
         VQGAN & 0.998 & 0.563 & 0.564 \\
         LlamaGen & 1.000 & 0.495 & 0.495 \\
     \end{tabular}

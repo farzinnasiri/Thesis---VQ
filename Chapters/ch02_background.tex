@@ -72,7 +72,7 @@ The decoder receives $z_q(x)$ rather than the continuous encoder output. Image i
 
 \subsection{Learning the Discrete Bottleneck}
 
-The nearest-neighbor assignment is not differentiable. VQ-VAE uses a straight-through estimator: during the forward pass the decoder receives quantized vectors, while during backpropagation the gradient with respect to the quantized representation is copied to the encoder output~\cite{oord2017neural}. The encoder, decoder, and codebook are consequently learned together.
+The nearest-neighbor assignment is not differentiable. VQ-VAE uses a straight-through estimator: during the forward pass the decoder receives quantized vectors, while during backpropagation the gradient with respect to the quantized representation is copied to the encoder output~\cite{bengio2013estimating,oord2017neural}. The encoder, decoder, and codebook are consequently learned together.
 
 The original VQ-VAE objective combines reconstruction, codebook, and commitment terms:
 \begin{equation}
@@ -99,6 +99,14 @@ Vector quantization introduces properties that are not visible from reconstructi
 
     \item[Decoder locality.] Conversely, changing a bounded region of the token grid can alter pixels both inside and outside the corresponding image region. Chapter~\ref{ch:rq4} isolates this decoder-side behavior.
 \end{description}
+
+The gap between nominal and empirical vocabulary is not merely a reporting
+detail. Underused or inactive entries, commonly described as codebook collapse,
+reduce the operational capacity of the bottleneck. Prior work has addressed
+this problem through changes to codebook optimization, quantizer design, and
+alternative discretization schemes~\cite{lancucki2020robust,yu2021vector,mentzer2023finite}.
+The present thesis does not propose a new remedy; it measures the extent to
+which the evaluated checkpoints exhibit this behavior.
 
 \begin{figure}[t]
     \centering

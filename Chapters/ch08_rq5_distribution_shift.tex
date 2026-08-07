@@ -111,6 +111,12 @@ Because LlamaGen and VQGAN have very different empirical vocabulary sizes,
 top-100 mass is interpreted within a tokenizer, not as a normalized score for
 ranking the two tokenizers.
 
+These global quantities pool millions of token assignments per dataset and
+are therefore less sparse than the per-code positional estimates below.
+Nevertheless, the datasets have unequal image counts, so small differences,
+especially for ImageNet-V2 and BloodMNIST, are not treated as formal
+hypothesis-test results.
+
 \subsection{Positional Measurements}
 \label{subsec:rq5_positional_metrics}
 
@@ -370,8 +376,9 @@ position distribution is therefore sparse by construction. VQGAN places the
 same number of total assignments over roughly 972 active codes, yielding much
 denser per-code estimates. Raising the support threshold removes most
 LlamaGen codes and changes the summary appreciably, while VQGAN's summary is
-more stable. We conclude only that dataset shift changes where many frequently
-observed codes are deployed, and that this spatial signal should be retested
+more stable. The evidence supports only the conclusion that dataset shift
+changes where many frequently observed codes are deployed, and that this
+spatial signal should be retested
 with matched sample sizes or pooled spatial regions. The present experiment
 does not establish that LlamaGen is less spatially stable than VQGAN.
 
