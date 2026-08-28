@@ -1,0 +1,51 @@
+\begin{tikzpicture}[
+    font=\sffamily\scriptsize,
+    row/.style={draw=black!35, rounded corners=2pt, minimum height=9mm},
+    probe/.style={row, fill=blue!8, text width=30mm, align=left, inner sep=4pt},
+    path/.style={row, fill=black!2, text width=61mm, align=center, inner sep=4pt},
+    measure/.style={row, fill=green!8, text width=43mm, align=left, inner sep=4pt},
+    flow/.style={-{Latex[length=2mm]}, semithick, black!65}
+]
+\node[font=\sffamily\bfseries\small] (title) at (0,0)
+    {Five behavioral probes applied to the same frozen tokenizer};
+
+\node[probe, below=5mm of title, xshift=-52mm] (p1)
+    {\textbf{1. Clean baseline}\\No intervention};
+\node[path, right=3mm of p1] (x1)
+    {$x \rightarrow E \rightarrow k \rightarrow D \rightarrow \hat{x}$};
+\node[measure, right=3mm of x1] (m1)
+    {Paired and set-level image metrics; code usage};
+
+\node[probe, below=2mm of p1] (p2)
+    {\textbf{2. Global input noise}\\Perturb all pixels};
+\node[path, right=3mm of p2] (x2)
+    {$x$ and $x+\epsilon$ follow parallel encode--decode paths};
+\node[measure, right=3mm of x2] (m2)
+    {Image-metric change; token flip rate};
+
+\node[probe, below=2mm of p2] (p3)
+    {\textbf{3. Local image patch}\\Perturb $R_{\mathrm{in}}$};
+\node[path, right=3mm of p3] (x3)
+    {$x+\epsilon\mathbb{1}_{R_{\mathrm{in}}} \rightarrow E \rightarrow k'$};
+\node[measure, right=3mm of x3] (m3)
+    {Token flips inside and outside the patch};
+
+\node[probe, below=2mm of p3] (p4)
+    {\textbf{4. Local token edit}\\Edit token region $S_{\mathrm{in}}$};
+\node[path, right=3mm of p4] (x4)
+    {$k' = \operatorname{edit}(k,S_{\mathrm{in}}) \rightarrow D \rightarrow \hat{x}'$};
+\node[measure, right=3mm of x4] (m4)
+    {Image response inside and outside the decoded region};
+
+\node[probe, below=2mm of p4] (p5)
+    {\textbf{5. Distribution shift}\\Change input domain};
+\node[path, right=3mm of p5] (x5)
+    {$x\sim\mathcal{D}_{\mathrm{ID}}$ or $\mathcal{D}_{\mathrm{OOD}}$; tokenizer fixed};
+\node[measure, right=3mm of x5] (m5)
+    {Reconstruction quality; code frequency and position};
+
+\foreach \i in {1,2,3,4,5} {
+    \draw[flow] (p\i.east) -- (x\i.west);
+    \draw[flow] (x\i.east) -- (m\i.west);
+}
+\end{tikzpicture}

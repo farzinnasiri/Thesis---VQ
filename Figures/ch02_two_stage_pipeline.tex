@@ -1,0 +1,37 @@
+\begin{tikzpicture}[
+    font=\sffamily\scriptsize,
+    block/.style={draw=black!50, rounded corners=2pt, minimum width=22mm,
+                  minimum height=9mm, align=center, fill=blue!7},
+    data/.style={draw=black!45, minimum width=18mm, minimum height=9mm,
+                 align=center, fill=black!2},
+    prior/.style={block, fill=orange!10, minimum width=29mm},
+    arrow/.style={-{Latex[length=2mm]}, semithick, black!65}
+]
+\node[font=\bfseries\small, anchor=west] (s1) at (-75mm,15mm)
+    {Stage 1: learn and then freeze the tokenizer};
+\node[data, anchor=west] (x) at (-75mm,3mm) {image\\$x$};
+\node[block, right=5mm of x] (enc) {encoder\\$E$};
+\node[data, right=5mm of enc] (grid) {token grid\\$k\in\{1,\ldots,K\}^{16\times16}$};
+\node[block, right=5mm of grid] (dec) {decoder\\$D$};
+\node[data, right=5mm of dec] (recon) {reconstruction\\$\hat{x}$};
+\draw[arrow] (x) -- (enc);
+\draw[arrow] (enc) -- (grid);
+\draw[arrow] (grid) -- (dec);
+\draw[arrow] (dec) -- (recon);
+
+\node[font=\bfseries\small, anchor=west] (s2) at (-75mm,-18mm)
+    {Stage 2: learn an autoregressive prior over tokenizer outputs};
+\node[data, anchor=west] (trainseq) at (-75mm,-30mm)
+    {training sequence\\$s=(k_1,\ldots,k_{256})$};
+\node[prior, right=5mm of trainseq] (ar)
+    {autoregressive prior\\$p(s)=\prod_i p(k_i\mid k_{<i})$};
+\node[data, right=5mm of ar] (sample)
+    {sampled sequence\\$\tilde{s}$};
+\node[block, right=5mm of sample] (dec2) {frozen\\decoder $D$};
+\node[data, right=5mm of dec2] (generated) {generated image\\$\tilde{x}$};
+\draw[arrow] (trainseq) -- (ar);
+\draw[arrow] (ar) -- (sample);
+\draw[arrow] (sample) -- (dec2);
+\draw[arrow] (dec2) -- (generated);
+\draw[arrow, dashed] (grid.south) -- ++(0,-5mm) -| (trainseq.north);
+\end{tikzpicture}

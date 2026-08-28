@@ -1,0 +1,29 @@
+\begin{tikzpicture}[
+    font=\sffamily\small,
+    point/.style={circle, fill=black, inner sep=1.7pt},
+    centroid/.style={circle, draw=red!70!black, fill=red!65, inner sep=2.6pt},
+    move/.style={-{Latex[length=2.3mm]}, very thick, red!70!black}
+]
+\draw[-{Latex[length=2mm]}] (-55mm,-24mm) -- (55mm,-24mm)
+    node[below] {$z_1$};
+\draw[-{Latex[length=2mm]}] (-55mm,-24mm) -- (-55mm,25mm)
+    node[left] {$z_2$};
+\draw[dashed, semithick] (0,-22mm) -- (0,23mm)
+    node[above, align=center, font=\scriptsize] {equal-distance boundary\\$\|z-e_a\|_2=\|z-e_b\|_2$};
+\node[centroid, label=below left:$e_a$] (ea) at (-28mm,-1mm) {};
+\node[centroid, label=below right:$e_b$] (eb) at (28mm,6mm) {};
+\node[point] (before) at (-7mm,2mm) {};
+\node[above left=1mm of before] {$z$};
+\node[point] (after) at (8mm,5mm) {};
+\node[above right=1mm of after] {$z'=z+\delta$};
+\draw[move] (before) -- node[above] {$\delta$} (after);
+\draw[thin, black!45] (before) -- (ea);
+\draw[thin, black!45] (after) -- (eb);
+\node[align=center, below=7mm of before, xshift=-15mm, font=\scriptsize]
+    {$\|z-e_a\|_2<\|z-e_b\|_2$\\$Q(z)=a$};
+\node[align=center, below=7mm of after, xshift=15mm, font=\scriptsize]
+    {$\|z'-e_b\|_2<\|z'-e_a\|_2$\\$Q(z')=b$};
+\node[draw=red!65, rounded corners=2pt, fill=red!5, align=center,
+      right=13mm of eb, text width=34mm, inner sep=5pt]
+    {A small continuous displacement can produce the discrete change $a\rightarrow b$.};
+\end{tikzpicture}

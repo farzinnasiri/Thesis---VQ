@@ -22,8 +22,8 @@ Pixel-level modeling is conceptually simple but computationally demanding. A $25
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.94\textwidth]{ch02_fig_2_1a_pixel_vs_token_sequence.png}
-    \aifigurecaption{Pixel-level flattening produces much longer autoregressive sequences than token-level flattening. A learned tokenizer replaces groups of pixel values with discrete visual symbols.}
+    \resizebox{0.94\textwidth}{!}{\input{Figures/ch02_pixel_vs_token_sequence}}
+    \caption{Pixel-level flattening produces much longer autoregressive sequences than token-level flattening. A learned tokenizer replaces groups of pixel values with discrete visual symbols.}
     \label{fig:pixel_vs_token_sequence}
 \end{figure}
 
@@ -31,8 +31,8 @@ The resulting system has two stages, illustrated in Figure~\ref{fig:two_stage_au
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.96\textwidth]{ch02_fig_2_1_two_stage_autoregressive_pipeline.png}
-    \aifigurecaption{Two-stage autoregressive image generation. The tokenizer maps an image to a compact token grid; an autoregressive prior models the flattened token sequence; the tokenizer decoder maps sampled tokens back to image space.}
+    \resizebox{0.96\textwidth}{!}{\input{Figures/ch02_two_stage_pipeline}}
+    \caption{Two-stage autoregressive image generation. The tokenizer maps an image to a compact token grid; an autoregressive prior models the flattened token sequence; the tokenizer decoder maps sampled tokens back to image space.}
     \label{fig:two_stage_autoregressive_pipeline}
 \end{figure}
 
@@ -65,8 +65,8 @@ The decoder receives $z_q(x)$ rather than the continuous encoder output. Image i
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.94\textwidth]{ch02_fig_2_2b_feature_map_to_token_sequence.png}
-    \aifigurecaption{From a continuous feature map to a discrete sequence. The encoder produces a latent grid, vector quantization replaces each latent vector with a codebook index, and the token grid is flattened for sequence modeling.}
+    \resizebox{0.94\textwidth}{!}{\input{Figures/ch02_feature_map_to_sequence}}
+    \caption{From a continuous feature map to a discrete sequence. The encoder produces a latent grid, vector quantization replaces each latent vector with a codebook index, and the token grid is flattened for sequence modeling.}
     \label{fig:feature_map_to_token_sequence}
 \end{figure}
 
@@ -110,8 +110,8 @@ which the evaluated checkpoints exhibit this behavior.
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.9\textwidth]{ch02_fig_2_2_vq_latent_space_boundary_crossing.png}
-    \aifigurecaption{Nearest-neighbor regions create discontinuities in latent space. A small displacement of an encoder output can cross a quantization boundary and change its assigned token.}
+    \resizebox{0.9\textwidth}{!}{\input{Figures/ch02_boundary_crossing}}
+    \caption{Nearest-neighbor regions create discontinuities in latent space. A small displacement of an encoder output can cross a quantization boundary and change its assigned token.}
     \label{fig:vq_boundary_crossing}
 \end{figure}
 \FloatBarrier
@@ -134,8 +134,8 @@ The perceptual term compares activations of a pretrained network rather than req
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.94\textwidth]{ch02_fig_2_3a_adversarial_and_perceptual_losses.png}
-    \aifigurecaption{VQGAN training combines reconstruction, perceptual, and adversarial supervision. Reconstruction and perceptual losses compare the input and reconstruction, while a patch discriminator encourages locally realistic outputs.}
+    \resizebox{0.94\textwidth}{!}{\input{Figures/ch02_vqgan_losses}}
+    \caption{VQGAN training combines reconstruction, perceptual, and adversarial supervision. Reconstruction and perceptual losses compare the input and reconstruction, while a patch discriminator encourages locally realistic outputs.}
     \label{fig:adversarial_and_perceptual_losses}
 \end{figure}
 

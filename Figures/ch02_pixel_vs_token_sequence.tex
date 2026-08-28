@@ -1,0 +1,36 @@
+\begin{tikzpicture}[
+    font=\sffamily\small,
+    panel/.style={draw=black!35, rounded corners=2pt, minimum width=70mm,
+                  minimum height=34mm, align=center, inner sep=6pt},
+    sequence/.style={draw=black!55, minimum height=5mm, minimum width=7mm,
+                     inner sep=0pt},
+    arrow/.style={-{Latex[length=2mm]}, semithick, black!65}
+]
+\node[panel, fill=red!4] (pixels) at (-38mm,0) {};
+\node[font=\bfseries, anchor=north] at ([yshift=-3mm]pixels.north)
+    {Pixel-level sequence};
+\node[align=center] (pixelshape) at ([yshift=3mm]pixels.center)
+    {$x\in[0,1]^{256\times256\times3}$\\[1mm]
+     $T_{\mathrm{pixel}}=256\cdot256\cdot3=196{,}608$ scalar values};
+\node[anchor=south, align=center, font=\scriptsize] at ([yshift=2mm]pixels.south)
+    {Raster order over all RGB channel values};
+
+\node[panel, fill=blue!4] (tokens) at (38mm,0) {};
+\node[font=\bfseries, anchor=north] at ([yshift=-3mm]tokens.north)
+    {Token-level sequence};
+\node[align=center] (tokenshape) at ([yshift=3mm]tokens.center)
+    {$k\in\{1,\ldots,K\}^{16\times16}$\\[1mm]
+     $T_{\mathrm{token}}=16\cdot16=256$ discrete tokens};
+\node[anchor=south, align=center, font=\scriptsize] at ([yshift=2mm]tokens.south)
+    {Raster order over the learned token grid};
+
+\draw[arrow] ([xshift=-9mm,yshift=-7mm]pixels.center) --
+    node[below=1mm, font=\scriptsize] {$196{,}608$ positions}
+    ([xshift=9mm,yshift=-7mm]pixels.center);
+\draw[arrow] ([xshift=-9mm,yshift=-7mm]tokens.center) --
+    node[below=1mm, font=\scriptsize] {$256$ positions}
+    ([xshift=9mm,yshift=-7mm]tokens.center);
+
+\node[font=\sffamily\bfseries] at (0,-25mm)
+    {Sequence-length reduction: $196{,}608/256=768$};
+\end{tikzpicture}

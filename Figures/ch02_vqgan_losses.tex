@@ -1,0 +1,46 @@
+\begin{tikzpicture}[
+    font=\sffamily\scriptsize,
+    block/.style={draw=black!50, rounded corners=2pt, minimum width=21mm,
+                  minimum height=10mm, align=center, fill=blue!7},
+    data/.style={draw=black!45, minimum width=17mm, minimum height=10mm,
+                 align=center, fill=black!2},
+    loss/.style={draw=red!55!black, rounded corners=2pt, minimum width=29mm,
+                 minimum height=9mm, align=center, fill=red!5},
+    arrow/.style={-{Latex[length=2mm]}, semithick, black!65},
+    supervise/.style={-{Latex[length=2mm]}, dashed, semithick, red!65!black}
+]
+\node[data] (x) at (-68mm,0) {real image\\$x$};
+\node[block, right=5mm of x] (enc) {encoder\\$E$};
+\node[block, right=5mm of enc, fill=orange!10] (quant) {quantizer\\$Q_{\mathcal E}$};
+\node[block, right=5mm of quant] (dec) {decoder\\$D$};
+\node[data, right=5mm of dec] (xhat) {reconstruction\\$\hat{x}$};
+\draw[arrow] (x) -- (enc);
+\draw[arrow] (enc) -- (quant);
+\draw[arrow] (quant) -- (dec);
+\draw[arrow] (dec) -- (xhat);
+
+\node[loss, below=18mm of enc, xshift=-8mm] (rec)
+    {reconstruction loss\\$\mathcal L_{\mathrm{rec}}(x,\hat{x})$};
+\node[loss, below=18mm of quant, xshift=13mm] (perc)
+    {perceptual loss\\$\|\phi(x)-\phi(\hat{x})\|$};
+\node[block, above=17mm of xhat, fill=orange!10] (disc)
+    {patch discriminator\\$C$};
+\node[loss, right=5mm of disc] (adv)
+    {adversarial loss\\$\mathcal L_{\mathrm{adv}}$};
+\node[loss, above=17mm of quant] (codebook)
+    {codebook and commitment\\$\mathcal L_{\mathrm{codebook}}$};
+
+\draw[supervise] (x.south) |- (rec.west);
+\draw[supervise] (xhat.south) |- (rec.east);
+\draw[supervise] (x.south) |- (perc.west);
+\draw[supervise] (xhat.south) |- (perc.east);
+\draw[arrow] (x.north) |- (disc.west);
+\draw[arrow] (xhat.north) -- (disc.south);
+\draw[supervise] (disc) -- (adv);
+\draw[supervise] (enc.north) |- (codebook.west);
+\draw[supervise] (quant.north) -- (codebook.south);
+
+\node[below=9mm of perc, align=center, font=\sffamily\bfseries]
+    {$\mathcal L_{\mathrm{VQGAN}}=\mathcal L_{\mathrm{rec}}+\mathcal L_{\mathrm{perc}}
+     +\lambda\mathcal L_{\mathrm{adv}}+\mathcal L_{\mathrm{codebook}}$};
+\end{tikzpicture}

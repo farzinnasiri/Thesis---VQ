@@ -1,0 +1,29 @@
+\begin{tikzpicture}[
+    font=\sffamily\scriptsize,
+    arrow/.style={-{Latex[length=2mm]}, semithick, black!65},
+    eq/.style={draw=black!35, rounded corners=2pt, fill=black!2,
+               text width=57mm, align=left, inner sep=6pt}
+]
+\begin{scope}[xshift=-58mm,yshift=-19mm]
+    \fill[blue!7] (0,0) rectangle (44mm,44mm);
+    \fill[red!18] (15mm,15mm) rectangle (29mm,29mm);
+    \draw[step=7.333mm, black!45] (0,0) grid (44mm,44mm);
+    \draw[red!70!black, very thick] (15mm,15mm) rectangle (29mm,29mm);
+    \node[font=\bfseries, above] at (22mm,44mm) {spatial response grid};
+    \node[red!70!black, align=center] at (22mm,22mm) {$R_{\mathrm{in}}$\\intervention};
+    \node[blue!60!black, align=center] at (7mm,37mm) {$R_{\mathrm{out}}$};
+\end{scope}
+
+\node[eq] (flip) at (29mm,15mm)
+    {\textbf{Flip rate in a region}\\[1mm]
+     $F_i=\mathbb{1}[t_i\neq t_i']$,\qquad
+     $r(R)=\dfrac{1}{|R|}\sum_{i\in R}F_i$};
+\node[eq, below=5mm of flip] (leak)
+    {\textbf{Encoder leakage ratio}\\[1mm]
+     $\lambda_{\mathrm{enc}}=
+     \dfrac{r(R_{\mathrm{out}})}{r(R_{\mathrm{in}})+\varepsilon}$};
+\node[eq, below=5mm of leak] (interpret)
+    {\textbf{Interpretation}\\Low outside response means that the effect remains local.
+     Decoder locality uses the analogous inside/outside partition in image space.};
+\draw[arrow] (-27mm,3mm) -- (flip.west);
+\end{tikzpicture}

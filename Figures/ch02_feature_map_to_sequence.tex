@@ -1,0 +1,28 @@
+\begin{tikzpicture}[
+    font=\sffamily\scriptsize,
+    block/.style={draw=black!50, rounded corners=2pt, minimum width=25mm,
+                  minimum height=14mm, align=center, fill=blue!7},
+    data/.style={draw=black!45, minimum width=27mm, minimum height=14mm,
+                 align=center, fill=black!2},
+    quant/.style={block, fill=red!7, minimum width=31mm},
+    arrow/.style={-{Latex[length=2mm]}, semithick, black!65}
+]
+\node[data] (image) at (-66mm,0) {image\\$x\in\mathbb{R}^{H\times W\times C}$};
+\node[block, right=5mm of image] (encoder) {encoder\\$E$};
+\node[data, right=5mm of encoder] (latent)
+    {continuous grid\\$z_e(x)\in\mathbb{R}^{h\times w\times d}$};
+\node[quant, right=5mm of latent] (nearest)
+    {nearest codebook entry\\$k_{u,v}=\arg\min_j\|z_{e,u,v}-e_j\|_2$};
+\node[data, right=5mm of nearest] (indices)
+    {index grid\\$k\in\{1,\ldots,K\}^{h\times w}$};
+\node[data, below=12mm of indices] (sequence)
+    {raster sequence\\$s=(k_{1,1},k_{1,2},\ldots,k_{h,w})$};
+\draw[arrow] (image) -- (encoder);
+\draw[arrow] (encoder) -- (latent);
+\draw[arrow] (latent) -- (nearest);
+\draw[arrow] (nearest) -- (indices);
+\draw[arrow] (indices) -- node[right=1mm] {flatten} (sequence);
+\node[below=7mm of sequence, align=center, font=\scriptsize, text width=82mm]
+    {For the evaluated checkpoints, $h=w=16$ and $K=16{,}384$: the grid has
+     $256$ positions, and each token is one of $16{,}384$ codebook indices.};
+\end{tikzpicture}

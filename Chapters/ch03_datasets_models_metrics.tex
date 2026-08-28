@@ -134,8 +134,8 @@ Sample-level metrics compare paired images, usually an input image $x$ and a rec
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.94\textwidth]{ch03_fig_3_2_metric_taxonomy_matrix.png}
-    \aifigurecaption{Metric taxonomy used in this thesis. Evaluation combines sample-level reconstruction metrics, distribution-level image metrics, codebook-usage measures, and locality-oriented measures.}
+    \input{Figures/ch03_metric_taxonomy}
+    \caption{Metric taxonomy used in this thesis. Evaluation combines sample-level reconstruction metrics, distribution-level image metrics, codebook-usage measures, and locality-oriented measures.}
     \label{fig:metric_taxonomy_matrix}
 \end{figure}
 \FloatBarrier
@@ -283,8 +283,8 @@ For decoder locality in Chapter~\ref{ch:rq4}, the intervention is applied direct
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.9\textwidth]{ch03_fig_3_4_locality_leakage_curve.png}
-    \caption{Locality and leakage. A local perturbation ideally changes only the corresponding token or image region; leakage measures change outside that region.}
+    \resizebox{0.9\textwidth}{!}{\input{Figures/ch03_locality_measurement}}
+    \caption{Locality and leakage as measured in this thesis. Encoder locality compares clean and perturbed token IDs inside and outside the image patch mapped to token space. Decoder locality uses the analogous partition of the decoded image response.}
     \label{fig:locality_leakage_curve}
 \end{figure}
 

@@ -1,0 +1,16 @@
+\begingroup
+\scriptsize
+\renewcommand{\arraystretch}{1.16}
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.18\textwidth} >{\raggedright\arraybackslash}p{0.25\textwidth} >{\raggedright\arraybackslash}p{0.25\textwidth} >{\centering\arraybackslash}X}
+\rowcolor{blue!9}
+\textbf{Metric family} & \textbf{Quantities used} & \textbf{Comparison unit} & \textbf{Interpretation} \\ \hline
+Paired reconstruction & PSNR, SSIM, LPIPS & One input $x$ and its reconstruction $\hat{x}$ & PSNR, SSIM $\uparrow$; LPIPS $\downarrow$ \\
+Distribution match & FID, sFID & Reference image set and reconstruction set & $\downarrow$ \\
+Distribution fidelity and coverage & Precision, Recall & Reference and reconstruction feature manifolds & both $\uparrow$ \\
+Output-set diagnostic & Inception Score & Reconstruction set only & $\uparrow$, interpreted cautiously \\
+Codebook usage & Active codes, entropy, perplexity, top-$m$ mass & All token assignments in an evaluation set & descriptive, not a quality score \\
+Perturbation stability & Flip rate & Matched clean and perturbed token grids & $\downarrow$ for a fixed perturbation \\
+Spatial locality & Inside/outside response; leakage ratio & Regions induced by a local intervention & outside response $\downarrow$ \\
+\end{tabularx}
+\endgroup
