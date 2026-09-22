@@ -1,70 +1,94 @@
 \chapter{Conclusion}
 \label{ch:conclusion}
 
-This thesis studied discrete image tokenizers as representations in their own
-right. Reconstruction quality is one part of that evaluation, but it does not
-describe how a tokenizer uses its vocabulary, how stable its token assignments
-are, or how local its encoder and decoder responses are. The five research
-questions examine these properties for VQGAN and LlamaGen VQ-16.
+This thesis compared VQGAN and LlamaGen VQ-16 to determine how two pretrained
+image tokenizers with the same $16\times16$ output grid differ beyond
+reconstruction quality. The study measured reconstruction, empirical codebook
+usage, token stability under global noise, encoder and decoder locality, and
+the response to distribution shift. Each analysis isolated the tokenizer from
+the autoregressive model that would consume its tokens.
 
-\section{Answers to the Research Questions}
+The reconstruction analysis established the clean baseline and reproduced the
+expected advantage of LlamaGen. On ImageNet validation, LlamaGen achieved
+$20.79$ rather than $19.65$ PSNR, $0.558$ rather than $0.489$ SSIM, $0.228$
+rather than $0.286$ LPIPS, and $2.19$ rather than $5.06$ FID. The codebook
+measurements revealed a larger difference between the checkpoints. LlamaGen
+used all 16{,}384 entries observed in this evaluation, while VQGAN used about
+972. The nominal vocabulary size therefore did not describe the vocabulary
+used by each checkpoint.
 
-\textbf{RQ1: reconstruction quality and empirical codebook usage.}
-LlamaGen reconstructs ImageNet validation images more accurately than VQGAN on
-all four reported metrics: $20.79$ versus $19.65$ PSNR, $0.558$ versus $0.489$
-SSIM, $0.228$ versus $0.286$ LPIPS, and $2.19$ versus $5.06$ FID. Their
-empirical vocabularies differ more sharply than their nominal configurations
-suggest. LlamaGen activates all 16{,}384 codebook entries on ImageNet, whereas
-VQGAN activates about 972. Nominal codebook size is therefore not an adequate
-description of the representation used by a checkpoint.
+The analysis of global image perturbations found that neither tokenizer
+preserved exact token identity under modest Gaussian noise. At $\sigma=0.1$,
+79.5\% of LlamaGen positions and 75.1\% of VQGAN positions differed from their
+clean assignments. The decoded images still retained their broad visual
+structure, and LlamaGen kept its reconstruction advantage at every tested
+noise level. Token assignments can therefore change much faster than the
+reconstructed image. Noise also concentrated code usage in both models without
+greatly changing the raw number of active codes.
 
-\textbf{RQ2: stability under global image perturbations.}
-Neither tokenizer preserves exact token identity under modest Gaussian noise.
-At $\sigma=0.1$, 79.5\% of LlamaGen token positions and 75.1\% of VQGAN token
-positions differ from their clean assignments. The decoded images nevertheless
-retain broad visual structure, and LlamaGen remains better on reconstruction
-metrics at every tested noise level. Token identity can therefore change much
-more rapidly than image-level structure. Noise also concentrates usage in both
-models, reducing their effective vocabularies even when raw active-code counts
-change little.
+The analysis of local image perturbations found that the encoder response was
+not confined to the perturbed patch. At low patch noise, the far-field token
+flip rate was 17.4\% for VQGAN and 17.8\% for LlamaGen. Masking one image patch
+changed 56.3\% of VQGAN positions and 49.5\% of LlamaGen positions outside the
+corresponding token region. A local change in image space can therefore alter
+the discrete representation well beyond that region.
 
-\textbf{RQ3: encoder locality under local image perturbations.}
-The encoder response is not confined to the perturbed patch. At low patch
-noise, the far-field token flip rate is 17.4\% for VQGAN and 17.8\% for
-LlamaGen; at higher noise levels, roughly one third of far-field positions
-change. Masking one image patch changes 56.3\% of VQGAN token positions and
-49.5\% of LlamaGen token positions outside the corresponding token region. A
-local image-space intervention can therefore produce a spatially extended
-change in the discrete representation.
+The decoder analysis found a more concentrated response. Directly editing a
+local token patch produced the largest pixel changes near the edited region,
+although measurable changes remained outside it. The same pattern held on the
+slightly out-of-distribution ImageNet-V2 dataset, where the largest change in
+patch LPIPS relative to ImageNet validation was 0.0068. Locality is therefore
+preserved approximately rather than exactly when the decoder maps token edits
+back to pixels.
 
-\textbf{RQ4: decoder locality under local token edits.}
-Directly editing a local token patch produces its largest pixel response near
-the edited region, but measurable changes remain outside it. This decoder-side
-result is preserved on ImageNet-V2. It should not be numerically ranked against
-the encoder-side token-flip ratio from RQ3: the two chapters intervene in
-different spaces and measure different response variables.
+When tested on out-of-distribution datasets, both VQGAN and LlamaGen retained
+almost all codes that were active on ImageNet. They did not switch to a
+substantially different set of active tokens. Instead, they changed how often
+they used those tokens. ImageNet-V2 and ObjectNet remained close to the
+ImageNet token distribution, while sketches, medical images, and document
+pages produced larger changes. RVL-CDIP produced the largest
+Jensen--Shannon divergence for both tokenizers. Even these large changes in
+token frequency did not consistently produce large losses in paired
+reconstruction quality.
 
-\textbf{RQ5: reconstruction, vocabulary usage, and spatial allocation under
-distribution shift.}
-Both models retain almost all codes that are active on ImageNet across the
-tested shifted datasets. Distribution shift mainly reallocates probability
-mass within the active vocabulary rather than activating a different one.
-ImageNet-V2 and ObjectNet remain closest to the ImageNet token distribution,
-while sketches, medical images, and document pages produce larger changes;
-RVL-CDIP has the largest Jensen--Shannon divergence for both tokenizers.
-Reconstruction quality and token-distribution shift do not follow the same
-ordering. The code-specific spatial analysis suggests movement for selected
-tokens, but it remains exploratory because the result depends on token choice
-and frequency.
+Overall, better reconstruction and broader codebook usage did not imply greater
+stability under noise. LlamaGen reconstructed images more accurately and used
+far more codes, yet its token assignments changed at a rate similar to VQGAN's.
+The distribution-shift results point to the same distinction. Large changes in
+the token stream can coexist with modest changes in reconstruction. A
+tokenizer therefore determines more than how faithfully an image is rebuilt;
+it also determines the sequence distribution presented to the autoregressive
+model.
 
-\section{Overall Conclusion}
+\section{Limitations and Future Work}
+\label{sec:limitations_future_work}
 
-The experiments support evaluating a discrete image tokenizer through a set of
-complementary probes: reconstruction quality, empirical codebook usage, token
-stability, spatial response, and distributional behavior. LlamaGen is stronger
-on the measured reconstruction metrics and uses a much broader vocabulary, but
-that breadth does not make its exact token identities more stable under noise.
-VQGAN uses a much smaller active subset, yet its token probabilities still
-change under perturbation and domain shift. A tokenizer should therefore be
-treated as a component that shapes the representation and input distribution
-seen by an autoregressive model, not only as a reconstruction module.
+This study compared one pretrained VQGAN checkpoint with one pretrained
+LlamaGen VQ-16 checkpoint. Because the models differ in architecture, training
+procedure, objective, codebook dimensionality, and normalization, the observed
+differences describe the two complete systems. They do not identify which
+design choice caused each result. A direct mechanistic study should modify one
+tokenizer property at a time, retrain the affected models, and repeat the same
+measurements. This would separate the effects of codebook size, training
+objective, and architecture.
+
+Both tokenizers also require a fixed $256\times256$ input. Resizing and cropping
+can alter datasets whose native resolution, aspect ratio, or layout differs
+from ImageNet, especially document and medical images. Future comparisons
+should include tokenizers with adaptive input resolution and test whether the
+same distribution-shift patterns remain without a fixed-size preprocessing
+step.
+
+The analyses of global and local perturbations used the same seeds and
+intervention levels for both models, but they did not save a shared manifest of
+the exact noise arrays and patch locations. This avoidable limitation was
+identified after data collection. A replication should export every
+intervention once and apply the same saved intervention to both tokenizers.
+
+Finally, the study did not train or evaluate an autoregressive model on the
+measured token streams. It therefore cannot show how token instability,
+concentrated code usage, or distribution-dependent token frequencies affect
+generation. Future work should train or evaluate autoregressive priors on these
+streams and measure generation quality and robustness directly. The spatial
+analysis should also be repeated with matched dataset sizes, since unequal
+sample counts affect the current positional-entropy estimates.

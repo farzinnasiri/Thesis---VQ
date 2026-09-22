@@ -30,17 +30,17 @@
 \node[loss, above=17mm of quant] (codebook)
     {codebook and commitment\\$\mathcal L_{\mathrm{codebook}}$};
 
-\draw[supervise] (x.south) |- (rec.west);
-\draw[supervise] (xhat.south) |- (rec.east);
-\draw[supervise] (x.south) |- (perc.west);
-\draw[supervise] (xhat.south) |- (perc.east);
-\draw[arrow] (x.north) |- (disc.west);
+\draw[supervise] (x.south) -- ++(0,-7mm) -| (rec.north west);
+\draw[supervise] (xhat.south) -- ++(0,-7mm) -| (perc.north east);
+\node[below=2mm of rec, align=center] {inputs: $x$, $\hat{x}$};
+\node[below=2mm of perc, align=center] {inputs: $x$, $\hat{x}$};
+\draw[arrow] (x.north) -- ++(0,31mm) -| (disc.north);
 \draw[arrow] (xhat.north) -- (disc.south);
 \draw[supervise] (disc) -- (adv);
 \draw[supervise] (enc.north) |- (codebook.west);
 \draw[supervise] (quant.north) -- (codebook.south);
 
-\node[below=9mm of perc, align=center, font=\sffamily\bfseries]
+\node[below=15mm of perc, align=center, font=\sffamily\bfseries]
     {$\mathcal L_{\mathrm{VQGAN}}=\mathcal L_{\mathrm{rec}}+\mathcal L_{\mathrm{perc}}
      +\lambda\mathcal L_{\mathrm{adv}}+\mathcal L_{\mathrm{codebook}}$};
 \end{tikzpicture}

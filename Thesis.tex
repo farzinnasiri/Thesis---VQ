@@ -70,7 +70,8 @@
 \usepackage{algorithmic}
 
 % PACKAGES FOR REFERENCES & BIBLIOGRAPHY
-\usepackage[colorlinks=true,linkcolor=black,anchorcolor=black,citecolor=black,filecolor=black,menucolor=black,runcolor=black,urlcolor=black]{hyperref} % Adds clickable links at references
+\usepackage{xurl}
+\usepackage[breaklinks=true,colorlinks=true,linkcolor=black,anchorcolor=black,citecolor=black,filecolor=black,menucolor=black,runcolor=black,urlcolor=black]{hyperref} % Adds clickable links at references
 \usepackage{cleveref}
 \usepackage[square, numbers, sort&compress]{natbib} % Square brackets, citing references with numbers, citations sorted by appearance in the text and compressed
 \bibliographystyle{abbrvnat} % You may use a different style adapted to your field
@@ -123,7 +124,7 @@
 \frontmatter % Use roman page numbering style (i, ii, iii, iv...) for the preamble pages
 
 \puttitle{
-	title={Behavioral Evaluation of Discrete Image Tokenizers}, % Title of the thesis
+	title={Discrete Image Tokenizers under Perturbations and Distribution Shift}, % Title of the thesis
 	name={Farzin Nasiri Safarzadeh}, % Author Name and Surname
 	course={Mathematical Engineering - Ingegneria Matematica (MST -- Statistical Learning)}, % Study Programme
 	ID  = 10968409,  % Student ID number (numero di matricola)
@@ -140,10 +141,14 @@
 
 % ABSTRACT IN ENGLISH
 \chapter*{Abstract} 
-Autoregressive image models operate on discrete visual tokens, so the tokenizer
-that produces those tokens determines both reconstruction quality and the token
-sequences learned by the downstream model. This thesis compares VQGAN and the
-LlamaGen VQ-16 tokenizer through five behavioral probes. The analysis combines
+The success of language models that predict one token at a time has motivated
+the use of autoregressive models for image generation. To apply this approach
+to images, an image tokenizer converts continuous pixel values into a sequence
+of discrete tokens and decodes those tokens back into an image. Tokenizers are
+trained on a particular image distribution, which may limit their behavior on
+different inputs. This thesis studies how two pretrained image tokenizers,
+VQGAN and LlamaGen VQ-16, respond to perturbations and distribution shift.
+The analysis combines
 reconstruction metrics with empirical codebook usage, token changes under
 global noise, encoder response to local image perturbations, decoder response
 to local token edits, and distribution shift across natural, medical, and
@@ -164,20 +169,22 @@ especially for sketches, medical images, and document pages.
 The results show that reconstruction quality alone does not characterize a
 discrete image tokenizer. Codebook utilization, token stability, spatial
 response, and distribution-dependent token usage expose different properties of
-the representation. The study does not train or evaluate a downstream
-autoregressive model; it identifies tokenizer-level quantities that such a
-model would inherit.
+the representation. Across the tested datasets, substantial changes in token
+frequencies coexist with modest changes in reconstruction quality.
 \\
 \\
 \textbf{Keywords:} vector quantization, image tokenization, VQGAN, LlamaGen, robustness, autoregressive image generation % Keywords
 
 % ABSTRACT IN ITALIAN
 \chapter*{Abstract in lingua italiana}
-I modelli autoregressivi per immagini operano su token visivi discreti. Il
-tokenizer che produce tali token determina quindi sia la qualit\`a della
-ricostruzione sia le sequenze che il modello autoregressivo deve apprendere.
-Questa tesi confronta VQGAN e il tokenizer VQ-16 di LlamaGen mediante cinque
-sonde comportamentali. L'analisi combina metriche di ricostruzione, utilizzo
+Il successo dei modelli linguistici che predicono un token alla volta ha
+motivato l'uso di modelli autoregressivi per generare immagini. Un tokenizer
+converte i valori continui dei pixel in una sequenza di token discreti e
+ricostruisce l'immagine a partire da tali token. La distribuzione delle immagini
+di addestramento pu\`o limitare il comportamento del tokenizer su input diversi.
+Questa tesi studia come due tokenizer preaddestrati, VQGAN e LlamaGen VQ-16,
+rispondono alle perturbazioni e ai cambiamenti di distribuzione.
+L'analisi combina metriche di ricostruzione, utilizzo
 empirico del codebook, cambiamenti dei token sotto rumore globale, risposta
 dell'encoder a perturbazioni locali dell'immagine, risposta del decoder a
 modifiche locali dei token e variazioni di distribuzione su dataset naturali,
@@ -232,7 +239,6 @@ proprieta' diverse della rappresentazione.
 \input{Chapters/ch06_rq3_local_image_perturbations}
 \input{Chapters/ch07_rq4_token_space_perturbations}
 \input{Chapters/ch08_rq5_distribution_shift}
-\input{Chapters/ch09_limitations}
 \input{Chapters/ch10_conclusion}
 
 % --------------------------------------------------------------------------
@@ -260,27 +266,27 @@ proprieta' diverse della rappresentazione.
 \addcontentsline{toc}{chapter}{List of Symbols}
 \begin{longtable}{p{0.20\textwidth}p{0.70\textwidth}}
     \textbf{Symbol} & \textbf{Description} \\ \hline
-    $x$ & Input image. \\[2px]
-    $\hat{x}$ & Reconstructed image. \\[2px]
-    $x_{\sigma}$ & Image perturbed by Gaussian noise with standard deviation $\sigma$. \\[2px]
-    $E$, $Q$, $D$ & Encoder, vector quantizer, and decoder. \\[2px]
-    $z_e$, $z_q$ & Continuous encoder output and quantized latent representation. \\[2px]
-    $z_0$, $z_{\sigma}$ & Clean and perturbed discrete token grids. \\[2px]
-    $e_k$ & Embedding vector associated with codebook entry $k$. \\[2px]
-    $K$ & Nominal codebook size. \\[2px]
-    $h,w$ & Height and width of the token grid. \\[2px]
-    $p_k$ & Empirical assignment probability of codebook entry $k$. \\[2px]
-    $H(p)$ & Entropy of the empirical token distribution. \\[2px]
-    $\operatorname{PPL}$ & Effective codebook perplexity, $\exp(H(p))$. \\[2px]
-    $\sigma$ & Standard deviation of an applied Gaussian perturbation. \\[2px]
-    $M_P$ & Binary image-space mask for patch $P$. \\[2px]
-    $I_P$, $O_P$ & Token positions inside and outside patch $P$. \\[2px]
-    $R_{\mathrm{in}}$, $R_{\mathrm{out}}$ & Mean encoder-side token response inside and outside a perturbed patch. \\[2px]
-    $\lambda_{\mathrm{enc}}$ & Encoder leakage ratio, $R_{\mathrm{out}}/(R_{\mathrm{in}}+\varepsilon)$. \\[2px]
-    $B_{\mathrm{tok}}$, $B_{\mathrm{px}}$ & Edited token-space region and its corresponding image-space region. \\[2px]
-    $\Delta_{\mathrm{in}}$, $\Delta_{\mathrm{out}}$ & Mean decoder-side image response inside and outside an edited region. \\[2px]
-    $\lambda_{\mathrm{dec}}$ & Decoder leakage ratio, $\Delta_{\mathrm{out}}/(\Delta_{\mathrm{in}}+\varepsilon)$. \\[2px]
-    $\varepsilon$ & Fixed small positive constant that prevents division by zero in leakage ratios. \\[2px]
+    $x$ & Input image. \\[2pt]
+    $\hat{x}$ & Reconstructed image. \\[2pt]
+    $x_{\sigma}$ & Image perturbed by Gaussian noise with standard deviation $\sigma$. \\[2pt]
+    $E$, $Q$, $D$ & Encoder, vector quantizer, and decoder. \\[2pt]
+    $z_e$, $z_q$ & Continuous encoder output and quantized latent representation. \\[2pt]
+    $z_0$, $z_{\sigma}$ & Clean and perturbed discrete token grids. \\[2pt]
+    $e_k$ & Embedding vector associated with codebook entry $k$. \\[2pt]
+    $K$ & Nominal codebook size. \\[2pt]
+    $h,w$ & Height and width of the token grid. \\[2pt]
+    $p_k$ & Empirical assignment probability of codebook entry $k$. \\[2pt]
+    $H(p)$ & Entropy of the empirical token distribution. \\[2pt]
+    $\operatorname{PPL}$ & Effective codebook perplexity, $\exp(H(p))$. \\[2pt]
+    $\sigma$ & Standard deviation of an applied Gaussian perturbation. \\[2pt]
+    $M_P$ & Binary image-space mask for patch $P$. \\[2pt]
+    $I_P$, $O_P$ & Token positions inside and outside patch $P$. \\[2pt]
+    $R_{\mathrm{in}}$, $R_{\mathrm{out}}$ & Mean encoder-side token response inside and outside a perturbed patch. \\[2pt]
+    $\lambda_{\mathrm{enc}}$ & Encoder leakage ratio, $R_{\mathrm{out}}/(R_{\mathrm{in}}+\varepsilon)$. \\[2pt]
+    $B_{\mathrm{tok}}$, $B_{\mathrm{px}}$ & Edited token-space region and its corresponding image-space region. \\[2pt]
+    $\Delta_{\mathrm{in}}$, $\Delta_{\mathrm{out}}$ & Mean decoder-side image response inside and outside an edited region. \\[2pt]
+    $\lambda_{\mathrm{dec}}$ & Decoder leakage ratio, $\Delta_{\mathrm{out}}/(\Delta_{\mathrm{in}}+\varepsilon)$. \\[2pt]
+    $\varepsilon$ & Fixed small positive constant that prevents division by zero in leakage ratios. \\[2pt]
 \end{longtable}
 
 % ACKNOWLEDGEMENTS

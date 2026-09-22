@@ -1,51 +1,45 @@
 \begin{tikzpicture}[
     font=\sffamily\scriptsize,
-    row/.style={draw=black!35, rounded corners=2pt, minimum height=9mm},
-    probe/.style={row, fill=blue!8, text width=30mm, align=left, inner sep=4pt},
-    path/.style={row, fill=black!2, text width=61mm, align=center, inner sep=4pt},
-    measure/.style={row, fill=green!8, text width=43mm, align=left, inner sep=4pt},
-    flow/.style={-{Latex[length=2mm]}, semithick, black!65}
+    data/.style={align=center, minimum width=7mm},
+    stage/.style={draw=black!50, trapezium, trapezium angle=75,
+        minimum width=13mm, minimum height=7mm, fill=blue!7},
+    flow/.style={-{Latex[length=1.7mm]}, semithick},
+    note/.style={align=left, text width=34mm}
 ]
-\node[font=\sffamily\bfseries\small] (title) at (0,0)
-    {Five behavioral probes applied to the same frozen tokenizer};
-
-\node[probe, below=5mm of title, xshift=-52mm] (p1)
-    {\textbf{1. Clean baseline}\\No intervention};
-\node[path, right=3mm of p1] (x1)
-    {$x \rightarrow E \rightarrow k \rightarrow D \rightarrow \hat{x}$};
-\node[measure, right=3mm of x1] (m1)
-    {Paired and set-level image metrics; code usage};
-
-\node[probe, below=2mm of p1] (p2)
-    {\textbf{2. Global input noise}\\Perturb all pixels};
-\node[path, right=3mm of p2] (x2)
-    {$x$ and $x+\epsilon$ follow parallel encode--decode paths};
-\node[measure, right=3mm of x2] (m2)
-    {Image-metric change; token flip rate};
-
-\node[probe, below=2mm of p2] (p3)
-    {\textbf{3. Local image patch}\\Perturb $R_{\mathrm{in}}$};
-\node[path, right=3mm of p3] (x3)
-    {$x+\epsilon\mathbb{1}_{R_{\mathrm{in}}} \rightarrow E \rightarrow k'$};
-\node[measure, right=3mm of x3] (m3)
-    {Token flips inside and outside the patch};
-
-\node[probe, below=2mm of p3] (p4)
-    {\textbf{4. Local token edit}\\Edit token region $S_{\mathrm{in}}$};
-\node[path, right=3mm of p4] (x4)
-    {$k' = \operatorname{edit}(k,S_{\mathrm{in}}) \rightarrow D \rightarrow \hat{x}'$};
-\node[measure, right=3mm of x4] (m4)
-    {Image response inside and outside the decoded region};
-
-\node[probe, below=2mm of p4] (p5)
-    {\textbf{5. Distribution shift}\\Change input domain};
-\node[path, right=3mm of p5] (x5)
-    {$x\sim\mathcal{D}_{\mathrm{ID}}$ or $\mathcal{D}_{\mathrm{OOD}}$; tokenizer fixed};
-\node[measure, right=3mm of x5] (m5)
-    {Reconstruction quality; code frequency and position};
-
-\foreach \i in {1,2,3,4,5} {
-    \draw[flow] (p\i.east) -- (x\i.west);
-    \draw[flow] (x\i.east) -- (m\i.west);
+\node[note, font=\sffamily\bfseries\scriptsize] at (-27mm,7mm) {Experiment};
+\node[font=\sffamily\bfseries\scriptsize] at (40mm,7mm) {Tokenizer path};
+\node[note, font=\sffamily\bfseries\scriptsize] at (113mm,7mm) {Measurements};
+\foreach \r/\title/\inputtext/\tokentext/\outputtext in {
+  1/Clean baseline/$x$/$k$/$\hat{x}$,
+  2/Global input noise/$x+\epsilon$/$k'$/$\hat{x}'$,
+  5/Distribution shift/$x_{\mathrm{OOD}}$/$k_{\mathrm{OOD}}$/$\hat{x}_{\mathrm{OOD}}$}{
+    \pgfmathsetmacro{\yy}{-(\r-1)*1.25}
+    \node[note] at (-27mm,\yy) {\title};
+    \node[data] (x\r) at (0,\yy) {\inputtext};
+    \node[stage] (e\r) at (20mm,\yy) {$E$};
+    \node[data] (k\r) at (40mm,\yy) {\tokentext};
+    \node[stage, trapezium angle=105] (d\r) at (60mm,\yy) {$D$};
+    \node[data] (o\r) at (80mm,\yy) {\outputtext};
+    \draw[flow] (x\r) -- (e\r);
+    \draw[flow] (e\r) -- (k\r);
+    \draw[flow] (k\r) -- (d\r);
+    \draw[flow] (d\r) -- (o\r);
 }
+\node[note] at (-27mm,-2.5) {Local image patch};
+\node[data] (x3) at (0,-2.5) {$x+\epsilon\mathbf{1}_{R}$};
+\node[stage] (e3) at (20mm,-2.5) {$E$};
+\node[data] (k3) at (40mm,-2.5) {$k'$};
+\draw[flow] (x3) -- (e3);
+\draw[flow] (e3) -- (k3);
+\node[note] at (-27mm,-3.75) {Local token edit};
+\node[data] (k4) at (40mm,-3.75) {$k'=\operatorname{edit}(k,S)$};
+\node[stage, trapezium angle=105] (d4) at (60mm,-3.75) {$D$};
+\node[data] (o4) at (80mm,-3.75) {$\hat{x}'$};
+\draw[flow] (k4) -- (d4);
+\draw[flow] (d4) -- (o4);
+\node[note] at (113mm,0) {Reconstruction metrics; code usage};
+\node[note] at (113mm,-1.25) {Clean vs.\ noisy reconstructions; token flips};
+\node[note] at (113mm,-2.5) {Token flips inside and outside $R$};
+\node[note] at (113mm,-3.75) {Pixel change inside and outside the region corresponding to $S$};
+\node[note] at (113mm,-5) {ID vs.\ OOD reconstruction and code frequencies};
 \end{tikzpicture}

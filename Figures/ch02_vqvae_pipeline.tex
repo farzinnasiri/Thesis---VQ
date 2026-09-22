@@ -1,0 +1,22 @@
+\begin{tikzpicture}[
+    font=\sffamily\small,
+    data/.style={draw=black!45, rounded corners=2pt, fill=black!2,
+                 minimum width=24mm, minimum height=14mm, align=center},
+    block/.style={draw=black!50, rounded corners=2pt, fill=blue!7,
+                  minimum width=27mm, minimum height=14mm, align=center},
+    arrow/.style={-{Latex[length=2mm]}, semithick, black!65}
+]
+\node[data] (input) {input image\\$x$};
+\node[block, right=7mm of input] (encoder) {encoder\\$E$};
+\node[data, right=7mm of encoder] (features) {continuous features\\$z_e(x)$};
+\node[block, right=7mm of features] (quantizer) {vector quantizer\\$Q$};
+\node[data, right=7mm of quantizer] (tokens) {tokens $k$\\vectors $z_q(x)$};
+\node[block, right=7mm of tokens] (decoder) {decoder\\$D$};
+\node[data, right=7mm of decoder] (output) {reconstruction\\$\hat{x}$};
+\draw[arrow] (input) -- (encoder);
+\draw[arrow] (encoder) -- (features);
+\draw[arrow] (features) -- (quantizer);
+\draw[arrow] (quantizer) -- (tokens);
+\draw[arrow] (tokens) -- (decoder);
+\draw[arrow] (decoder) -- (output);
+\end{tikzpicture}

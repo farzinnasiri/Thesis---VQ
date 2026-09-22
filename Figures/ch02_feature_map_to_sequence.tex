@@ -23,6 +23,7 @@
 \draw[arrow] (nearest) -- (indices);
 \draw[arrow] (indices) -- node[right=1mm] {flatten} (sequence);
 \node[below=7mm of sequence, align=center, font=\scriptsize, text width=82mm]
-    {For the evaluated checkpoints, $h=w=16$ and $K=16{,}384$: the grid has
+    {Example dimensions for the evaluated checkpoints, not a universal tokenizer
+     constraint: $h=w=16$ and $K=16{,}384$. The grid has
      $256$ positions, and each token is one of $16{,}384$ codebook indices.};
 \end{tikzpicture}

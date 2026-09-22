@@ -1,19 +1,15 @@
 \chapter{Reconstruction Baseline and Codebook Usage}
 \label{ch:rq1}
 
-Before any perturbation is introduced, this chapter establishes the clean ImageNet baseline for the two tokenizers. The purpose is to define the reference point used by later chapters: how well each tokenizer reconstructs unmodified validation images, and what empirical token distribution it produces while doing so. Reconstruction metrics describe the quality of $\hat{x}$ relative to $x$; codebook statistics describe the discrete vocabulary actually used by the tokenizer before decoding.
-
-\section{Motivation}
-\label{sec:rq1_motivation}
-
-The later chapters perturb the tokenizer in several ways: global image noise, local image-space perturbations, token-space edits, and dataset shifts. Those analyses are only interpretable if the unperturbed baseline is already understood. A robustness curve, for example, is meaningful only relative to the clean reconstruction quality of the model. Codebook measurements also need a clean reference distribution: without it, later changes in token usage cannot be separated from the tokenizer's ordinary behavior on ImageNet.
-
-The baseline is also important because both tokenizers have the same nominal vocabulary size, $K = 16{,}384$, and the same spatial token grid, $16 \times 16$, for $256 \times 256$ images. At the interface level, both models produce 256 discrete image tokens per image. This makes them directly comparable as visual tokenizers, while still leaving open whether their architectures induce the same empirical vocabulary.
+Before any perturbation is introduced, this chapter establishes the clean
+ImageNet baseline for the two studied tokenizers. It measures how well each
+tokenizer reconstructs unmodified validation images and which empirical token
+distribution it produces. Both tokenizers have the same nominal vocabulary
+size, $K=16{,}384$, and produce a $16\times16$ token grid from a
+$256\times256$ image, making their outputs directly comparable.
 
 \section{Experimental Setup}
 \label{sec:rq1_experimental_setup}
-
-The experiment uses the ImageNet validation set described in Chapter~\ref{ch:datasets_models_metrics}. This is an in-domain baseline: both tokenizers are evaluated on the same ImageNet validation distribution used in their original ImageNet-oriented evaluation, not on a shifted domain. Each image is resized and center-cropped to $256 \times 256$, converted to RGB, and prepared using tokenizer-specific preprocessing pipelines. Both tokenizers are evaluated in deterministic inference mode. No augmentation is applied at evaluation time.
 
 For each image $x$, the tokenizer produces a reconstruction:
 
@@ -30,6 +26,10 @@ where $E$ is the encoder, $Q$ is the vector-quantization step, and $D$ is the de
 token assignments for the ImageNet baseline.
 
 The codebook analysis reports both raw and effective vocabulary use. The raw active count is the number of codebook entries assigned at least once. The effective active count uses a minimum-frequency threshold of $10^{-6}$ of all token assignments, corresponding to at least 13 assignments out of 12.8 million tokens in this experiment. Entropy and perplexity summarize the effective size of the empirical distribution, and top-$k$ mass measures how much of the token stream is captured by the most frequent codes.
+
+The experiment uses the ImageNet validation split and the shared preprocessing
+and deterministic inference protocol described in
+Chapter~\ref{ch:datasets_models_metrics}.
 
 \section{Reconstruction Baseline}
 \label{sec:rq1_reconstruction_baseline}
@@ -49,7 +49,7 @@ Table~\ref{tab:rq1_reconstruction_metrics} reports the ImageNet reconstruction m
     \label{tab:rq1_reconstruction_metrics}
 \end{table}
 
-The PSNR gap is modest in absolute terms, but it is consistent with the other metrics. LlamaGen reaches a mean PSNR of 20.79 compared with 19.65 for VQGAN, and a mean SSIM of 0.558 compared with 0.489. LPIPS also favors LlamaGen: 0.228 compared with 0.286 for VQGAN. Since LPIPS is computed in a learned feature space, this indicates that the reconstruction difference is not only a pixel-level effect. The distributional metrics agree with the same direction: LlamaGen obtains FID 2.19 and sFID 5.01, while VQGAN obtains FID 5.06 and sFID 6.49.
+The PSNR gap is modest in absolute terms, but it is consistent with the other metrics. LlamaGen reaches a mean PSNR of 20.79 compared with 19.65 for VQGAN, and a mean SSIM of 0.558 compared with 0.489. LPIPS also favors LlamaGen: 0.228 compared with 0.286 for VQGAN. Because LPIPS is computed in a learned feature space, the reconstruction difference extends beyond pixel-level measurements. The distributional metrics agree with the same direction: LlamaGen obtains FID 2.19 and sFID 5.01, while VQGAN obtains FID 5.06 and sFID 6.49.
 
 The corresponding per-image standard deviations are 3.18 dB, 0.167, and
 0.058 for LlamaGen PSNR, SSIM, and LPIPS, and 3.41 dB, 0.176, and 0.066 for
@@ -67,7 +67,9 @@ Figure~\ref{fig:rq1_reconstruction_metric_comparison} visualizes the same compar
     \label{fig:rq1_reconstruction_metric_comparison}
 \end{figure}
 
-Figure~\ref{fig:rq1_reconstruction_triplets} shows qualitative examples. In a reconstruction baseline, the relevant comparison is how much detail and structure survive the discrete bottleneck, not whether the output is semantically plausible in isolation.
+Figure~\ref{fig:rq1_reconstruction_triplets} shows how much detail and structure
+each tokenizer preserves through the discrete bottleneck on three paired
+examples.
 
 \begin{figure}[t]
     \centering
@@ -106,26 +108,22 @@ $9.69$ nats ($13.98$ bits) per token for LlamaGen and $6.81$ nats ($9.83$
 bits) per token for VQGAN. For a 256-token grid, these are approximately
 $3{,}579$ and $2{,}516$ idealized bits per image under an optimal code matched
 to each empirical marginal distribution. LlamaGen's empirical marginal
-entropy is therefore about 42\% higher. This is a coding-rate statement, not a
-claim that individual LlamaGen tokens contain 42\% more semantic information.
+entropy is therefore about 42\% higher. These marginal entropies describe ideal
+code lengths for the observed token frequencies. They do not measure semantic
+content or the conditional code length of a trained autoregressive model.
 
 Figure~\ref{fig:rq1_code_usage_sorted} shows the full rank-frequency curve. LlamaGen assigns probability mass across the full codebook. VQGAN has a shorter curve because most nominal codes are inactive on ImageNet, and its active codes carry substantially higher average frequency.
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.88\textwidth]{ch04_fig_code_usage_sorted.png}
+    \includegraphics[width=0.78\textwidth]{ch04_fig_code_usage_sorted.png}
     \caption{Sorted ImageNet code-usage distribution. Codes are ranked by empirical frequency. The VQGAN curve ends near rank 972 because the remaining nominal codes are inactive on ImageNet.}
     \label{fig:rq1_code_usage_sorted}
 \end{figure}
 
-Figure~\ref{fig:rq1_code_usage_concentration} gives a complementary view, reporting the cumulative mass of the top-10, top-100, and top-500 codes. High top-$k$ mass means that a large fraction of the training sequence is made from a small set of token IDs. For an autoregressive model trained on these sequences, this changes the effective vocabulary and token-frequency distribution it must learn.
-
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=0.82\textwidth]{ch04_fig_code_usage_concentration.png}
-    \caption{ImageNet code-usage concentration, measured as the fraction of all token assignments captured by the most frequent 10, 100, and 500 codes.}
-    \label{fig:rq1_code_usage_concentration}
-\end{figure}
+The top-$k$ columns in Table~\ref{tab:rq1_codebook_usage} report the cumulative
+mass of the 10, 100, and 500 most frequent codes. High top-$k$ mass means that a
+large fraction of the token sequence comes from a small set of IDs.
 
 \section{Baseline Summary}
 \label{sec:rq1_joint_view}
@@ -144,11 +142,10 @@ The baseline has two parts. First, LlamaGen gives better clean ImageNet reconstr
     \label{tab:rq1_joint_summary}
 \end{table}
 
-These results define the reference point for later chapters. They do not identify a single causal mechanism: the two tokenizers differ in architecture, training objective, codebook dimensionality, and normalization. What the baseline shows is more limited and more useful. On ImageNet validation, LlamaGen starts from both a stronger reconstruction baseline and a nearly full empirical vocabulary. VQGAN starts from lower reconstruction scores and a much smaller active codebook.
-
-\section{Discussion}
-\label{sec:rq1_discussion}
-
-In discrete representation learning, codebook collapse---many entries going unused---is a well-documented failure mode~\cite{lancucki2020robust,yu2021vector,mentzer2023finite}. LlamaGen avoids this behavior on the 16,384-entry codebook evaluated here: every code appears on ImageNet, and the perplexity is close to the nominal vocabulary size. VQGAN shows partial collapse on the same dataset: roughly 94\% of nominal codes are inactive, and the active subset carries the reconstruction load.
-
-The baseline is ImageNet-specific. VQGAN may activate a different code subset on other domains, so the sparse pattern observed here does not imply global codebook collapse across all possible inputs. The reconstruction advantage also cannot be attributed to any single design choice. At this stage, the result is a baseline: LlamaGen reconstructs ImageNet validation images better and uses the nominal codebook more fully; VQGAN reconstructs less accurately and uses a much smaller empirical vocabulary. Later chapters use this clean reference point when measuring robustness, locality, and distribution shift.
+These results set the ImageNet baseline for later chapters. As expected from the
+newer tokenizer's stated design goals, LlamaGen reconstructs the validation set
+more accurately and uses nearly its full codebook. VQGAN reconstructs less
+accurately and leaves roughly 94\% of its nominal codes inactive. Such codebook
+underuse is a documented failure mode in discrete representation learning
+~\cite{lancucki2020robust,yu2021vector,mentzer2023finite}, and LlamaGen
+explicitly targets it through its tokenizer design~\cite{sun2024llamagen}.

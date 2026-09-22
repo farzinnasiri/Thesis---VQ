@@ -1,29 +1,25 @@
-\chapter{Perturbations in Token Space}
+\chapter{Local Perturbations in Token Space}
 \label{ch:rq4}
 
 The previous chapter showed that a local image-space perturbation causes token changes well beyond the corrupted patch. This chapter examines the complementary decoder-side question: when token IDs inside a bounded region of the latent grid are replaced directly, how far does the decoded image change?
 
-Rather than perturbing pixels, the experiment replaces token IDs inside a contiguous rectangular region and measures the pixel-level response inside and outside that region. Four replacement strategies are considered---nearest codebook neighbour, farthest, orthogonal, and uniformly random---and the edited region is varied from 10\% to 75\% of the token grid. The experiment asks two questions: how severe is the decoded change, and how much of that change leaks outside the edited region? The main empirical pattern is that replacement type controls edit severity more strongly than patch size alone: nearest-neighbour replacement leaves most of the decoded image intact, while farthest-code replacement produces severe pixel changes that are especially pronounced for VQGAN.
-
-\section{Motivation}
-\label{sec:rq4_motivation}
+The experiment replaces token IDs inside a contiguous rectangular region and
+measures the decoded change inside and outside the corresponding image region.
+It asks how severe the change is and how far it extends beyond the edited patch.
 
 A discrete image tokenizer represents an image as a spatial grid of codebook
 indices. Editing a bounded region of this grid is expected to affect mainly
 the corresponding region of the decoded image. Decoder locality matters because
 autoregressive image models may make local token errors: if the decoder spreads
 such errors widely, a local sequence error can become a broader image artifact.
-However, the decoder is a learned convolutional network with overlapping
-receptive fields, so a token intervention may also alter pixels outside the
-nominal edited region.
 
-The geometry of the replacement also matters. Replacing a token with its
-nearest codebook neighbour is a small intervention in embedding space.
-Replacing it with the farthest code is a large displacement. Orthogonal
-replacement chooses a code that is neither especially similar nor maximally
-opposite in cosine direction. Random replacement provides a reference that does
-not depend on a particular geometric relation. Comparing the four modes shows
-how decoder locality changes with edit severity.
+The replacement strategies test whether nearby codebook vectors decode to
+similar image content and whether more distant vectors cause larger changes.
+Nearest-neighbour replacement tests a small change in the embedding space;
+farthest replacement tests a large one. Orthogonal replacement selects a
+vector with cosine similarity near zero, and random replacement provides a
+reference independent of distance. We expect these strategies to produce
+different levels of change, but their decoded effects must be measured.
 
 \section{Experimental Setup}
 \label{sec:rq4_setup}
@@ -49,22 +45,17 @@ uses four mappings:
     \item \textbf{Closest}: the nearest alternative codebook vector;
     \item \textbf{Orthogonal}: a codebook vector with cosine similarity close
           to zero;
-    \item \textbf{Random}: a uniformly sampled token ID;
+    \item \textbf{Random}: a uniformly sampled codebook vector;
     \item \textbf{Farthest}: the most distant codebook vector.
 \end{itemize}
 
-The geometric mappings follow the codebook conventions of each tokenizer.
-For LlamaGen, relations are computed over the full codebook after applying the
-model's L2 normalization. Consequently, maximizing Euclidean distance is
-equivalent to minimizing cosine similarity, while the orthogonal mapping
-selects a code with cosine similarity closest to zero. For VQGAN, the
+For VQGAN, the
 closest, orthogonal, and farthest mappings are restricted to the empirically
-active code subset identified in Chapter~\ref{ch:rq1}; otherwise, geometric
-edits would often select codes never observed on clean ImageNet. Uniform-random
+active code subset identified in Chapter~\ref{ch:rq1}. VQGAN uses only part of
+its codebook on the reference dataset. Uniform-random
 replacement is different: it samples from the full codebook for both models.
 For VQGAN this means that random replacement may introduce inactive codes, so
-the random edit is an unrestricted stress test rather than a geometrically
-matched counterpart to the active-code mappings.
+the random edit tests both replacement and the use of previously inactive codes.
 
 The clean and edited reconstructions are
 \begin{equation}
@@ -73,44 +64,50 @@ The clean and edited reconstructions are
     x_{\mathrm{edit}}^{(m)} = D(z^{(m)}),
     \label{eq:rq4_clean_edited_decode}
 \end{equation}
-where $D$ is the tokenizer decoder. The edited token patch covers
-$10\%$, $25\%$, $50\%$, or $75\%$ of the token grid. The main analysis uses
+where $D$ is the tokenizer decoder. All image changes are measured against
+$x_{\mathrm{clean}}$, so ordinary reconstruction error relative to the input
+does not enter the perturbation measurement.
+
+The main comparisons use a patch covering $25\%$ of the token grid. A
+patch-size sweep also tests target fractions of $10\%$, $50\%$, and $75\%$.
+The main analysis uses
 ImageNet validation; ImageNet-V2 is used to test whether the observed trends
 remain stable under a natural distribution shift.
 
 Images are resized and center-cropped to $256\times256$ using the
 model-specific preprocessing described in Appendix~\ref{app:computational_environment}.
 Decoder outputs are converted from the models' internal $[-1,1]$ range to
-$[0,1]$ before metrics are computed. Both runs use seed zero. Patch locations
-are reproducible within each exporter, but random replacement draws were not
-exported as a shared cross-model intervention.
+$[0,1]$ before metrics are computed. Patch locations
+are reproducible within each run. The two tokenizers did not receive shared
+random replacement draws, so comparisons describe aggregate behavior.
 
 Both tokenizers produce a $16 \times 16$ grid. For each image, a square patch
 is sampled at a random valid position for the largest target fraction. The
 smaller patches are nested within that patch, so comparisons across fractions
-do not also change the general image region being edited. Integer token-grid
-dimensions make the reported percentages nominal: the square side lengths are
+do not also change the general image region being edited. The square side lengths are
 5, 8, 11, and 14 tokens, corresponding to actual grid fractions of 9.8\%,
-25.0\%, 47.3\%, and 76.6\%, respectively. Table~\ref{tab:rq4_patch_sizes}
-lists these discrete patch sizes.
+25.0\%, 47.3\%, and 76.6\%, respectively.
 
-\begin{table}[t]
-    \centering
-    \small
-    \begin{tabular}{lrr}
-        \textbf{Nominal fraction} & \textbf{Token side length} & \textbf{Actual grid fraction} \\ \hline
-        10\% & $5 \times 5$ & 9.8\% \\
-        25\% & $8 \times 8$ & 25.0\% \\
-        50\% & $11 \times 11$ & 47.3\% \\
-        75\% & $14 \times 14$ & 76.6\% \\
-    \end{tabular}
-    \caption{Token-patch sizes used in the decoder-locality experiment. Actual fractions differ slightly from nominal fractions because the token grid is discrete.}
-    \label{tab:rq4_patch_sizes}
-\end{table}
+\subsection{Fidelity Metrics}
+\label{subsec:rq4_fidelity_metrics}
+
+Decoder locality alone does not describe the severity of an edit. A low
+outside response may coincide with either a negligible local change or severe
+damage confined to the patch. Using the definitions and metric references in
+Chapter~\ref{ch:datasets_models_metrics}, the experiment measures PSNR, SSIM,
+and LPIPS between $x_{\mathrm{clean}}$ and $x_{\mathrm{edit}}^{(m)}$, both over
+the full image and within $B_{\mathrm{px}}$. Patch-level metrics quantify edit
+severity; the inside/outside response and leakage ratio quantify spatial
+propagation. The comparison is made against the clean reconstruction rather
+than the original image so that the measurement isolates the decoder response
+to the token edit, not the tokenizer's ordinary reconstruction error.
 
 \subsection{Decoder-Locality Metrics}
 \label{subsec:rq4_decoder_locality_metrics}
 
+To measure how far decoded changes spread, we compare the average response
+inside and outside the edited region. The per-pixel measurement follows the
+RMSE construction used in Chapter~\ref{ch:datasets_models_metrics}.
 The decoder response is measured relative to the clean reconstruction. For
 pixel position $(u,v)$, the channel-averaged root-mean-square change is
 \begin{equation}
@@ -152,7 +149,8 @@ The decoder leakage ratio is
          {\Delta_{\mathrm{in}}^{(m)} + \varepsilon}.
     \label{eq:rq4_decoder_leakage}
 \end{equation}
-A low value means that most image-space change remains within the edited
+A small positive $\varepsilon$ stabilizes the denominator. A low ratio means
+that the average pixel change is smaller outside than inside the edited
 region. $\Delta_{\mathrm{in}}$ measures local edit strength, while
 $\Delta_{\mathrm{out}}$ measures leakage outside the intended image region. The analysis also reports the 99th and 99.9th percentiles of
 outside-patch change to capture strong but spatially sparse leakage.
@@ -164,19 +162,6 @@ by an even smaller inside response can yield a large ratio. The median is
 therefore the primary summary of proportional leakage; means and standard
 deviations are retained in the archived per-image tables. The absolute inside
 and outside responses are reported alongside $\lambda_{\mathrm{dec}}^{(m)}$.
-
-\subsection{Fidelity Metrics}
-\label{subsec:rq4_fidelity_metrics}
-
-Decoder locality alone does not describe the severity of an edit. A low
-outside response may coincide with either a negligible local change or severe
-damage confined to the patch. The experiment measures PSNR, SSIM,
-and LPIPS between $x_{\mathrm{clean}}$ and $x_{\mathrm{edit}}^{(m)}$, both over
-the full image and within $B_{\mathrm{px}}$. Patch-level metrics quantify edit
-severity; the inside/outside response and leakage ratio quantify spatial
-propagation. The comparison is made against the clean reconstruction rather
-than the original image so that the measurement isolates the decoder response
-to the token edit, not the tokenizer's ordinary reconstruction error.
 
 \section{Experimental Results}
 \label{sec:rq4_results}
@@ -194,16 +179,10 @@ farthest edit produces the strongest local transformation for both models.
 For VQGAN, the farthest edit becomes an extreme high-contrast artifact,
 consistent with the large quantitative response reported below.
 
-The heatmaps show that the decoder response does not stop exactly at the cyan
-boundary. Most change remains within or near the edited region, but
-lower-amplitude changes extend into the surrounding image, including under
-closest replacement. The qualitative ordering agrees with the aggregate
-metrics reported below.
-
-\begin{figure}[p]
+\begin{figure}[t]
     \centering
     \includegraphics[width=\textwidth]{ch07_fig_token_edit_qualitative_imagenet_val_patch25.png}
-    \caption{Qualitative decoder response to a 25\% token-patch intervention.
+    \caption{Qualitative decoder response to a 25\% token-patch perturbation.
     The cyan rectangle marks the nominal edited region. RMSE heatmaps show
     pixel change relative to each tokenizer's clean reconstruction; the figure
     should be read for the ordering of edit severity and for change outside the
@@ -217,7 +196,10 @@ Table~\ref{tab:rq4_patch25_severity} and
 Figure~\ref{fig:rq4_fidelity_patch25} compare the four replacement strategies
 at the 25\% patch level. Closest replacement is the mildest
 intervention for both tokenizers. Its patch PSNR is 20.36 dB for LlamaGen and
-20.00 dB for VQGAN, while patch LPIPS remains at 0.134 and 0.182. Moving away
+20.00 dB for VQGAN, while patch LPIPS remains at 0.134 and 0.182. These edits preserve recognizable
+content in Figure~\ref{fig:rq4_qualitative_token_edits}; the more distant
+replacements visibly change the patch. PSNR measures pixel error, whereas
+LPIPS measures differences in learned image features. Moving away
 from the nearest code sharply increases perceptual change. Orthogonal
 replacement raises patch LPIPS to 0.599 for LlamaGen and 0.614 for VQGAN.
 The random edit should be interpreted separately from the three geometric
@@ -255,7 +237,9 @@ farthest-code replacement under all three measures.
         VQGAN & Farthest & 0.607 & 3.74 & 0.790 \\
     \end{tabular}
     \caption{Edit severity for a 25\% token patch on ImageNet validation.
-    Values are means over 50{,}000 images.}
+    Values are means over 50{,}000 images. The inside RMSE is repeated here to
+    relate pixel-response magnitude to patch fidelity; the locality table also
+    reports the corresponding outside response.}
     \label{tab:rq4_patch25_severity}
 \end{table}
 \begin{figure}[t]
@@ -296,13 +280,16 @@ outside response ranges from 0.013 for closest replacement to 0.050 for
 farthest replacement. For VQGAN, it ranges from 0.019 to 0.090. The decoder
 response is spatially concentrated, but not confined to the edited region.
 
-The median proportional leakage values give a different ordering. Farthest
-replacement has the largest absolute outside response, but one of the lowest
-leakage ratios: 0.141 for LlamaGen and 0.148 for VQGAN at the 25\% level. Its
-inside response grows even more strongly than its outside response. Closest
-replacement is mild in absolute terms, yet has a higher proportional leakage
-ratio, especially for VQGAN at 0.263. Absolute leakage and proportional leakage
-describe different aspects of the response.
+The heatmaps in Figure~\ref{fig:rq4_qualitative_token_edits} show the same
+pattern: the response does not stop exactly at the cyan boundary. Most change
+remains within or near the edited region, but lower-amplitude changes extend
+into the surrounding image, including under closest replacement.
+
+Even nearest-neighbour replacement changes pixels outside the patch, as the
+heatmaps in Figure~\ref{fig:rq4_qualitative_token_edits} also show. Farthest
+replacement causes the greatest absolute change both inside and outside.
+Its small ratio therefore reflects severe inside damage and should not be
+read as evidence that the replacement is harmless outside the patch.
 
 The outside response also contains localized high-amplitude changes that are
 not visible from its mean alone. At the 25\% patch level, VQGAN farthest
@@ -361,23 +348,18 @@ rises from 0.030 to 0.120.
 The same growth appears in Figure~\ref{fig:rq4_leakage_ratio}. At the 75\%
 level, median leakage ratios range from 0.299 to 0.418 for LlamaGen and from
 0.352 to 0.531 for VQGAN. The closest and random VQGAN edits have the highest
-proportional leakage at large patch sizes. One small-patch point should not be
-overinterpreted: for LlamaGen closest replacement at the nominal 10\% level,
-the mean of the per-image ratios is inflated because some images have almost
-no inside change. This is why the median is the primary proportional summary.
-The absolute response curves, and the median ratio from 25\% onward, provide
-the more reliable description of that edit mode.
+proportional leakage at large patch sizes. The plots use median per-image
+ratios throughout; near-zero inside responses can distort the mean.
 
 \subsection{Robustness under Dataset Shift}
 \label{subsec:rq4_dataset_shift}
 
-Figure~\ref{fig:rq4_dataset_shift_lpips} compares patch LPIPS on ImageNet-V2
-with the ImageNet validation baseline. The differences are small across both
-models, all four edit modes, and all patch fractions. The largest absolute
-LPIPS difference is 0.0068. Closest replacement is slightly more disruptive on
-ImageNet-V2, with positive deltas between 0.000 and 0.002. Orthogonal and
-farthest replacement generally have small negative deltas, indicating
-marginally lower perceptual change on ImageNet-V2.
+We test ImageNet-V2 to check whether the measured decoder locality persists
+beyond the in-distribution reference images. Patch-LPIPS differences from the
+ImageNet validation baseline are small across both models, all four edit
+modes, and all patch fractions: the largest absolute difference is 0.0068.
+This is too small to support an interpretation of the individual signed
+differences.
 
 The other metrics are similarly stable. Across the full comparison, the
 largest absolute change in mean outside response is 0.0016. At the 25\% patch
@@ -385,44 +367,25 @@ level, leakage-ratio differences range from $-0.0030$ to $-0.0080$, and
 patch-PSNR differences remain within 0.17 dB. These differences are small
 relative to those among edit modes and tokenizers. ImageNet-V2 preserves the
 ordering and approximate magnitude found on ImageNet validation.
-
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=0.92\textwidth]{ch07_fig_dataset_shift_lpips_patch.png}
-    \caption{Difference in mean patch LPIPS between ImageNet-V2 and ImageNet
-    validation. Positive values indicate greater perceptual change on
-    ImageNet-V2.}
-    \label{fig:rq4_dataset_shift_lpips}
-\end{figure}
 \section{Discussion}
 \label{sec:rq4_discussion}
 
-A local token-space intervention produces a spatially concentrated decoder
+A local token-space perturbation produces a spatially concentrated decoder
 response, but the response is not strictly local. Mean change is always stronger
 inside the corresponding image region than outside it, and the qualitative
 heatmaps preserve a clear spatial relationship to the edited patch.
-Nevertheless, outside response is measurable for every edit mode and grows as
-the edited region becomes larger. The leakage ratio must be read together with
-the absolute inside and outside responses. Farthest-code replacement has the
-largest absolute outside response at the 25\% level, but one of the lowest
-proportional leakage ratios because the inside response is much larger still.
-The low ratio therefore does not mean that farthest replacement is benign; it
-means that the local damage is severe.
+Outside response is measurable even for nearest-neighbour replacement and grows as
+the edited region becomes larger. Farthest-code replacement causes large
+absolute changes both inside and outside the patch.
 
-Edit severity follows codebook distance for the three geometric mappings.
-Closest-neighbour replacement preserves the reconstruction best, while
-farthest replacement produces the largest average pixel response and the
-lowest patch PSNR. Orthogonal and random replacement occupy the middle of the
-range, but their relationship depends on the tokenizer. They are nearly
-equivalent for LlamaGen, whereas VQGAN random replacement is substantially more
-disruptive under LPIPS than its orthogonal edit. Replacement strategy affects
-both the magnitude and perceptual character of the decoded response.
+Orthogonal and random replacements are nearly equivalent for LlamaGen.
+For VQGAN, random replacement is more disruptive under LPIPS than the
+orthogonal edit despite a smaller average pixel response.
 
-The VQGAN random edit is an unrestricted codebook stress test rather than a
-geometrically matched counterpart to the active-code mappings. Its high LPIPS
-may reflect both large token displacement and the introduction of codes that
-are inactive on clean ImageNet data. Its magnitude is less directly comparable
-across tokenizers than the three geometric edits.
+VQGAN random replacement can introduce codes absent from its clean ImageNet
+assignments. This affects the interpretation of its scores and qualitative
+examples: the experiment does not isolate the effect of distance from the
+effect of using inactive codes.
 
 The differences between tokenizers persist across patch fractions. Closest
 replacement is milder for LlamaGen than for VQGAN under LPIPS.
@@ -436,14 +399,15 @@ completely.
 These decoder-side findings contrast with the encoder-side results in
 Chapter~\ref{ch:rq3}. A local image-space perturbation caused widespread token
 identity changes outside the patch, with outside flip rates approaching one
-half under stronger perturbations. Direct token edits produce a more spatially
-structured image response: outside RMSE remains much smaller than inside RMSE.
+half under stronger perturbations. Direct token edits produce a more localized
+image response: outside RMSE remains much smaller than inside RMSE.
 The two experiments use different response variables, so their magnitudes are
 not directly comparable. They nevertheless locate two separate effects: local
 image perturbations can alter token identities far outside the patch, while
 direct token edits produce a decoded response that is concentrated near the
 edited region but still extends beyond it.
 
-The ImageNet-V2 results preserve the same edit-mode ordering and differ only
-slightly in magnitude. Within this natural resampling shift, the measured
-decoder response is stable.
+ImageNet-V2 preserves the same ordering and approximate response magnitude.
+Decoder locality therefore persists under this mild shift to natural images
+from different sources. Testing whether it persists under stronger style and
+domain changes remains future work.

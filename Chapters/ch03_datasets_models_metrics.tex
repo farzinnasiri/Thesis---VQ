@@ -4,23 +4,40 @@
 % For AI-assisted explanatory figures in this chapter, use \aifigurecaption{...}
 % so the standardized disclosure is included directly in the caption.
 
-The previous chapter introduced discrete image tokenizers as the interface between images and autoregressive sequence models. This chapter fixes the experimental objects used in the rest of the thesis: the two tokenizers being compared, the image datasets on which they are evaluated, and the metrics used to describe reconstruction quality, codebook use, and spatial behavior.
+This work focuses on two pretrained image tokenizers: VQGAN
+~\cite{esser2021taming} and LlamaGen VQ-16~\cite{sun2024llamagen}. This chapter
+defines these two tokenizers, the evaluation datasets, and the metrics used to
+measure reconstruction quality, codebook use, and spatial behavior.
 
 \section{Models Under Study}
 \label{sec:models_under_study}
 
-The experiments compare two vector-quantized image tokenizers. The comparison is useful because the models share the same external task--mapping $256\times256$ images to discrete token grids--but differ in architecture and codebook design. If both tokenizers show the same behavior, the result is more likely to reflect a property of discrete image tokenization itself. If their behavior differs, the difference can be related to design choices such as embedding dimension, normalization, or training objective.
+These two tokenizers share the same external task, mapping $256\times256$
+images to discrete token grids, but differ in architecture and codebook design.
 
-The first model is the ImageNet VQGAN first-stage tokenizer from Taming Transformers~\cite{esser2021taming}. It is a convolutional encoder--quantizer--decoder model trained with reconstruction, perceptual, and adversarial losses. The setting used here has downsampling factor $f=16$, so a $256\times256$ image becomes a $16\times16$ token grid. The nominal codebook contains $K=16{,}384$ entries, each with embedding dimension $256$.
+VQGAN uses an encoder, vector quantizer, and decoder with a convolutional
+architecture and attention at the lowest-resolution level
+~\cite{esser2021taming}. Section~\ref{sec:vqgan_taming} describes the model in
+more detail. The pretrained version used in this study was trained with a
+reconstruction, perceptual, adversarial, and codebook objective. It has a
+downsampling factor $f=16$, so a $256\times256$ image becomes a $16\times16$
+token grid. Its codebook has $K=16{,}384$ entries with dimension $256$.
 
-The second model is the LlamaGen tokenizer~\cite{sun2024llamagen,llamagengithub}. LlamaGen is designed for Llama-style autoregressive image generation and provides tokenizers such as \texttt{VQ-16} and \texttt{VQ-8}. The primary comparison in this thesis uses \texttt{VQ-16}, which also maps $256\times256$ images to a $16\times16$ grid with nominal codebook size $K=16{,}384$. Its codebook embeddings are lower-dimensional ($d=8$) and assignments use L2-normalized encoder outputs and codebook entries.
+LlamaGen provides two pretrained versions, VQ-16 and VQ-8, with downsampling
+factors of 16 and 8, respectively~\cite{sun2024llamagen,llamagengithub}. To
+maintain the same token-grid size as VQGAN, these experiments use VQ-16. It maps
+$256\times256$ images to a $16\times16$ grid with a nominal codebook of
+$K=16{,}384$. Its codebook embeddings have dimension $d=8$. Before
+nearest-neighbor lookup, the projected encoder vectors and codebook vectors are
+normalized to unit L2 norm.
 
-Table~\ref{tab:model_config_summary} summarizes the shared and differing configuration choices. The table is included to make later results interpretable: equal grid size and vocabulary size make the sequence-level comparison controlled, while the differences in embedding geometry and training recipe give the experiments something meaningful to test.
+Table~\ref{tab:model_config_summary} summarizes the configurations of the two
+evaluated tokenizers.
 
 \begin{table}[htbp]
     \centering
     \renewcommand{\arraystretch}{1.2}
-    \begin{tabular}{lll}
+    \begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.22\textwidth} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X}
         \textbf{Property} & \textbf{VQGAN} & \textbf{LlamaGen} \\ \hline
         Source & Taming Transformers~\cite{esser2021taming} & LlamaGen~\cite{sun2024llamagen} \\
         Main tokenizer & ImageNet first stage, $f=16$ & \texttt{VQ-16} \\
@@ -29,39 +46,59 @@ Table~\ref{tab:model_config_summary} summarizes the shared and differing configu
         Nominal codebook size & $K=16{,}384$ & $K=16{,}384$ \\
         Embedding dimension & $256$ & $8$ \\
         Codebook normalization & none & L2-normalized lookup \\
-        Training emphasis & perceptual-adversarial reconstruction & tokenizer quality for scalable next-token prediction \\
-    \end{tabular}
+        Training objective & perceptual and adversarial reconstruction & reconstruction and codebook use \\
+    \end{tabularx}
     \caption{Tokenizer configurations compared in the thesis. Both models produce the same token-grid size and nominal vocabulary size, but differ in codebook geometry and training recipe.}
     \label{tab:model_config_summary}
 \end{table}
-\FloatBarrier
 
 \section{Datasets}
 \label{sec:datasets}
 
-The datasets serve two roles. ImageNet validation is the reference set: it is used for reconstruction baselines, codebook usage, global perturbation robustness, and locality experiments. ImageNet-V2 is additionally used in Chapter~\ref{ch:rq4} as a near-domain check of decoder locality. Chapter~\ref{ch:rq5} uses all shifted datasets to test how reconstruction and codebook statistics change when the input distribution moves away from ImageNet.
+The ImageNet-1K validation split is used for reconstruction baselines, codebook
+usage, global perturbation robustness, and locality experiments. It belongs to
+the training domain of both selected checkpoints and appears in their published
+evaluations~\cite{esser2021taming,sun2024llamagen}. ImageNet-V2 is also used in
+Chapter~\ref{ch:rq4} for decoder locality. Chapter~\ref{ch:rq5} studies
+distribution shifts using ImageNet-V2, ImageNet-Sketch, ObjectNet, BloodMNIST,
+OrganAMNIST, and RVL-CDIP.
 
-\subsection{ImageNet Validation}
+\subsection{ImageNet}
 \label{subsec:imagenet_validation}
 
 ImageNet was introduced as a large-scale visual recognition dataset organized around the WordNet noun hierarchy~\cite{deng2009imagenet}. It was collected to provide broad object-category coverage at a scale that earlier recognition datasets did not offer. The ImageNet Large Scale Visual Recognition Challenge (ILSVRC) later standardized a 1,000-class classification benchmark, commonly called ImageNet-1K~\cite{russakovsky2015imagenet}.
 
-The primary reference set in this thesis is the ImageNet-1K validation split. It contains 50,000 images, with 50 images for each of 1,000 object classes. The images vary in original resolution and aspect ratio, so they are converted to RGB, resized, center-cropped to $256\times256$, and normalized according to the tokenizer being evaluated. No test-time data augmentation is used. This deterministic preprocessing is important because the experiments compare tokenizer behavior, not augmentation robustness.
+ImageNet is a standard reference dataset for the evaluated VQ tokenizers
+~\cite{esser2021taming,sun2024llamagen}. We use the ImageNet-1K validation split
+because it matches their training domain. It contains 50,000 images, with 50
+images for each of 1,000 object classes. The images are converted to RGB,
+resized, center-cropped to $256\times256$, and normalized for each tokenizer.
+No test-time data augmentation is used.
 
-\subsection{Shifted Datasets}
+\subsection{Distribution-Shifted Datasets}
 \label{subsec:shifted_datasets}
 
-The shifted datasets are not used to repeat every experiment in the thesis. ImageNet-V2 is used in the decoder-locality analysis of Chapter~\ref{ch:rq4}; Chapter~\ref{ch:rq5} then uses all shifted datasets to test whether the codebook and reconstruction behavior observed on ImageNet validation remains stable when the visual distribution changes. The datasets form two groups.
+These datasets evaluate the tokenizers beyond their training domain. We
+distinguish ImageNet-aligned shifts from datasets with different image content.
+ImageNet-V2 supports the decoder-locality analysis in Chapter~\ref{ch:rq4}; all
+datasets in this section support the reconstruction and codebook analyses in
+Chapter~\ref{ch:rq5}.
 
 \paragraph{ImageNet-aligned shifts.}
-ImageNet-V2 was collected as a new test set for the same 1,000 ImageNet classes, with the goal of measuring robustness to natural resampling of the benchmark distribution~\cite{recht2019imagenet}. It keeps the label space and natural-image setting close to ImageNet while changing the sampled images. This makes it a near-domain shift: changes in tokenizer behavior should mostly reflect resampled natural-image statistics rather than a new visual domain.
+ImageNet-V2 was collected years after the original ImageNet construction as a
+new test set for the same 1,000 classes~\cite{recht2019imagenet}. It keeps the
+label space and natural-image setting close to ImageNet while changing the
+sampled images, so it represents a near-domain shift.
 
-ImageNet-Sketch also keeps the ImageNet label space, but replaces natural photographs with black-and-white sketches~\cite{wang2019learning}. It is therefore a stronger shift than ImageNet-V2. Texture, color, and photographic detail are largely absent, while object shape remains central. This makes it useful for testing whether a tokenizer's vocabulary is tied mainly to natural-image texture statistics or can also represent more abstract object depictions.
+ImageNet-Sketch instead keeps the ImageNet label space but replaces natural
+photographs with black-and-white sketches~\cite{wang2019learning}. It represents
+a stronger shift than ImageNet-V2 because texture, color, and photographic
+detail are largely absent while object shape remains central.
 
 \begin{figure}[t]
     \centering
-    \setlength{\tabcolsep}{5pt}
-    \renewcommand{\arraystretch}{1.35}
+    \setlength{\tabcolsep}{2pt}
+    \renewcommand{\arraystretch}{1.1}
     \begin{tabular}{>{\raggedright\arraybackslash}p{0.13\textwidth} c c c}
         & \makebox[0.235\textwidth][c]{\textbf{ImageNet validation}}
         & \makebox[0.235\textwidth][c]{\textbf{ImageNet-V2}}
@@ -82,10 +119,9 @@ ImageNet-Sketch also keeps the ImageNet label space, but replaces natural photog
     \caption{Examples from the ImageNet-aligned shift ladder. Each row keeps the same class while changing the collection process or visual style.}
     \label{fig:dataset_shift_severity_ladder}
 \end{figure}
-\FloatBarrier
 
 \paragraph{Non-ImageNet domain checks.}
-Chapter 8 also uses datasets whose visual domains are not ImageNet-like. ObjectNet contains household objects photographed under controlled variations in viewpoint, rotation, and background, and was designed to expose object-recognition brittleness outside standard ImageNet biases~\cite{barbu2019objectnet}. BloodMNIST and OrganAMNIST are part of MedMNIST v2, a lightweight benchmark suite for biomedical image classification~\cite{yang2023medmnist}: BloodMNIST contains RGB microscopy images of blood cells, while OrganAMNIST contains abdominal CT slices. RVL-CDIP contains scanned document pages labeled by document type~\cite{harley2015rvlcdip}. These domains test whether a tokenizer trained for natural images changes its codebook behavior when the input is microscopy, medical imaging, or document layout rather than ordinary object photographs.
+Chapter 8 also uses datasets whose visual domains are not ImageNet-like. ObjectNet contains household objects photographed under controlled variations in viewpoint, rotation, and background, and was designed to expose object-recognition brittleness outside standard ImageNet biases~\cite{barbu2019objectnet}. BloodMNIST and OrganAMNIST are part of MedMNIST v2, a lightweight benchmark suite for biomedical image classification~\cite{yang2023medmnist}: BloodMNIST contains RGB microscopy images of blood cells, while OrganAMNIST contains abdominal CT slices. RVL-CDIP contains scanned document pages labeled by document type~\cite{harley2015rvlcdip}. These domains test tokenizer behavior on microscopy, medical images, and document layouts. Table~\ref{tab:non_imagenet_datasets} summarizes the datasets, and Figure~\ref{fig:non_imagenet_domain_examples} shows representative inputs.
 
 \begin{table}[htbp]
     \centering
@@ -123,14 +159,24 @@ Chapter 8 also uses datasets whose visual domains are not ImageNet-like. ObjectN
     \caption{Representative non-ImageNet domain examples. ObjectNet remains object-centric, while BloodMNIST, OrganAMNIST, and RVL-CDIP move to biomedical or document domains.}
     \label{fig:non_imagenet_domain_examples}
 \end{figure}
-\FloatBarrier
 
 \section{Metrics}
 \label{sec:metrics}
 
-The experiments evaluate tokenizers from several angles. First, a tokenizer should reconstruct the input image faithfully. Second, it should induce a usable discrete vocabulary rather than collapsing onto a small subset of codes. Third, its response to perturbations should be interpretable: a small or local change in the input should not necessarily imply arbitrary changes throughout the token grid or decoded image. These requirements lead to three metric families: sample-level image metrics, distribution-level image metrics, and representation-level metrics.
+A tokenizer can be evaluated by reconstruction quality, codebook usage, and its
+response to perturbations. Token frequencies determine the distribution that
+the autoregressive model must learn. Perturbation response can be measured by
+how far changes spread through the token grid or decoded image.
 
-Sample-level metrics compare paired images, usually an input image $x$ and a reconstruction $\hat{x}$. They answer whether one reconstruction preserves one source image. Distribution-level metrics compare sets of images in a feature space. They answer whether the aggregate distribution of reconstructions resembles the reference distribution. In this thesis, the images being compared are reconstructions or perturbed reconstructions, not free samples from a newly trained generator, so distribution metrics are interpreted as reconstruction-distribution metrics rather than as standalone generative quality scores. Representation-level metrics measure the token sequence itself: which codes are used, how concentrated the code distribution is, and how token assignments change under perturbation.
+We group the metrics by what they measure: paired-image reconstruction,
+image-set distributions, codebook usage, and perturbation locality. Paired
+metrics compare each reconstruction with its source image. Distribution metrics
+compare the aggregate distributions of two image sets; FID and related metrics
+perform this comparison in a particular learned feature space. Codebook metrics
+measure which codes are used and how concentrated their frequencies are.
+Perturbation metrics compare matched outputs before and after an intervention,
+either globally or within specified spatial regions. Figure~\ref{fig:metric_taxonomy_matrix}
+summarizes these four families.
 
 \begin{figure}[t]
     \centering
@@ -138,30 +184,13 @@ Sample-level metrics compare paired images, usually an input image $x$ and a rec
     \caption{Metric taxonomy used in this thesis. Evaluation combines sample-level reconstruction metrics, distribution-level image metrics, codebook-usage measures, and locality-oriented measures.}
     \label{fig:metric_taxonomy_matrix}
 \end{figure}
-\FloatBarrier
-
-\subsection{Evaluation Criteria}
-\label{subsec:evaluation_criteria}
-
-The metrics are organized by the following criteria:
-\begin{description}
-    \item[Pixel fidelity.] Agreement between aligned pixel intensities in $x$ and $\hat{x}$. Pixel fidelity is useful for measuring exact reconstruction error, but it can penalize small spatial shifts or perceptually negligible changes.
-
-    \item[Perceptual fidelity.] Agreement in visual structure or learned feature space. These metrics are intended to better reflect perceived similarity than raw pixel error.
-
-    \item[Distribution match.] Agreement between the feature distribution of reference images and the feature distribution of reconstructions or perturbed reconstructions.
-
-    \item[Diversity and coverage.] Whether a set of outputs covers the reference feature manifold rather than matching only a narrow region.
-
-    \item[Codebook efficiency.] How much of the nominal visual vocabulary is used and how concentrated token usage is. Perplexity is used here as an effective vocabulary-size measure: if the empirical token distribution were uniform over $M$ codes, its perplexity would be $M$.
-
-    \item[Stability and locality.] Stability means that a controlled perturbation produces a controlled change in the tokenizer output. Locality asks where that change occurs: inside the perturbed image region, outside it, or across the whole grid.
-\end{description}
 
 \subsection{Sample-Level Reconstruction Metrics}
 \label{subsec:sample_reconstruction_metrics}
 
-Mean squared error (MSE) and peak signal-to-noise ratio (PSNR) are full-reference pixel metrics. For an image with $N$ scalar pixel values,
+Full-reference metrics compare each reconstruction with its corresponding
+original image. Mean squared error (MSE) and peak signal-to-noise ratio (PSNR)
+are full-reference pixel metrics. For an image with $N$ scalar pixel values,
 \begin{align}
     \mathrm{MSE}(x,\hat{x}) &= \frac{1}{N}\sum_{i=1}^{N}(x_i-\hat{x}_i)^2, \\
     \mathrm{PSNR}(x,\hat{x}) &= 10\log_{10}\!\left(\frac{\mathrm{MAX}^2}{\mathrm{MSE}(x,\hat{x})}\right).
@@ -185,9 +214,8 @@ LPIPS compares normalized deep-network activations between two images~\cite{zhan
 where $\hat\phi_l$ denotes channel-normalized features at layer $l$, $w_l$
 contains learned channel weights, and the distance is averaged over the
 $H_l\times W_l$ spatial locations. Lower LPIPS indicates greater perceptual
-similarity. Unlike MSE and PSNR, LPIPS is explicitly calibrated against human
-perceptual judgments, but its value depends on the chosen backbone and
-calibration.
+similarity. Unlike MSE and PSNR, LPIPS is calibrated against human perceptual
+judgments. The reconstruction evaluator used here uses its VGG-16 backbone.
 
 \subsection{Distribution-Level Image Metrics}
 \label{subsec:distribution_metrics}
@@ -200,11 +228,14 @@ FID compares two image sets by embedding them with an Inception network and fitt
     +
     \mathrm{Tr}\!\left(\Sigma_r+\Sigma_g-2(\Sigma_r\Sigma_g)^{1/2}\right).
 \end{equation}
-Lower FID indicates closer feature distributions. In tokenizer papers, VQGAN and LlamaGen report reconstruction FID or rFID to measure whether reconstructions match the distribution of original images~\cite{esser2021taming,sun2024llamagen}. That use is appropriate here, but the interpretation is narrower than for unconditional generation: the model is reconstructing or perturbing existing images rather than sampling independent images from scratch.
+Lower FID indicates closer feature distributions. In the literature on VQ
+tokenizers, VQGAN and LlamaGen report reconstruction FID or rFID to compare the
+distribution of reconstructions with original images
+~\cite{esser2021taming,sun2024llamagen}.
 
 sFID is a spatial variant used in common diffusion-model evaluator pipelines~\cite{dhariwal2021diffusion,openaiguideddiffusion,openaiguideddiffusionevals}. It uses spatial features rather than only pooled Inception features, so it can be more sensitive to spatial layout differences. It carries the same finite-sample and feature-extractor caveats as FID.
 
-Inception Score combines classifier confidence and predicted-class diversity~\cite{salimans2016improved}:
+Inception Score uses an Inception classifier~\cite{salimans2016improved}:
 \begin{equation}
     \mathrm{IS}
     =
@@ -215,9 +246,18 @@ Inception Score combines classifier confidence and predicted-class diversity~\ci
         \right]
     \right).
 \end{equation}
-Higher IS means that individual images are confidently classified while the set spans multiple classes. It does not compare directly to real images, and later analyses emphasize that it can be misleading when used alone~\cite{barratt2018note,chong2019unbiased}.
+Here, $p(y\mid x)$ is the classifier's conditional class distribution for one
+reconstruction and $p(y)$ is the marginal class distribution across the set.
+The score increases when individual predictions are confident and predictions
+across the set cover different classes. It does not measure whether a
+reconstruction matches its input, so we report it as a classifier-based
+diagnostic~\cite{barratt2018note,chong2019unbiased}.
 
-Precision and recall for generative models separate fidelity from coverage in feature space~\cite{kynkaanniemi2019improved}. Precision measures how much of the output set lies near the real-data manifold; recall measures how much of the real-data manifold is covered by the output set. Figure~\ref{fig:precision_recall_tradeoff} illustrates this distinction.
+For reconstructed image sets, precision measures how much of the reconstruction
+distribution lies near the reference feature distribution, while recall
+measures how much of the reference distribution is covered
+~\cite{kynkaanniemi2019improved}. Figure~\ref{fig:precision_recall_tradeoff}
+illustrates this distinction.
 
 \begin{figure}[t]
     \centering
@@ -233,15 +273,23 @@ Let $n_k$ be the number of assignments to code $k$ over an evaluation set, let $
 \begin{equation}
     p_k = \frac{n_k}{N_t}.
 \end{equation}
+$p_k$ is the fraction of all observed token assignments that use code $k$.
 The raw active-code count is
 \begin{equation}
-    A_{\mathrm{raw}} = \sum_{k=1}^{K}\mathbb{1}[n_k>0],
+    A_{\mathrm{raw}} = \sum_{k=1}^{K}\mathbf{1}[n_k>0],
 \end{equation}
 and the active fraction is
 \begin{equation}
     a_{\mathrm{raw}} = \frac{A_{\mathrm{raw}}}{K}.
 \end{equation}
-Raw activity is easy to interpret, but it is sensitive to one-off rare codes. When needed, an effective active set can be defined by a minimum support threshold or by the smallest set of codes covering a fixed cumulative mass.
+The active-code count is the number of distinct codes used at least once;
+dividing it by $K$ gives the active fraction. Because a single assignment makes
+a code active under this definition, Chapter~\ref{ch:rq1} also reports two
+support measures. The effective active set counts codes with
+$p_k\geq10^{-6}$, which is at least 13 of the 12.8 million assignments in that
+evaluation. The cumulative support $C_{99}$ is the smallest frequency-ranked
+set of codes covering 99\% of assignments. These measures are distinct from
+perplexity, which summarizes the full frequency distribution.
 
 Entropy and perplexity summarize how spread out the token distribution is:
 \begin{align}
@@ -261,17 +309,19 @@ Finally, positional entropy computes the same entropy quantity at each grid posi
 \subsection{Locality and Robustness Metrics}
 \label{subsec:locality_robustness_metrics}
 
-Robustness experiments compare the tokenizer output before and after a controlled perturbation. For global noise experiments in Chapter~\ref{ch:rq2}, the perturbation is applied to the whole image, and robustness is reported as the change in reconstruction metrics and codebook statistics as noise strength increases.
-
-Locality experiments use spatial masks. For encoder locality in Chapter~\ref{ch:rq3}, a patch is perturbed in image space and the clean and perturbed token grids are compared. For token position $i$, define a flip indicator
+Perturbation metrics compare tokenizer outputs before and after a controlled
+change. A global response can be measured as the change in reconstruction or
+codebook statistics. Spatial locality uses a mask to divide the response into
+inside and outside regions. For token position $i$, define a flip indicator
 \begin{equation}
-    F_i = \mathbb{1}[t_i \ne t'_i],
+    F_i = \mathbf{1}[t_i \ne t'_i],
 \end{equation}
-where $t_i$ and $t'_i$ are the clean and perturbed token IDs. For a set of token positions $R$,
+where $t_i$ and $t'_i$ are the clean and perturbed token assignments. For a set of token positions $R$,
 \begin{equation}
     r(R) = \mathbb{E}_{i\in R}[F_i].
 \end{equation}
-The leakage ratio compares outside-patch and inside-patch flip rates:
+For a local image perturbation, the leakage ratio compares outside-region and
+inside-region flip rates:
 \begin{equation}
     \lambda_{\mathrm{enc}} =
     \frac{r(R_{\mathrm{out}})}
@@ -279,19 +329,24 @@ The leakage ratio compares outside-patch and inside-patch flip rates:
 \end{equation}
 The small constant $\varepsilon$ avoids division by zero when no inside-patch flips occur. A low leakage ratio means that token changes are mostly confined to the perturbed region; a high value means that the encoder or quantizer has propagated the perturbation to distant token positions.
 
-For decoder locality in Chapter~\ref{ch:rq4}, the intervention is applied directly to a bounded token patch and the decoded images are compared inside and outside the corresponding image-space region. The same idea is used: inside-region change measures whether the edit had an effect, while outside-region change measures leakage beyond the intended region.
+The same definition applies to decoder locality after replacing the token flip
+indicator with an image-change measure. Later chapters specify the perturbation,
+mask, and response measure used by each experiment.
 
 \begin{figure}[t]
     \centering
     \resizebox{0.9\textwidth}{!}{\input{Figures/ch03_locality_measurement}}
-    \caption{Locality and leakage as measured in this thesis. Encoder locality compares clean and perturbed token IDs inside and outside the image patch mapped to token space. Decoder locality uses the analogous partition of the decoded image response.}
+    \caption{Locality and leakage as measured in this thesis. Encoder locality compares clean and perturbed token assignments inside and outside the image patch mapped to token space. Decoder locality uses the analogous partition of the decoded image response.}
     \label{fig:locality_leakage_curve}
 \end{figure}
 
 \subsection{Metric Comparison Summary}
 \label{subsec:metric_comparison_summary}
 
-Table~\ref{tab:metric_comparison_summary} summarizes the metrics used in the thesis. The purpose of the table is not to rank metrics, but to keep their interpretation separate: sample-level metrics compare paired images, distribution-level metrics compare image sets, codebook metrics describe the discrete representation, and locality metrics describe the response to controlled perturbations.
+Table~\ref{tab:metric_comparison_summary} summarizes the metrics used in the
+thesis. Paired metrics compare images, distribution metrics compare image sets,
+codebook metrics describe token frequencies, and locality metrics describe the
+response to controlled perturbations.
 
 \begin{table}[t]
     \centering
@@ -314,4 +369,3 @@ Table~\ref{tab:metric_comparison_summary} summarizes the metrics used in the the
     \caption{Compact comparison of metric families used in the thesis. Arrows indicate the preferred direction under a fixed evaluation protocol.}
     \label{tab:metric_comparison_summary}
 \end{table}
-\FloatBarrier

@@ -1,20 +1,20 @@
 \chapter{Robustness to Distribution Shift}
 \label{ch:rq5}
 
-The preceding experiments applied controlled perturbations to ImageNet images
-or their token grids. This chapter instead changes the input distribution.
+The preceding experiments measured responses to controlled noise and local
+perturbations on in-distribution ImageNet images or their token grids. Inputs
+encountered outside training can differ systematically in style, content, and
+layout. This chapter tests whether these structured changes reduce tokenizer
+robustness by evaluating six out-of-distribution datasets.
 ImageNet validation remains the in-distribution reference, and six shifted
 datasets vary sampling, visual style, object presentation, imaging domain, and
 document layout. The experiment measures changes in global code frequency,
-positional code diversity, code placement, and reconstruction quality. Its
+positional code diversity and reconstruction quality. Its
 central question is whether larger changes in code usage coincide with worse
 reconstruction.
 
-\section{Motivation}
-\label{sec:rq5_motivation}
-
-Both tokenizers were developed for natural images and are evaluated on
-ImageNet in Chapter~\ref{ch:rq1}. A shifted dataset can change their token
+Both tokenizers were trained on natural images. Chapter~\ref{ch:rq1} evaluates
+them on the ImageNet validation set as the in-distribution reference. A shifted dataset can change their token
 distributions in two ways. First, it may activate codes that were absent on
 ImageNet, indicating that the ImageNet baseline did not expose the tokenizer's
 operational vocabulary. Second, the
@@ -29,7 +29,7 @@ a fixed grid position may contract when a dataset has strong layout regularity.
 The chapter therefore separates three questions:
 \begin{enumerate}
     \item Does the global code-frequency distribution change?
-    \item Does code diversity or code placement change across grid positions?
+    \item Does code diversity change across grid positions?
     \item Are these changes accompanied by worse reconstructions?
 \end{enumerate}
 
@@ -43,20 +43,22 @@ The fixed reference is the 50{,}000-image ImageNet validation set. It is
 compared separately with ImageNet-V2, ImageNet-Sketch, ObjectNet, OrganAMNIST,
 BloodMNIST, and RVL-CDIP, using the datasets and preprocessing described in
 Chapter~\ref{ch:datasets_models_metrics}. The comparison is always ImageNet
-versus one shifted dataset; shifted datasets are not used as references for one
-another. Table~\ref{tab:rq5_dataset_sizes} reports the number of encoded images.
-Every image produces 256 token assignments, and the token counts were checked
-against $256N$ for each model--dataset pair.
+versus one shifted dataset. Table~\ref{tab:rq5_dataset_sizes} reports the number of encoded images.
+Both tokenizers produce a $16\times16$ grid, giving 256 token assignments per
+image.
 
 \begin{table}[t]
     \centering
     \small
-    \begin{tabular}{lr@{\qquad}lr}
-        \textbf{Dataset} & \textbf{Images} & \textbf{Dataset} & \textbf{Images} \\ \hline
-        ImageNet & 50{,}000 & ObjectNet & 50{,}273 \\
-        ImageNet-V2 & 10{,}000 & OrganAMNIST & 57{,}187 \\
-        ImageNet-Sketch & 50{,}889 & BloodMNIST & 17{,}092 \\
-        RVL-CDIP & 39{,}996 & & \\
+    \begin{tabular}{llr}
+        \textbf{Role} & \textbf{Dataset} & \textbf{Images} \\ \hline
+        ID & ImageNet & 50{,}000 \\ \hline
+        OOD & ImageNet-V2 & 10{,}000 \\
+        OOD & ObjectNet & 50{,}273 \\
+        OOD & ImageNet-Sketch & 50{,}889 \\
+        OOD & OrganAMNIST & 57{,}187 \\
+        OOD & BloodMNIST & 17{,}092 \\
+        OOD & RVL-CDIP & 39{,}996 \\
     \end{tabular}
     \caption{Datasets encoded for the distribution-shift analysis. ImageNet is
     the in-distribution reference for every comparison.}
@@ -65,34 +67,39 @@ against $256N$ for each model--dataset pair.
 
 For each tokenizer and dataset, the experiment exports the global count of
 every code and a $K\times16\times16$ tensor of code counts by grid position.
-These two arrays are the token-side inputs used in this chapter. All summary
-tables and figures are computed from the exported counts rather than by running
-the tokenizers again.
+The counts estimate code frequencies across the dataset and at each grid
+position.
 
 \subsection{Global Code-Usage Shift}
 \label{subsec:rq5_global_metrics}
 
 Let $p$ be the ImageNet code-frequency distribution defined in
 Section~\ref{subsec:codebook_usage_metrics}, and let $q$ be the corresponding
-distribution on a shifted dataset. Three measurements describe global change.
-Active-set retention is
+distribution on an OOD dataset. We define two ratios for this comparison,
+active-set retention and perplexity ratio, and use Jensen--Shannon divergence
+as a standard measure of distribution difference.
+
+\textbf{Active-set retention} is defined as
 \begin{equation}
     \operatorname{Ret}(p,q)=
     \frac{|\{k:p_k>0\}\cap\{k:q_k>0\}|}{|\{k:p_k>0\}|}.
     \label{eq:rq5_active_retention}
 \end{equation}
+It measures the fraction of codes observed on the ID dataset that also occur
+on the OOD dataset. Retention equals one if all ID-active codes remain active.
+
 Perplexity is the exponential of distribution entropy,
-$P(p)=\exp(H(p))$. The perplexity ratio
+$P(p)=\exp(H(p))$. The \textbf{perplexity ratio} is defined as
 \begin{equation}
     R_P = \frac{P(q)}{P(p)}
     \label{eq:rq5_perplexity_ratio}
 \end{equation}
-measures the change in effective vocabulary size. A value near one indicates
+and measures the change in effective vocabulary size. A value near one indicates
 similar spread; a value below one indicates concentration onto fewer effective
 codes.
 
-The Jensen--Shannon divergence measures redistribution over the fixed code
-indices:
+The \textbf{Jensen--Shannon divergence} measures how much the probabilities of
+the same code identities differ between datasets. It is defined as:
 \begin{equation}
     \operatorname{JSD}(p,q)
     = \frac{1}{2}D_{\mathrm{KL}}(p\|m)
@@ -100,16 +107,15 @@ indices:
     \qquad m=\frac{p+q}{2}.
     \label{eq:rq5_jsd}
 \end{equation}
-Unlike a comparison between independently sorted rank-frequency curves, this
+Here $m$ is the midpoint distribution. JSD is symmetric and remains finite
+when a code appears in only one dataset; direct KL divergence need not.
+It is zero for identical distributions and at most $\log 2$ with natural
+logarithms. Unlike a comparison between independently sorted rank-frequency curves, this
 quantity preserves code identity: probability assigned to code $k$ on
 ImageNet is compared with probability assigned to the same code $k$ on the
 shifted dataset. All entropy and divergence calculations use natural
-logarithms, so values are reported in nats. Top-100 mass is the probability
-assigned by a dataset to its own 100 most frequent codes and is retained as a
-direct concentration measure.
-Because LlamaGen and VQGAN have very different empirical vocabulary sizes,
-top-100 mass is interpreted within a tokenizer, not as a normalized score for
-ranking the two tokenizers.
+logarithms, so values are reported in nats. The comparison uses $R_P$ to
+measure concentration relative to each tokenizer's own ID baseline.
 
 These global quantities pool millions of token assignments per dataset and
 are therefore less sparse than the per-code positional estimates below.
@@ -126,46 +132,18 @@ code $k$ at that position over all images in a dataset. Positional entropy is
     H_{u,v}=-\sum_{k=1}^{K}p_{k\mid u,v}\log p_{k\mid u,v}.
     \label{eq:rq5_positional_entropy}
 \end{equation}
-The reported heatmaps show $H^{\mathrm{shift}}_{u,v}-H^{\mathrm{ImageNet}}_{u,v}$.
+We normalize entropy by $\log K$, its theoretical maximum for a codebook of
+size $K$. Both checkpoints have $K=16{,}384$. The plots report the average of
+$(H^{\mathrm{shift}}_{u,v}-H^{\mathrm{ImageNet}}_{u,v})/\log K$ over all
+positions and separately over border and interior positions.
 Negative values mean that fewer codes, or a more concentrated mix of codes,
 occur at that location under the shifted dataset.
 
-A complementary code-specific analysis normalizes counts over positions:
-\begin{equation}
-    s_k(u,v)=
-    \frac{n_{k,u,v}}{\sum_{a,b}n_{k,a,b}}.
-    \label{eq:rq5_position_mass}
-\end{equation}
-Thus $s_k$ answers where code $k$ is placed, conditional on that code being
-used. Spatial movement is summarized by
-\begin{equation}
-    d_k=\sum_{u,v}\left|s_k^{\mathrm{shift}}(u,v)
-    -s_k^{\mathrm{ImageNet}}(u,v)\right|,
-    \qquad 0\leq d_k\leq2,
-    \label{eq:rq5_spatial_l1}
-\end{equation}
-and by the ratio of effective spatial support. For code $k$, effective support
-is
-\begin{equation}
-    S_k=\exp\left(-\sum_{u,v}s_k(u,v)\log s_k(u,v)\right),
-    \qquad
-    R_{S,k}=\frac{S_k^{\mathrm{shift}}}{S_k^{\mathrm{ImageNet}}}.
-    \label{eq:rq5_spatial_support}
-\end{equation}
-A ratio below one means that a code is deployed over fewer effective grid
-positions after the shift. Codes must occur at least 256 times in both datasets
-to enter this summary.
-
-The positional measurements have stronger finite-sample limitations than the
-global measurements. Each grid position contributes only one observation per
-image. In particular, ImageNet-V2 has 10{,}000 observations per position, so
-its empirical entropy cannot exceed $\log(10{,}000)$ even though LlamaGen has
-16{,}384 codes. Its entropy difference therefore includes a sample-size effect.
-The 256-count threshold is also weak for a $16\times16$ position map: it is only
-one occurrence per cell on average. This is especially consequential for
-LlamaGen, whose assignments are spread across almost the full codebook. The
-code-specific results are treated as exploratory and are not used to rank the
-tokenizers.
+These positional entropy estimates depend on sample size. Each position
+contributes one observation per image, so an empirical entropy computed from
+$N$ images cannot exceed $\log(\min(K,N))$. ImageNet-V2 has 10{,}000 images,
+fewer than LlamaGen's 16{,}384 codes. Its entropy difference consequently
+includes a sampling effect and cannot establish a loss of intrinsic diversity.
 
 \subsection{Reconstruction Measurements}
 \label{subsec:rq5_reconstruction_metrics}
@@ -191,33 +169,32 @@ Table~\ref{tab:rq5_global_shift} reports the global code-usage measurements.
 ImageNet-V2 produces almost no global shift: JSD is 0.002 for LlamaGen and
 0.0004 for VQGAN, while both perplexity ratios are approximately one.
 ObjectNet also remains close to the ImageNet distribution, with JSD values of
-0.020 and 0.007. These results show that a change in ImageNet sampling or object
-presentation does not necessarily change the token stream substantially.
+0.020 and 0.007. ImageNet-V2 contains natural images of the same classes collected from
+different sources. ObjectNet changes object presentation. Both produce small
+changes in the global code-frequency distribution.
 
 \begin{table}[t]
     \centering
     \scriptsize
     \setlength{\tabcolsep}{4pt}
-    \begin{tabular}{llrrrr}
-        \textbf{Tokenizer} & \textbf{Shifted dataset} & \textbf{Active retention} & \textbf{JSD} & $\boldsymbol{R_P}$ & \textbf{Top-100 mass} \\ \hline
-        LlamaGen & ImageNet-V2     & 1.000 & 0.0020 & 0.995 & 0.012 \\
-        LlamaGen & ImageNet-Sketch & 1.000 & 0.1531 & 0.377 & 0.186 \\
-        LlamaGen & ObjectNet       & 1.000 & 0.0200 & 0.916 & 0.030 \\
-        LlamaGen & OrganAMNIST     & 1.000 & 0.1035 & 0.624 & 0.070 \\
-        LlamaGen & BloodMNIST      & 0.984 & 0.2260 & 0.359 & 0.129 \\
-        LlamaGen & RVL-CDIP        & 0.994 & 0.2510 & 0.230 & 0.216 \\ \hline
-        VQGAN & ImageNet-V2        & 1.000 & 0.0004 & 1.001 & 0.165 \\
-        VQGAN & ImageNet-Sketch    & 1.000 & 0.1277 & 0.452 & 0.456 \\
-        VQGAN & ObjectNet          & 1.000 & 0.0068 & 0.962 & 0.197 \\
-        VQGAN & OrganAMNIST        & 1.000 & 0.0424 & 0.816 & 0.269 \\
-        VQGAN & BloodMNIST         & 0.994 & 0.1575 & 0.497 & 0.450 \\
-        VQGAN & RVL-CDIP           & 0.999 & 0.1949 & 0.325 & 0.548 \\
+    \begin{tabular}{llrrr}
+        \textbf{Tokenizer} & \textbf{Shifted dataset} & \textbf{Active retention} & \textbf{JSD} & $\boldsymbol{R_P}$ \\ \hline
+        LlamaGen & ImageNet-V2     & 1.000 & 0.0020 & 0.995 \\
+        LlamaGen & ObjectNet       & 1.000 & 0.0200 & 0.916 \\
+        LlamaGen & ImageNet-Sketch & 1.000 & 0.1531 & 0.377 \\
+        LlamaGen & OrganAMNIST     & 1.000 & 0.1035 & 0.624 \\
+        LlamaGen & BloodMNIST      & 0.984 & 0.2260 & 0.359 \\
+        LlamaGen & RVL-CDIP        & 0.994 & 0.2510 & 0.230 \\ \hline
+        VQGAN & ImageNet-V2        & 1.000 & 0.0004 & 1.001 \\
+        VQGAN & ObjectNet          & 1.000 & 0.0068 & 0.962 \\
+        VQGAN & ImageNet-Sketch    & 1.000 & 0.1277 & 0.452 \\
+        VQGAN & OrganAMNIST        & 1.000 & 0.0424 & 0.816 \\
+        VQGAN & BloodMNIST         & 0.994 & 0.1575 & 0.497 \\
+        VQGAN & RVL-CDIP           & 0.999 & 0.1949 & 0.325 \\
     \end{tabular}
     \caption{Global code-usage shift relative to ImageNet. Active retention is
     the fraction of ImageNet-active codes also observed on the shifted dataset;
-    $R_P$ is the shifted-to-ImageNet perplexity ratio. Top-100 mass is computed
-    from each shifted dataset's own 100 most frequent codes; its ImageNet value
-    is 0.012 for LlamaGen and 0.165 for VQGAN.}
+    $R_P$ is the shifted-to-ImageNet perplexity ratio. }
     \label{tab:rq5_global_shift}
 \end{table}
 
@@ -240,18 +217,17 @@ LlamaGen to a small raw set.
     \centering
     \includegraphics[width=0.98\textwidth]{ch08_fig_global_shift_summary.png}
     \caption{Global response to each shifted dataset. JSD measures movement of
-    probability mass over fixed code identities; the perplexity ratio and
-    top-100 mass measure concentration relative to each tokenizer's ImageNet
+    probability mass over fixed code identities; $R_P$ measures concentration relative to each tokenizer's ImageNet
     baseline.}
     \label{fig:rq5_global_shift_summary}
 \end{figure}
 
 Figure~\ref{fig:rq5_global_shift_summary} shows that ImageNet-V2 and ObjectNet
 remain near the ImageNet reference. The stylized, medical, and document
-datasets have lower perplexity ratios and higher top-100 mass, despite little
+datasets have lower perplexity ratios, despite little
 change in their raw active sets.
 
-\subsection{Code-Usage Shift and Reconstruction Measure Different Effects}
+\subsection{Reconstruction under Distribution Shift}
 \label{subsec:rq5_reconstruction_results}
 
 Table~\ref{tab:rq5_reconstruction_shift} reports reconstruction quality on the
@@ -268,15 +244,15 @@ Chapter~\ref{ch:rq1}.
         \textbf{Tokenizer} & \textbf{Dataset} & \textbf{PSNR} & \textbf{SSIM} & \textbf{LPIPS} & \textbf{FID} \\ \hline
         LlamaGen & ImageNet         & 20.79 & 0.558 & 0.228 & 2.19 \\
         LlamaGen & ImageNet-V2      & 20.95 & 0.572 & 0.231 & 4.34 \\
-        LlamaGen & ImageNet-Sketch  & 20.26 & 0.752 & 0.128 & 3.69 \\
         LlamaGen & ObjectNet        & 23.88 & 0.683 & 0.208 & 2.93 \\
+        LlamaGen & ImageNet-Sketch  & 20.26 & 0.752 & 0.128 & 3.69 \\
         LlamaGen & OrganAMNIST      & 26.79 & 0.805 & 0.182 & 57.16 \\
         LlamaGen & BloodMNIST       & 27.10 & 0.802 & 0.157 & 19.60 \\
         LlamaGen & RVL-CDIP         & 20.49 & 0.764 & 0.094 & 5.08 \\ \hline
         VQGAN & ImageNet            & 19.65 & 0.489 & 0.286 & 5.06 \\
         VQGAN & ImageNet-V2         & 19.83 & 0.501 & 0.289 & 7.48 \\
-        VQGAN & ImageNet-Sketch     & 18.23 & 0.696 & 0.170 & 5.98 \\
         VQGAN & ObjectNet           & 22.79 & 0.611 & 0.268 & 5.80 \\
+        VQGAN & ImageNet-Sketch     & 18.23 & 0.696 & 0.170 & 5.98 \\
         VQGAN & OrganAMNIST         & 26.58 & 0.732 & 0.239 & 76.12 \\
         VQGAN & BloodMNIST          & 26.38 & 0.766 & 0.201 & 29.02 \\
         VQGAN & RVL-CDIP            & 18.23 & 0.699 & 0.128 & 8.02 \\
@@ -288,52 +264,36 @@ Chapter~\ref{ch:rq1}.
     \label{tab:rq5_reconstruction_shift}
 \end{table}
 
-Across the six shifts, larger JSD or a lower perplexity ratio does not
-correspond to worse paired reconstruction in rank order. ImageNet-Sketch and
-RVL-CDIP have large JSD and sharply reduced perplexity, yet their SSIM and
-LPIPS values are better than the ImageNet baseline. OrganAMNIST and BloodMNIST
-similarly obtain high PSNR and SSIM. Their regular low-level structure can make
-paired similarity easier even though their token-frequency distributions move
-away from ImageNet. On OrganAMNIST, FID is 57.16 for LlamaGen and 76.12 for
-VQGAN despite strong paired metrics. Because the Inception representation is
-out of domain for these images, this contrast is reported but not interpreted
-across datasets. Paired metrics measure individual reconstructions, whereas
-FID compares feature distributions. No correlation test or predictive model
-is fitted here; the observation is only that usage shift and reconstruction
-quality are not interchangeable measurements.
+The paired reconstruction metrics show no uniform degradation across the
+OOD datasets. ImageNet-V2 is close to ImageNet for both tokenizers.
+ImageNet-Sketch has lower PSNR but higher SSIM and lower LPIPS, so the
+metrics do not support a single ordering of those datasets. Medical images
+have higher PSNR and SSIM and lower LPIPS than ImageNet, while document
+images have higher SSIM and lower LPIPS but lower PSNR. These differences
+also reflect image content and complexity. The consistent comparison is
+between tokenizers on each dataset: all four metrics favor LlamaGen.
 
-Figure~\ref{fig:rq5_joint_sketch} pairs the sorted usage curves with
-reconstruction metrics for ImageNet-Sketch, a representative large shift. The
-shifted distributions have steeper heads and lower-frequency tails. VQGAN's
-curve still ends near rank 972, showing that concentration occurs within its
-existing active subset.
-
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=\textwidth]{ch08_fig_usage_reconstruction_imagenet_sketch.png}
-    \caption{Sorted code usage and reconstruction quality for ImageNet versus
-    ImageNet-Sketch. The shifted distributions place substantially more mass
-    in their most frequent codes.}
-    \label{fig:rq5_joint_sketch}
-\end{figure}
+Large shifts in code frequencies can therefore coexist with preserved
+reconstruction quality. FID is reported for the model comparison within each
+dataset; its changing reference distribution and natural-image features
+limit interpretation across domains.
 
 \subsection{Positional Diversity Contracts under Larger Shifts}
 \label{subsec:rq5_entropy_results}
 
-Figure~\ref{fig:rq5_positional_entropy} shows the change in positional entropy.
-The maps are predominantly negative. ImageNet-Sketch, BloodMNIST, and RVL-CDIP
-show the strongest reductions; ObjectNet shows a smaller change concentrated
-near the image boundary. These patterns are consistent with centered medical
-imagery, page-like document layouts, and preprocessing-induced borders, but the
-entropy maps alone do not establish which image property causes them.
+Figure~\ref{fig:rq5_positional_entropy} reports normalized changes in positional
+entropy on a common scale. Negative values indicate a more concentrated
+distribution at a typical grid position. Comparing border and interior
+averages tests whether that concentration is uniform across the grid.
+These averages describe spatial variation without identifying its cause.
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=\textwidth]{ch08_fig_positional_entropy_deltas.png}
-    \caption{Per-position entropy difference between each shifted dataset and
-    ImageNet. Blue indicates lower code diversity at that grid location under
-    the shifted dataset. Each tokenizer uses its own scale. ImageNet-V2 is
-    affected by its smaller sample size, particularly for LlamaGen.}
+    \includegraphics[width=\textwidth]{ch08_fig_normalized_positional_entropy.png}
+    \caption{Mean positional entropy change divided by $\log K$, for all
+    positions, border positions, and interior positions. The common scale
+    expresses changes relative to the theoretical entropy range. Unequal
+    dataset sizes still affect these estimates, especially ImageNet-V2.}
     \label{fig:rq5_positional_entropy}
 \end{figure}
 
@@ -345,42 +305,6 @@ a much smaller mean decrease of 0.039. The larger decreases on datasets with
 sample sizes close to ImageNet are less exposed to this specific mismatch, but
 they remain empirical entropy estimates rather than intrinsic properties of
 the encoder.
-
-\subsection{Code-Specific Spatial Movement Is Exploratory}
-\label{subsec:rq5_spatial_results}
-
-Figure~\ref{fig:rq5_spatial_summary} aggregates the code-specific position
-maps. For most eligible codes, effective spatial support is lower on the
-shifted dataset than on ImageNet. The contraction is strongest for BloodMNIST
-and is also visible for ImageNet-Sketch and RVL-CDIP. The median spatial L1
-distance is greater for LlamaGen than for VQGAN on every dataset. Eligibility
-varies substantially: for ImageNet-V2, only 64 LlamaGen codes satisfy the
-256-count threshold in both datasets, compared with 968 VQGAN codes.
-
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=\textwidth]{ch08_fig_spatial_shift_summary.png}
-    \caption{Code-specific spatial redistribution. The left panel reports the
-    median L1 distance between ImageNet and shifted position distributions;
-    the middle panel reports shifted-to-ImageNet effective-support ratio; the
-    right panel gives the fraction of eligible codes whose support contracts.
-    These measurements are exploratory because per-code position maps can be
-    sparse, especially for LlamaGen.}
-    \label{fig:rq5_spatial_summary}
-\end{figure}
-
-This apparent model difference is not a reliable robustness ranking. Under
-the 256-count eligibility threshold, the median eligible LlamaGen code has only
-about one to three observations per grid cell on several datasets. Its
-position distribution is therefore sparse by construction. VQGAN places the
-same number of total assignments over roughly 972 active codes, yielding much
-denser per-code estimates. Raising the support threshold removes most
-LlamaGen codes and changes the summary appreciably, while VQGAN's summary is
-more stable. The evidence supports only the conclusion that dataset shift
-changes where many frequently observed codes are deployed, and that this
-spatial signal should be retested
-with matched sample sizes or pooled spatial regions. The present experiment
-does not establish that LlamaGen is less spatially stable than VQGAN.
 
 \section{Discussion}
 \label{sec:rq5_discussion}
@@ -399,28 +323,14 @@ Sketches, medical images, and documents use a more concentrated token mixture,
 with RVL-CDIP producing the largest JSD. The two tokenizers show the same
 qualitative JSD ranking despite their different empirical vocabulary sizes.
 
-Reconstruction quality and representation shift answer different questions.
-LlamaGen consistently reconstructs better than VQGAN, but datasets with strong
-global token redistribution can still obtain high paired-image scores. A
-tokenizer may preserve the visible input while expressing it through a token
-distribution unlike the one seen on ImageNet. A downstream sequence model
-would consequently receive a shifted token-frequency distribution, although
-this chapter does not measure its generation performance.
+Changing the input domain substantially changes token frequencies for sketches,
+medical images, and documents, while paired reconstruction scores show no
+uniform decline. Both tokenizers can reconstruct images whose token
+distribution differs from ImageNet. An autoregressive model trained on the
+ID token distribution would receive a changed frequency distribution, with
+potential consequences for its performance.
 
-The positional analysis indicates a second form of change. Structured domains
-reduce code diversity at particular grid locations, and many codes appear over
-fewer effective positions. However, positional entropy depends on the number
-of images, and code-specific maps depend on enough occurrences of each code.
-Those constraints affect LlamaGen more strongly because its assignments are
-spread over 16{,}384 codes. The global JSD and perplexity results support the
-chapter's main conclusion; the spatial results identify a plausible mechanism
-and a concrete next experiment, but they remain exploratory.
-
-Under this protocol, LlamaGen has both higher reconstruction scores and a much
-larger empirical vocabulary, while VQGAN preserves its small active subset
-across domains. Neither result is attributed here to a single architectural or
-training choice. Across the tested shifts, reconstruction scores, global code
-frequencies, and positional diversity can move in different directions; no
-single scalar summarizes all three.
-
-\FloatBarrier
+The global results are the main finding of this chapter. An almost unchanged
+active vocabulary can hide substantial redistribution among its codes.
+LlamaGen retains its reconstruction advantage across the tested datasets,
+but its larger vocabulary does not prevent this redistribution.

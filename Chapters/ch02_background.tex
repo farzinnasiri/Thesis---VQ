@@ -4,21 +4,52 @@
 % For AI-assisted explanatory figures in this chapter, use \aifigurecaption{...}
 % so the standardized disclosure is included directly in the caption.
 
-This chapter introduces the ideas needed to study discrete image tokenizers. It begins with autoregressive sequence modeling, explains why images require a more compact representation than raw pixels, and then develops vector quantization from VQ-VAE to VQGAN and LlamaGen.
+This chapter introduces autoregressive image modeling and vector quantization,
+then describes early and recent image tokenizers.
 
 \section{Autoregressive Models: From Text to Images}
 \label{sec:ar_models_text_to_images}
 
-An autoregressive model represents a joint distribution by predicting each element from those that precede it. For a sequence $s=(s_1,\ldots,s_T)$, the chain rule gives
+An autoregressive model represents a joint distribution by predicting each
+element from those that precede it. A token is a discrete text unit, such as a
+word or subword, drawn from a finite vocabulary. Let
+$s=(s_1,\ldots,s_T)$ be a sequence of tokens, where $s_i$ is the token at
+position $i$ and $T$ is the sequence length. The chain rule gives
 \begin{equation}
     p(s)=\prod_{i=1}^{T}p(s_i\mid s_{<i}),
     \qquad s_{<i}=(s_1,\ldots,s_{i-1}).
 \end{equation}
-This factorization is particularly natural for language. A tokenizer converts text into a sequence drawn from a finite vocabulary, and a language model learns the conditional distribution of the next token. Transformers made this approach effective at scale by using self-attention to model dependencies between tokens~\cite{vaswani2017attention}. Subsequent large autoregressive language models showed that the same training objective can support broad capabilities when paired with sufficient data and model capacity~\cite{brown2020language,touvron2023llama}.
+This factorization has long been used for statistical language
+modeling~\cite{bengio2003neural}. A text tokenizer converts text into a sequence
+of tokens drawn from a finite vocabulary, and a language model learns the
+conditional distribution of the next token. Transformers made this approach
+effective at scale by using self-attention to model dependencies between
+tokens~\cite{vaswani2017attention}. Later work found that language-model loss
+follows empirical power laws as the amount of data, model size, and training
+compute increase~\cite{kaplan2020scaling}. Large autoregressive language models
+then demonstrated broad capabilities under the same training
+objective~\cite{brown2020language,touvron2023llama}.
 
-Applying the same principle to images is less direct. An image is a two-dimensional array rather than an ordered sequence, so an autoregressive model must first choose both a prediction unit and an ordering. The most literal choice is to discretize pixel intensities and traverse them in raster order, from left to right and top to bottom. PixelRNN and PixelCNN showed that this produces tractable image likelihoods and coherent samples~\cite{oord2016pixel}. Image Transformer later applied self-attention to autoregressive pixel generation while restricting attention to local neighborhoods to control its cost~\cite{parmar2018image}.
+Applying the same principle to images is less direct. An image is a
+two-dimensional array rather than an ordered sequence, so an autoregressive
+model must first choose both a prediction unit and an ordering. The most literal
+choice is to discretize pixel intensities and traverse them in raster order,
+from left to right and top to bottom. Early works such as PixelRNN and PixelCNN
+showed that this produces tractable image likelihoods and coherent
+samples~\cite{oord2016pixel}. Image Transformer later applied self-attention to
+autoregressive pixel generation while restricting attention to local
+neighborhoods to control its cost~\cite{parmar2018image}.
 
-Pixel-level modeling is conceptually simple but computationally demanding. A $256\times256$ RGB image contains $196{,}608$ channel values, and generation must resolve low-level color statistics as well as long-range structure. Moreover, full self-attention on a sequence of length $T$ has $\mathcal{O}(T^2)$ time and memory cost. A learned image tokenizer addresses both problems by mapping the image to a shorter grid of discrete symbols. Figure~\ref{fig:pixel_vs_token_sequence} contrasts the resulting sequence lengths.
+Pixel-level modeling is conceptually simple but computationally demanding. A
+$256\times256$ RGB image contains $196{,}608$ channel values, and generation
+must resolve low-level color statistics as well as long-range structure.
+Moreover, full self-attention on a sequence of length $T$ has
+$\mathcal{O}(T^2)$ time and memory cost. A learned image tokenizer addresses
+both problems by mapping the image to a shorter grid of discrete symbols. The
+token grids studied in this thesis are flattened in raster order. Tokenization
+reduces the number of prediction units but does not choose a different
+ordering. Figure~\ref{fig:pixel_vs_token_sequence} contrasts the resulting
+sequence lengths.
 
 \begin{figure}[t]
     \centering
@@ -27,7 +58,12 @@ Pixel-level modeling is conceptually simple but computationally demanding. A $25
     \label{fig:pixel_vs_token_sequence}
 \end{figure}
 
-The resulting system has two stages, illustrated in Figure~\ref{fig:two_stage_autoregressive_pipeline}. First, a tokenizer learns to encode an image as a compact grid of token IDs and to reconstruct the image from that grid. Second, an autoregressive \emph{prior} learns the probability distribution of token sequences produced by the tokenizer. The term prior refers here to the generative model over latent token sequences: it can sample a new sequence before the decoder maps that sequence back to image space.
+Autoregressive image generation therefore has two stages, illustrated in
+Figure~\ref{fig:two_stage_autoregressive_pipeline}. A tokenizer first converts
+images into compact token grids and reconstructs images from them. An
+autoregressive model is then trained on the resulting token sequences. This
+second-stage model is also called a \emph{prior}: it models the distribution of
+token sequences and can sample a sequence for the decoder.
 
 \begin{figure}[t]
     \centering
@@ -36,17 +72,42 @@ The resulting system has two stages, illustrated in Figure~\ref{fig:two_stage_au
     \label{fig:two_stage_autoregressive_pipeline}
 \end{figure}
 
-This separation allows each stage to specialize. Convolutional encoders provide a useful inductive bias for extracting local visual structure, while the sequence model learns dependencies between distant visual tokens~\cite{esser2021taming}. The tokenizer is therefore not merely a compression component. It determines which image information reaches the sequence model, the length of the sequence, and the vocabulary over which next-token prediction operates.
+Image tokenizers may use convolutions, attention, or both. Their function is to
+represent images with discrete tokens and reconstruct images from them. The
+autoregressive model has a different function: it predicts those tokens in
+sequence. The tokenizer determines which image information reaches that model,
+the sequence length, and the vocabulary used for next-token prediction.
 
 \section{Image Tokens and Vector Quantization}
 \label{sec:image_tokens_vq}
 
-The Vector Quantised Variational Autoencoder (VQ-VAE) introduced a learned discrete bottleneck for neural representation learning~\cite{oord2017neural}. Unlike a conventional variational autoencoder with continuous latent variables, VQ-VAE represents an input using indices from a finite codebook. A separate autoregressive prior can then model those indices. VQ-VAE-2 later showed that hierarchical discrete latents and stronger priors could support high-fidelity large-scale image generation~\cite{razavi2019vqvae2}.
+Vector quantization replaces continuous feature vectors with entries from a
+finite codebook. We introduce this operation using VQ-VAE, which learns
+discrete latent representations by assigning encoder outputs to a learned
+codebook~\cite{oord2017neural}. A separate autoregressive model can then model
+the resulting token sequence. VQ-VAE-2 later showed that hierarchical discrete
+latents and stronger priors could support high-fidelity large-scale image
+generation~\cite{razavi2019vqvae2}.
 
-Let an input image be $x\in\mathbb{R}^{H\times W\times C}$. The encoder produces a continuous latent tensor
-$z_e(x)\in\mathbb{R}^{h\times w\times d}$. At each spatial position $(u,v)$, the vector $z_e(x)_{u,v}\in\mathbb{R}^{d}$ is assigned to its nearest entry in a learned codebook
+VQ-VAE contains an encoder, a vector quantizer, and a decoder. Given an input
+image $x\in\mathbb{R}^{H\times W\times C}$, the encoder produces a continuous
+feature grid $z_e(x)\in\mathbb{R}^{h\times w\times d}$. The full path is shown
+in Figure~\ref{fig:vqvae_pipeline}.
+
+\begin{figure}[t]
+    \centering
+    \resizebox{0.9\textwidth}{!}{\input{Figures/ch02_vqvae_pipeline}}
+    \aifigurecaption{VQ-VAE representation path. The encoder produces continuous
+    features, the vector quantizer returns integer tokens and their associated
+    codebook vectors, and the decoder reconstructs the image. Based on van den
+    Oord et al.~\cite{oord2017neural}.}
+    \label{fig:vqvae_pipeline}
+\end{figure}
+
+At each spatial position $(u,v)$, the vector $z_e(x)_{u,v}\in\mathbb{R}^{d}$ is assigned to its nearest entry in a learned codebook
 $\mathcal{E}=\{e_1,\ldots,e_K\}$, where $e_j\in\mathbb{R}^{d}$. Quantization produces an integer token grid $k\in\{1,\ldots,K\}^{h\times w}$ and a quantized latent tensor $z_q(x)\in\mathbb{R}^{h\times w\times d}$:
 \begin{align}
+    z_e(x) &= E(x), \\
     k_{u,v} &= \underset{j\in\{1,\ldots,K\}}{\arg\min}\,
         \lVert z_e(x)_{u,v}-e_j\rVert_2, \\
     z_q(x)_{u,v} &= e_{k_{u,v}}, \\
@@ -70,43 +131,40 @@ The decoder receives $z_q(x)$ rather than the continuous encoder output. Image i
     \label{fig:feature_map_to_token_sequence}
 \end{figure}
 
-\subsection{Learning the Discrete Bottleneck}
+\subsection{Learning the Discrete Representation}
 
-The nearest-neighbor assignment is not differentiable. VQ-VAE uses a straight-through estimator: during the forward pass the decoder receives quantized vectors, while during backpropagation the gradient with respect to the quantized representation is copied to the encoder output~\cite{bengio2013estimating,oord2017neural}. The encoder, decoder, and codebook are consequently learned together.
+VQ-VAE is trained by gradient descent, but nearest-neighbor assignment is not
+differentiable. It therefore uses a straight-through estimator. During the
+forward pass the decoder receives quantized vectors; during backpropagation,
+the gradient with respect to the quantized representation is copied to the
+encoder output~\cite{bengio2013estimating,oord2017neural}. The encoder, decoder,
+and codebook are learned together.
 
-The original VQ-VAE objective combines reconstruction, codebook, and commitment terms:
+The objective contains a reconstruction loss and two additional terms for
+learning the codebook and encoder representation:
 \begin{equation}
     \mathcal{L}_{\mathrm{VQ}}
     =
-    \mathcal{L}_{\mathrm{rec}}\!\left(x,\hat{x}\right)
-    +
-    \left\lVert \operatorname{sg}[z_e(x)]-z_q(x)\right\rVert_2^2
-    +
-    \beta
-    \left\lVert z_e(x)-\operatorname{sg}[z_q(x)]\right\rVert_2^2.
+    \underbrace{-\log p\!\left(x\mid z_q(x)\right)}_{\mathcal{L}_{\mathrm{rec}}}
+    + \underbrace{\left\lVert \operatorname{sg}[z_e(x)]-z_q(x)\right\rVert_2^2}_{\mathcal{L}_{\mathrm{cod}}}
+    + \underbrace{\beta\left\lVert z_e(x)-\operatorname{sg}[z_q(x)]\right\rVert_2^2}_{\mathcal{L}_{\mathrm{comm}}}.
 \end{equation}
-The stop-gradient operator $\operatorname{sg}[\cdot]$ is the identity in the forward pass and has zero derivative. The codebook term moves embeddings toward encoder outputs; the commitment term, weighted by $\beta$, discourages encoder outputs from moving arbitrarily between embeddings. Together, these terms make the discrete bottleneck trainable while preserving a reconstruction path through the decoder.
+The reconstruction term follows the likelihood convention in the original
+VQ-VAE formulation~\cite{oord2017neural}. The stop-gradient operator
+$\operatorname{sg}[\cdot]$ is the identity in the forward pass and has zero
+derivative. The codebook term $\mathcal{L}_{\mathrm{cod}}$ moves embeddings
+toward encoder outputs. The commitment term $\mathcal{L}_{\mathrm{comm}}$
+keeps encoder outputs close to their assigned embeddings.
 
-\subsection{Properties of the Token Representation}
+The codebook contains $K$ entries, but a dataset may activate only a subset.
+Codebook collapse occurs when many entries receive few or no assignments, which
+reduces the empirical vocabulary available to the autoregressive
+model~\cite{lancucki2020robust,yu2021vector,mentzer2023finite}. Chapter~\ref{ch:rq1}
+measures nominal and empirical vocabulary directly.
 
-Vector quantization introduces properties that are not visible from reconstruction quality alone:
-\begin{description}
-    \item[Nominal and empirical vocabulary.] The codebook contains $K$ entries, but a dataset may activate only a subset of them. The effective vocabulary and its frequency distribution determine the symbols that the sequence model actually observes. Chapter~\ref{ch:rq1} measures this distinction directly.
-
-    \item[Quantization discontinuity.] Nearest-neighbor assignment partitions latent space into regions. A small change in the encoder output can cross a region boundary and change the token ID abruptly, as illustrated in Figure~\ref{fig:vq_boundary_crossing}.
-
-    \item[Encoder locality.] A local change in image space need not produce only local token changes. The encoder receptive field and subsequent quantization determine how far token changes spread. Chapter~\ref{ch:rq3} studies this behavior.
-
-    \item[Decoder locality.] Conversely, changing a bounded region of the token grid can alter pixels both inside and outside the corresponding image region. Chapter~\ref{ch:rq4} isolates this decoder-side behavior.
-\end{description}
-
-The gap between nominal and empirical vocabulary is not merely a reporting
-detail. Underused or inactive entries, commonly described as codebook collapse,
-reduce the operational capacity of the bottleneck. Prior work has addressed
-this problem through changes to codebook optimization, quantizer design, and
-alternative discretization schemes~\cite{lancucki2020robust,yu2021vector,mentzer2023finite}.
-The present thesis does not propose a new remedy; it measures the extent to
-which the evaluated checkpoints exhibit this behavior.
+Nearest-neighbor assignment also partitions latent space into discrete regions.
+A small change in an encoder output can cross a region boundary and change its
+token abruptly, as illustrated in Figure~\ref{fig:vq_boundary_crossing}.
 
 \begin{figure}[t]
     \centering
@@ -114,14 +172,23 @@ which the evaluated checkpoints exhibit this behavior.
     \caption{Nearest-neighbor regions create discontinuities in latent space. A small displacement of an encoder output can cross a quantization boundary and change its assigned token.}
     \label{fig:vq_boundary_crossing}
 \end{figure}
-\FloatBarrier
 
 \section{VQGAN and Taming Transformers}
 \label{sec:vqgan_taming}
 
-VQ-VAE established discrete neural representations, but reconstruction losses based mainly on pixel likelihood or pixel error do not necessarily preserve perceptually important high-frequency detail. When several sharp reconstructions are plausible, minimizing an average pixel error can favor a blurred result. Esser et al.\ address this limitation with a vector-quantized generative adversarial network, commonly called VQGAN, and use its discrete representation to make transformer-based high-resolution synthesis practical~\cite{esser2021taming}. The broader method is commonly referred to as \emph{Taming Transformers}, after the title of the paper.
+VQ-VAE showed how to learn a discrete token space that an autoregressive model
+can model, with a decoder that converts sampled token sequences into
+images~\cite{oord2017neural}. Its reconstruction objective, however, does not
+necessarily preserve perceptually important high-frequency detail. When several
+sharp reconstructions are plausible, minimizing an average pixel error can
+favor a blurred result. Esser et al.\ address this limitation with a
+vector-quantized generative adversarial network, commonly called VQGAN, and use
+its discrete representation to make transformer-based high-resolution
+synthesis practical~\cite{esser2021taming}.
 
-VQGAN retains the encoder--quantizer--decoder structure of VQ-VAE but changes the reconstruction objective. In addition to a reconstruction term, it uses a learned perceptual loss and an adversarial loss:
+VQGAN retains the encoder--quantizer--decoder structure of VQ-VAE but changes
+the training objective. In the implementation used by the evaluated VQGAN
+checkpoint, the generator objective has four components:
 \begin{equation}
     \mathcal{L}_{\mathrm{VQGAN}}
     =
@@ -130,7 +197,14 @@ VQGAN retains the encoder--quantizer--decoder structure of VQ-VAE but changes th
     + \lambda\,\mathcal{L}_{\mathrm{adv}}
     + \mathcal{L}_{\mathrm{codebook}}.
 \end{equation}
-The perceptual term compares activations of a pretrained network rather than requiring exact pixel agreement. The adversarial term is supplied by a patch-based discriminator, which judges whether local image patches resemble patches from real images. These objectives encourage the decoder to preserve perceptually salient structure and synthesize plausible fine detail. Figure~\ref{fig:adversarial_and_perceptual_losses} shows how the losses supervise the reconstructed image.
+This expanded implementation view separates the pixel reconstruction,
+perceptual, adversarial, and codebook terms; their configured and adaptive
+weights are omitted here for readability. The perceptual term compares
+activations of a pretrained network rather than requiring exact pixel
+agreement. A patch-based discriminator supplies the adversarial term. These
+objectives encourage the decoder to preserve perceptually salient structure and
+synthesize plausible fine detail. Figure~\ref{fig:adversarial_and_perceptual_losses}
+shows how the losses supervise the reconstructed image.
 
 \begin{figure}[t]
     \centering
@@ -148,23 +222,50 @@ The first-stage model is convolutional, with non-local attention at its lowest-r
     \label{fig:vqgan_first_stage_model}
 \end{figure}
 
-The central contribution of Taming Transformers is this division of labor. The convolutional tokenizer learns a context-rich vocabulary of image constituents and reduces the sequence length; the transformer models their global composition~\cite{esser2021taming}. The compression rate is consequential. A smaller latent grid makes transformer training and sampling cheaper, but forces each token to carry more image information and can reduce reconstruction fidelity. The paper studies this trade-off through different codebook sizes and latent resolutions, showing that the first-stage representation constrains both reconstruction quality and the difficulty of the second-stage sequence problem.
+A smaller token grid reduces the sequence length processed by the transformer,
+but forces each token to carry more image information and can reduce
+reconstruction fidelity. Esser et al.\ study this trade-off through different
+codebook sizes and latent resolutions~\cite{esser2021taming}.
 
-\section{Recent Autoregressive Image Tokenizers and LlamaGen}
+\section{\texorpdfstring{\mbox{LlamaGen}}{LlamaGen}}
 \label{sec:llamagen_tokenizer}
 
-Discrete image representations subsequently became a common interface between images and large sequence models. DALL-E models text and image tokens as a single autoregressive stream~\cite{ramesh2021zero}; related systems use discrete visual vocabularies to move image generation from pixel space into a shorter learned sequence. Across these systems, the tokenizer controls the information available to the generative model and the statistical properties of the sequence it must learn.
+After VQGAN, subsequent work improved autoregressive image generation. DALL-E,
+for example, models text and image tokens as a single autoregressive
+stream~\cite{ramesh2021zero}.
 
-LlamaGen revisits this approach in the context of modern large language model architectures~\cite{sun2024llamagen}. Its main question is whether standard next-token prediction, scaled using a Llama-style transformer, can remain competitive for image generation. The system preserves the two-stage design: a vector-quantized tokenizer first converts images to discrete grids, and an autoregressive model then predicts their indices.
+LlamaGen revisits this approach using a Llama-style transformer and reports
+competitive results against diffusion baselines through tokenizer and model
+design~\cite{sun2024llamagen}. The system preserves the two-stage design: a
+vector-quantized tokenizer converts images to discrete grids, and an
+autoregressive model predicts their tokens.
 
-Tokenizer quality is treated as a prerequisite for scaling the sequence model. LlamaGen reports that low-dimensional codebook embeddings and L2-normalized lookup improve codebook utilization and reconstruction quality~\cite{sun2024llamagen}. Reducing the embedding dimension makes the nearest-neighbor problem less sparse, while normalization places encoder projections and codebook entries on a common unit sphere before assignment. These choices target a recurring failure mode of vector-quantized models: a large nominal codebook can be of limited value if only a small fraction of entries is used.
+A large nominal codebook is of limited value if the tokenizer uses only a small
+fraction of its entries. LlamaGen addresses this problem with low-dimensional
+codebook embeddings and L2-normalized lookup~\cite{sun2024llamagen}. Reducing
+the embedding dimension makes nearest-neighbor assignment less sparse, while
+normalization places encoder projections and codebook entries on a common unit
+sphere before assignment. LlamaGen also evaluates longer token sequences as a
+separate design choice. This thesis evaluates its VQ-16 tokenizer.
 
-VQGAN and LlamaGen therefore represent two points in the development of discrete image tokenization. Both learn a finite visual vocabulary and expose token grids to an autoregressive model, but they differ in tokenizer design and in the empirical distributions induced over their vocabularies. Comparing them makes it possible to distinguish behavior shared by vector-quantized tokenizers from behavior associated with a particular design.
-
-\section{Implications for Tokenizer Evaluation}
+\section{Representation Properties Beyond Reconstruction Quality}
 \label{sec:reconstruction_to_behavior}
 
 A tokenizer is usually evaluated first through reconstruction: given $x$, it produces
 $\hat{x}=D(Q(E(x)))$, and the two images are compared. Reconstruction is essential because any information discarded by the tokenizer is unavailable to the generative model. It is not, however, a complete description of the induced discrete representation.
 
-The token grid also determines the effective vocabulary, the frequency of each symbol, and the spatial response to changes before or after quantization. Two tokenizers with similar reconstruction quality may use very different fractions of their codebooks; a small image perturbation may leave one token grid largely unchanged while altering many entries in another; and a local token edit may remain local or propagate through the decoder. These properties matter because the second-stage model learns the distribution created by the tokenizer, not the original pixel distribution directly.
+The tokenizer also determines the effective vocabulary, token frequencies, and
+spatial response to perturbations. Two tokenizers with similar reconstruction
+quality may use different fractions of their codebooks. A small image
+perturbation may leave one token grid largely unchanged while altering many
+entries in another. A local token edit may remain local or propagate through
+the decoder. Chapters~\ref{ch:rq1}, \ref{ch:rq3}, and \ref{ch:rq4} measure these
+properties because the autoregressive model learns the distribution created by
+the tokenizer rather than the original pixel distribution directly.
+
+VQGAN and LlamaGen represent two stages in the development of discrete image
+tokenization. Both learn a finite visual vocabulary and expose token grids to
+an autoregressive model, but they differ in tokenizer design and in the
+empirical distributions induced over their vocabularies. Their comparison
+separates behavior shared by vector-quantized tokenizers from behavior tied to
+a particular design.

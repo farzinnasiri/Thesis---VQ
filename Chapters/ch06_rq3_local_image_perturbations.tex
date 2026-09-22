@@ -1,18 +1,17 @@
 \chapter{Local Perturbations in Image Space}
 \label{ch:rq3}
 
-Global noise, as shown in Chapter~\ref{ch:rq2}, makes token identities highly unstable across the whole image. That experiment cannot separate the effect of perturbing the input everywhere from the tokenizer's response to a local change. This chapter isolates the question: when a bounded image region is corrupted, how far do the token changes spread?
+Global perturbations mix the response associated with one token's corresponding
+image region with responses caused by changes elsewhere. This chapter perturbs
+one image patch and measures how far assignment changes spread beyond it.
+Chapter~\ref{ch:rq2} showed assignment instability under global noise; the
+present experiment tests whether changes also appear outside a bounded patch.
 
-The experiment adds Gaussian noise to an image patch corresponding to a square region of the $16\times16$ token grid, then compares the resulting token grid with the clean tokenization. Token changes are measured inside the corresponding token patch, outside it, and as a function of distance from the patch boundary. Both tokenizers react most strongly within the patch, but the response does not stop there: even at the lowest noise level tested, roughly 30\% of outside token positions carry a different token than in the clean encoding.
-
-\section{Motivation}
-\label{sec:rq3_motivation}
-
-A convolutional tokenizer is spatial in an architectural sense: nearby pixels tend to contribute to nearby latent positions, and the output is arranged as a two-dimensional grid. That does not guarantee locality under perturbation. A latent cell can depend on pixels outside its nominal $16\times16$ image block, neighboring receptive fields can overlap, and nearest-neighbor quantization can turn a small feature shift into a discrete token change.
-
-For autoregressive generation, the relevant input is the token sequence rather than the image. A local image-space change that causes widespread token changes is therefore more disruptive to the sequence representation than image-space metrics alone would suggest.
-
-The global-noise experiment in Chapter~\ref{ch:rq2} cannot separate these cases, because every part of the input was perturbed. The patch experiment does: only part of the image is changed, so outside-patch token changes directly measure leakage through the tokenizer.
+Finite convolutional receptive fields create overlapping local dependencies,
+while attention and spatial normalization can couple distant positions. The
+evaluated VQGAN contains $3\times3$ stride-2 downsampling, $3\times3$ residual
+convolutions, GroupNorm, and attention at its lowest-resolution level. These
+facts identify candidate mechanisms, not the cause of the measured response.
 
 \section{Experimental Setup}
 \label{sec:rq3_setup}
@@ -20,28 +19,38 @@ The global-noise experiment in Chapter~\ref{ch:rq2} cannot separate these cases,
 \subsection{Patch-Noise Protocol}
 \label{subsec:rq3_patch_noise_protocol}
 
-Let $x \in [0,1]^{H \times W \times 3}$ be a preprocessed ImageNet validation image and let $P$ denote a square patch in image space. The binary mask $M_P \in \{0,1\}^{H \times W \times 1}$ equals one inside the patch and zero outside it. For a noise level $\sigma$, the perturbed image is
+Let $x \in [-1,1]^{H \times W \times 3}$ be an input image and let $P$ denote
+a square patch. The binary mask $M_P$ equals one inside the patch and zero
+outside it. For a noise level $\sigma$, the perturbed image is
 \begin{equation}
     x_{\sigma,P}
     =
-    \mathrm{clip}\!\left(x + \sigma \epsilon \odot M_P, 0, 1\right),
+    \mathrm{clip}\!\left(x + \sigma \epsilon \odot M_P, -1, 1\right),
     \qquad
     \epsilon \sim \mathcal{N}(0,I).
     \label{eq:rq3_patch_noise}
 \end{equation}
 Only pixels inside $P$ receive additive noise. The clipping operation keeps the image in the valid pixel range.
 
-Both tokenizers produce a $16 \times 16$ token grid. The main Gaussian-noise analysis uses an $8 \times 8$ token-space patch, corresponding to one quarter of the token grid and approximately one quarter of the image area under the tokenizer downsampling. Its top-left corner is sampled uniformly from the valid grid locations using a seeded pseudorandom generator. The patch location is recorded for each image in both pixel and token coordinates, so inside/outside regions are measured from the actual perturbation mask. The reported noise levels are $\sigma \in \{0.1, 0.25, 0.5\}$. A masked-occlusion variant is reported separately as a stronger local intervention. Both exporters set the Python, NumPy, and PyTorch seeds to zero. This makes each implementation reproducible, but the sampled noise tensors were not exported and shared between implementations; the two tokenizer runs are therefore not paired by identical random arrays.
+Both tokenizers produce a $16\times16$ token grid. The analysis uses an
+$8\times8$ token-space patch, corresponding to a $128\times128$ pixel region.
+Its top-left corner is sampled uniformly from valid grid locations for each of
+the 50,000 ImageNet validation images. The reported levels are
+$\sigma\in\{0.1,0.25,0.5\}$. The two runs use the same images and nominal
+settings but different random patch locations and noise realizations. Strictly
+paired model comparisons would require shared perturbations and a rerun.
 
-The equations use the common $[0,1]$ image convention. In the implementation,
-images are transformed to the $[-1,1]$ range expected by each tokenizer,
-perturbations are clipped in that range, and reconstructions are returned to
-$[0,1]$ before image metrics are computed.
+The masked variant fills the selected patch with black in the internal image
+range. With fill value $c=-1$, it is defined as
+\begin{equation}
+    x_{\mathrm{mask},P}=(1-M_P)\odot x + M_P\odot c.
+    \label{eq:rq3_patch_mask}
+\end{equation}
 
 \subsection{Inside and Outside Response}
 \label{subsec:rq3_inside_outside_metrics}
 
-Let $z_0 \in \{1,\ldots,K\}^{16 \times 16}$ be the clean token grid and $z_{\sigma,P}$ be the token grid obtained from the patch-perturbed image. Let $I_P$ be the set of token positions covered by the patch and let $O_P$ be the complement. The inside response is the mean token flip rate inside the perturbed patch:
+Let $z_0 \in \{1,\ldots,K\}^{16 \times 16}$ be the clean token grid and $z_{\sigma,P}$ be the token grid obtained from the patch-perturbed image. Let $I_P$ be the set of token positions covered by the patch and let $O_P$ be the complement. We define the inside response as the fraction of token assignments within the selected patch that change:
 \begin{equation}
     R_{\mathrm{in}}(\sigma,P)
     =
@@ -50,7 +59,7 @@ Let $z_0 \in \{1,\ldots,K\}^{16 \times 16}$ be the clean token grid and $z_{\sig
     \mathbf{1}\!\left[z_{\sigma,P,i} \neq z_{0,i}\right].
     \label{eq:rq3_inside_response}
 \end{equation}
-The outside response is the same quantity measured outside the perturbed region:
+We define the outside response as the fraction of token assignments outside the selected patch that change:
 \begin{equation}
     R_{\mathrm{out}}(\sigma,P)
     =
@@ -59,7 +68,7 @@ The outside response is the same quantity measured outside the perturbed region:
     \mathbf{1}\!\left[z_{\sigma,P,i} \neq z_{0,i}\right].
     \label{eq:rq3_outside_response}
 \end{equation}
-The ratio
+We define the encoder leakage ratio as
 \begin{equation}
     \lambda_{\mathrm{enc}}(\sigma,P)
     =
@@ -67,13 +76,21 @@ The ratio
          {R_{\mathrm{in}}(\sigma,P) + \varepsilon}
     \label{eq:rq3_leakage_ratio}
 \end{equation}
-is used as a compact leakage measure. A value near zero means that token changes are mostly confined to the patch. A value near one means that outside tokens change almost as often as inside tokens. In this chapter, all response values are token-flip probabilities: they are fractions of token positions whose discrete ID differs from the clean encoding.
-Thus, $R_{\mathrm{in}}$ measures direct sensitivity to the corrupted patch, while $R_{\mathrm{out}}$ measures leakage outside the patch. The ratio $\lambda_{\mathrm{enc}}$ is useful only together with the two absolute rates, because a ratio can be large either because the outside response is large or because the inside response is small.
+where $\varepsilon>0$ prevents division by zero. All responses are fractions of
+token assignments that differ from the clean encoding. A value of
+$\lambda_{\mathrm{enc}}$ near zero indicates that changes are mostly confined
+to the patch, while a value near one indicates similar change rates inside and
+outside it. We retain $R_{\mathrm{in}}$ and $R_{\mathrm{out}}$ alongside the
+ratio because the same ratio can arise from different absolute responses.
 
 \subsection{Distance Profile}
 \label{subsec:rq3_distance_metrics}
 
-The inside/outside split is useful but coarse. It says how much response leaves the patch, but not how far it goes. Each token position $i$ is therefore assigned a Manhattan grid distance $d(i,P)$ to the nearest token in $I_P$: distance zero is inside the patch, distance one is the first ring of neighboring token cells, and larger values move farther across the token grid. The distance profile is
+The inside and outside responses do not show how far token changes spread. Each
+token position $i$ is therefore assigned a Manhattan grid distance $d(i,P)$ to
+the nearest token in $I_P$: distance zero is inside the patch, distance one is
+the first ring of neighboring token cells, and larger values move farther
+across the token grid. We define the distance profile as
 \begin{equation}
     R_d(\sigma,P)
     =
@@ -87,41 +104,65 @@ The results report the full profile and a small set of bands: inside tokens ($d=
 \section{Experimental Results}
 \label{sec:rq3_results}
 
-\subsection{Qualitative Patch Perturbations}
+\paragraph{Qualitative patch perturbations.}
 \label{subsec:rq3_qualitative}
 
-Figures~\ref{fig:rq3_qual_vqgan} and~\ref{fig:rq3_qual_llamagen} show representative examples for the two tokenizers. Each panel contains the clean image, the patch-noisy inputs, the corresponding reconstructions, and binary token-response maps. The black rectangle marks the perturbed patch in pixel space and the corresponding token block in the response map. The response maps should be read as token flips relative to the clean encoding: highlighted cells outside the rectangle are outside-patch token changes caused by the local image perturbation.
+Figure~\ref{fig:rq3_qual_combined} shows selected examples for the two tokenizers. Each panel contains the clean image, the patch-noisy inputs, the corresponding reconstructions, and binary token-response maps. The black rectangle marks the perturbed patch in pixel space and the corresponding token block in the response map. Highlighted cells outside the rectangle are token-assignment changes outside the patch.
 
-\begin{figure}[p]
+\begin{figure}[tbp]
     \centering
-    \includegraphics[width=\textwidth,height=0.78\textheight,keepaspectratio]{ch06_fig_patch_noise_qualitative_vqgan.png}
-    \caption{VQGAN qualitative examples for local patch-noise perturbations. The patch is localized in image space; token-response maps show which token IDs change inside and outside the corresponding token patch.}
-    \label{fig:rq3_qual_vqgan}
+    \textbf{(a) VQGAN}\par\smallskip
+    \includegraphics[width=\textwidth,height=0.35\textheight,keepaspectratio]{ch06_fig_patch_noise_qualitative_vqgan.png}
+    \begin{minipage}{0.96\textwidth}
+        \footnotesize\centering
+        Sample ILSVRC2012\_val\_00000293:
+        $\sigma=0.1$ ($R_{\mathrm{in}}=0.766$, $R_{\mathrm{out}}=0.297$, $\lambda_{\mathrm{enc}}=0.388$);
+        $\sigma=0.25$ ($0.969$, $0.630$, $0.651$);
+        $\sigma=0.5$ ($0.969$, $0.724$, $0.747$).
+    \end{minipage}
+
+    \medskip
+    \textbf{(b) LlamaGen}\par\smallskip
+    \includegraphics[width=\textwidth,height=0.35\textheight,keepaspectratio]{ch06_fig_patch_noise_qualitative_llamagen.png}
+    \begin{minipage}{0.96\textwidth}
+        \footnotesize\centering
+        Sample ILSVRC2012\_val\_00000293:
+        $\sigma=0.1$ ($R_{\mathrm{in}}=0.875$, $R_{\mathrm{out}}=0.323$, $\lambda_{\mathrm{enc}}=0.369$);
+        $\sigma=0.25$ ($0.938$, $0.526$, $0.561$);
+        $\sigma=0.5$ ($0.984$, $0.656$, $0.667$).
+    \end{minipage}
+    \caption{Selected local patch-noise examples for (a) VQGAN and (b) LlamaGen using the same input ID. The binary response maps use dark cells for unchanged assignments (0) and yellow cells for changed assignments (1); the marked rectangle identifies the perturbed patch. Metrics below each panel are sample-specific and ordered as $R_{\mathrm{in}}$, $R_{\mathrm{out}}$, and $\lambda_{\mathrm{enc}}$.}
+    \label{fig:rq3_qual_combined}
 \end{figure}
-\begin{figure}[p]
-    \centering
-    \includegraphics[width=\textwidth,height=0.78\textheight,keepaspectratio]{ch06_fig_patch_noise_qualitative_llamagen.png}
-    \caption{LlamaGen qualitative examples for local patch-noise perturbations, using the same perturbation protocol as Figure~\ref{fig:rq3_qual_vqgan}. The response maps should be compared with the marked patch to identify outside-patch token changes.}
-    \label{fig:rq3_qual_llamagen}
-\end{figure}
-\subsection{Local Response and Leakage}
+\paragraph{Local response and leakage.}
 \label{subsec:rq3_inside_outside_results}
 
-Table~\ref{tab:rq3_inside_outside_summary} reports the mean inside response, outside response, leakage ratio, and far-field response. The inside response is high for both tokenizers because the perturbation directly modifies the patch. At $\sigma=0.1$, VQGAN changes 78.8\% of inside tokens and LlamaGen changes 82.2\%. At $\sigma=0.5$, the inside response is almost saturated for both models.
+Table~\ref{tab:rq3_inside_outside_summary} reports the mean inside response
+$R_{\mathrm{in}}$, outside response $R_{\mathrm{out}}$, encoder leakage ratio
+$\lambda_{\mathrm{enc}}$, and far-field response. A high inside response is
+expected because the corresponding image pixels are directly perturbed. At
+$\sigma=0.1$, VQGAN changes 78.8\% of inside assignments and LlamaGen changes
+82.2\%. At $\sigma=0.5$, the inside response is almost saturated for both.
 
-Outside the patch, the response is already approximately 30\% at the lowest noise level. At $\sigma=0.25$, it rises to 44.1\% for VQGAN and 42.8\% for LlamaGen. At $\sigma=0.5$, it reaches 52.1\% for VQGAN and 50.5\% for LlamaGen. The leakage ratio also increases with $\sigma$: at the high level, outside tokens change about half as often as inside tokens.
+Token assignments also change outside the patch at the lowest tested level:
+$R_{\mathrm{out}}$ is 29.9\% for VQGAN and 30.2\% for LlamaGen at
+$\sigma=0.1$. It rises to 44.1\% and 42.8\%, respectively, at $\sigma=0.25$,
+then to 52.1\% and 50.5\% at $\sigma=0.5$. At the largest tested value,
+outside assignments change about half as often as inside assignments. A
+lower-noise sweep would be needed to estimate when $R_{\mathrm{out}}$
+approaches zero.
 
 \begin{table}[t]
     \centering
     \small
-    \begin{tabular}{llrrrrr}
-        \textbf{Tokenizer} & \textbf{Level} & $\boldsymbol{\sigma}$ & $\boldsymbol{R_{\mathrm{in}}}$ & $\boldsymbol{R_{\mathrm{out}}}$ & $\boldsymbol{\lambda_{\mathrm{enc}}}$ & \textbf{Far field} \\ \hline
-        VQGAN & low & 0.10 & 0.788 & 0.299 & 0.375 & 0.174 \\
-        VQGAN & mid & 0.25 & 0.952 & 0.441 & 0.462 & 0.265 \\
-        VQGAN & high & 0.50 & 0.988 & 0.521 & 0.527 & 0.333 \\
-        LlamaGen & low & 0.10 & 0.822 & 0.302 & 0.361 & 0.178 \\
-        LlamaGen & mid & 0.25 & 0.960 & 0.428 & 0.444 & 0.260 \\
-        LlamaGen & high & 0.50 & 0.991 & 0.505 & 0.509 & 0.328 \\
+    \begin{tabular}{lrrrrr}
+        \textbf{Tokenizer} & $\boldsymbol{\sigma}$ & $\boldsymbol{R_{\mathrm{in}}}$ & $\boldsymbol{R_{\mathrm{out}}}$ & $\boldsymbol{\lambda_{\mathrm{enc}}}$ & \textbf{Far field} \\ \hline
+        VQGAN & 0.10 & 0.788 & 0.299 & 0.375 & 0.174 \\
+        VQGAN & 0.25 & 0.952 & 0.441 & 0.462 & 0.265 \\
+        VQGAN & 0.50 & 0.988 & 0.521 & 0.527 & 0.333 \\ \hline
+        LlamaGen & 0.10 & 0.822 & 0.302 & 0.361 & 0.178 \\
+        LlamaGen & 0.25 & 0.960 & 0.428 & 0.444 & 0.260 \\
+        LlamaGen & 0.50 & 0.991 & 0.505 & 0.509 & 0.328 \\
     \end{tabular}
     \caption{Inside and outside token response under local patch-noise perturbations. The far-field column reports the mean token flip rate for positions at distance at least six token cells from the perturbed patch.}
     \label{tab:rq3_inside_outside_summary}
@@ -132,22 +173,29 @@ Outside the patch, the response is already approximately 30\% at the lowest nois
     \caption{Mean token response inside and outside the perturbed patch, with the corresponding leakage ratio. Outside-token changes increase monotonically with noise level for both tokenizers, and the outside/inside ratio also increases.}
     \label{fig:rq3_inside_outside_response}
 \end{figure}
-\subsection{Distance from the Perturbed Patch}
+\paragraph{Distance from the perturbed patch.}
 \label{subsec:rq3_distance_results}
 
-Figure~\ref{fig:rq3_distance_profile_flip} plots token flip probability as a function of distance from the patch. The response drops sharply over the first few token cells, but it does not go to zero. Table~\ref{tab:rq3_distance_band_summary} summarizes the same curves into distance bands. The far-field band, $d \geq 6$, is useful because it is far enough from the patch that a response there is not simply boundary spillover. For this band, the response is 17.4\% for VQGAN and 17.8\% for LlamaGen at $\sigma=0.1$. At $\sigma=0.5$, roughly one third of far-field tokens change.
+Figure~\ref{fig:rq3_distance_profile_flip} plots the response to the image
+perturbation as a function of distance from the patch. It declines sharply over
+the first few token cells but remains nonzero farther away. Table~\ref{tab:rq3_distance_band_summary}
+summarizes the curves using descriptive distance bands. The chosen far-field
+band, $d \geq 6$, separates distant positions from the immediate rings; it is
+not a measured boundary between local and global mechanisms. In this band,
+17.4\% of VQGAN assignments and 17.8\% of LlamaGen assignments change at
+$\sigma=0.1$. At $\sigma=0.5$, the fraction is roughly one third.
 
 \begin{table}[t]
     \centering
     \small
-    \begin{tabular}{llrrrr}
-        \textbf{Tokenizer} & \textbf{Level} & $\boldsymbol{\sigma}$ & \textbf{Inside} & \textbf{Boundary} & \textbf{Far field} \\ \hline
-        VQGAN & low & 0.10 & 0.788 & 0.597 & 0.174 \\
-        VQGAN & mid & 0.25 & 0.952 & 0.827 & 0.265 \\
-        VQGAN & high & 0.50 & 0.988 & 0.917 & 0.333 \\
-        LlamaGen & low & 0.10 & 0.822 & 0.613 & 0.178 \\
-        LlamaGen & mid & 0.25 & 0.960 & 0.832 & 0.260 \\
-        LlamaGen & high & 0.50 & 0.991 & 0.922 & 0.328 \\
+    \begin{tabular}{lrrrr}
+        \textbf{Tokenizer} & $\boldsymbol{\sigma}$ & \textbf{Inside} & \textbf{Boundary} & \textbf{Far field} \\ \hline
+        VQGAN & 0.10 & 0.788 & 0.597 & 0.174 \\
+        VQGAN & 0.25 & 0.952 & 0.827 & 0.265 \\
+        VQGAN & 0.50 & 0.988 & 0.917 & 0.333 \\ \hline
+        LlamaGen & 0.10 & 0.822 & 0.613 & 0.178 \\
+        LlamaGen & 0.25 & 0.960 & 0.832 & 0.260 \\
+        LlamaGen & 0.50 & 0.991 & 0.922 & 0.328 \\
     \end{tabular}
     \caption{Distance-band summary of token response. Inside denotes $d=0$, boundary denotes $d=1$, and far field denotes positions with Manhattan distance $d \geq 6$ from the perturbed patch.}
     \label{tab:rq3_distance_band_summary}
@@ -158,10 +206,15 @@ Figure~\ref{fig:rq3_distance_profile_flip} plots token flip probability as a fun
     \caption{Token flip probability as a function of distance from the perturbed patch. The response is strongest inside and near the patch, but remains measurable far from it.}
     \label{fig:rq3_distance_profile_flip}
 \end{figure}
-\subsection{Masked Patch Intervention}
+\paragraph{Masked patch intervention.}
 \label{subsec:rq3_masked_results}
 
-The masked-patch variant tests whether the same pattern appears under a stronger local intervention. Table~\ref{tab:rq3_masked_summary} shows that masking nearly saturates the inside response for both tokenizers, while the outside response remains large: 56.3\% for VQGAN and 49.5\% for LlamaGen. The masked result sharpens the patch-noise finding: even when the intervention is confined to one quarter of the image, the tokenizer can carry disruption to roughly half of the remaining token grid.
+The masked intervention defined in Equation~\ref{eq:rq3_patch_mask} replaces the
+same local patch with black. Table~\ref{tab:rq3_masked_summary} shows that this
+nearly saturates the inside response for both tokenizers, while the response to
+the image perturbation outside the patch is 56.3\% for VQGAN and 49.5\% for
+LlamaGen. Thus, a change confined to one quarter of the image changes token
+assignments across roughly half of the remaining grid.
 
 \begin{table}[t]
     \centering
@@ -177,14 +230,22 @@ The masked-patch variant tests whether the same pattern appears under a stronger
 \section{Discussion}
 \label{sec:rq3_discussion}
 
-Both tokenizers preserve a spatial gradient of response, but not strict spatial locality. The response is strongest inside the perturbed patch and near its boundary, yet far-field tokens change at every noise level. VQGAN and LlamaGen are also closer to each other here than in the clean reconstruction and codebook-usage results. LlamaGen has a slightly higher inside response at low noise and a slightly lower leakage ratio at each reported level, but the overall pattern is shared.
+Both tokenizers show the same measured pattern: token changes are most frequent
+inside and near the perturbed patch, decline over the nearby token cells, and
+remain nonzero at distant positions. LlamaGen has a slightly higher inside
+response at $\sigma=0.1$ and a slightly lower leakage ratio at each tested
+value, but the spatial pattern is shared.
 
-Several mechanisms in the encoder-tokenizer pipeline can plausibly contribute to this non-local leakage:
-\begin{enumerate}
-    \item \textbf{Receptive field overlap}: Standard convolutional encoders downsample the image through stacked layers with overlapping windows. A latent grid cell can therefore depend on pixels outside the nominal image block associated with that cell.
-    \item \textbf{Spatial normalization}: If normalization statistics are computed over spatial feature maps, a localized perturbation can change feature statistics beyond the visibly corrupted region.
-    \item \textbf{Quantization boundary amplification}: Nearest-neighbor quantization is discontinuous. A small continuous feature shift can cause a discrete token flip when the feature lies near a codebook boundary.
-\end{enumerate}
-Together, these mechanisms provide a plausible explanation for why the local visual changes measured here alter the discrete sequence representation outside the corrupted patch.
+The evaluated architecture contains overlapping $3\times3$ convolutions,
+GroupNorm, and an attention layer. A small feature movement can also cross a
+nearest-neighbor quantization boundary and change the assignment at that
+position, although pointwise quantization does not transmit changes between
+positions. The measurements do not isolate the contribution of these
+components. Future work can investigate attention, spatial normalization, and
+receptive-field overlap through ablations and intermediate-feature analysis.
 
-This result complements Chapter~\ref{ch:rq2}. Global noise showed that token identity is unstable when the whole image is perturbed. The patch experiment shows that the instability is not merely a consequence of perturbing every pixel. A bounded image-space perturbation can still alter many tokens outside the patch. For downstream autoregressive generation, locality in pixel space does not translate directly into locality in the discrete sequence.
+This result complements Chapter~\ref{ch:rq2}. Global noise changed many token
+assignments when every image region was perturbed. The study of perturbation
+locality shows how far those changes spread when the image modification is
+bounded: token assignments change well beyond the selected patch. These
+changes also alter the token sequences supplied to an autoregressive model.
