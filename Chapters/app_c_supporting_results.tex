@@ -1,0 +1,530 @@
+\chapter{Supporting Experimental Results}
+\label{app:supporting_results}
+
+The tables below retain the per-condition summaries behind the figures and
+selected comparisons in Chapters~\ref{ch:rq2}--\ref{ch:rq5}. A dash marks a
+measurement missing from the archived summary, not an estimated value.
+The model runs used the same nominal settings but did not save shared random
+interventions; cross-model values are descriptive comparisons.
+
+\section{Global image noise}
+\begingroup
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{llrrrrr}
+\caption[Complete ImageNet global-noise summary]{Complete ImageNet global-noise summary. PSNR values are dataset means in dB; flip is the fraction of changed token assignments, and top-100 mass is the assignment probability held by the 100 most frequent codes.}\label{tab:app_global_noise}\\
+\hline
+Tokenizer & $\sigma$ & $\operatorname{PSNR}(x,\hat{x}_{\sigma})$ & Flip & Perplexity & Top-100 mass & Active codes \\ \hline
+\endfirsthead
+\multicolumn{7}{l}{\small\itshape Continued from the previous page}\\
+\hline
+Tokenizer & $\sigma$ & $\operatorname{PSNR}(x,\hat{x}_{\sigma})$ & Flip & Perplexity & Top-100 mass & Active codes \\ \hline
+\endhead
+\hline
+\endfoot
+LlamaGen & 0.00 & 20.79 & -- & 16179 & 0.012 & 16{,}384 \\
+LlamaGen & 0.10 & 20.32 & 0.795 & 12829 & 0.040 & 16{,}381 \\
+LlamaGen & 0.20 & 19.11 & 0.910 & 10388 & 0.063 & 16{,}369 \\
+LlamaGen & 0.50 & 16.22 & 0.979 & 6434 & 0.115 & 16{,}203 \\
+VQGAN & 0.00 & 19.65 & -- & 910 & 0.165 & 972 \\
+VQGAN & 0.10 & 19.23 & 0.751 & 859 & 0.202 & 973 \\
+VQGAN & 0.20 & 18.11 & 0.890 & 780 & 0.249 & 971 \\
+VQGAN & 0.50 & 14.90 & 0.975 & 560 & 0.388 & 972 \\
+\end{longtable}
+\endgroup
+
+\pagebreak
+\section{Encoder response by distance from the patch}
+
+\begingroup
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{r|rrr|rrr}
+\caption[Token-flip probability by Manhattan distance from the perturbed patch]{Token-flip probability by Manhattan distance from the perturbed patch. Distance zero denotes tokens inside the patch. Every value is taken from the saved Chapter 6 distance profile; the six columns are model and noise-level pairs.}\label{tab:app_encoder_distance}\\
+\hline
+Distance & VQ 0.1 & VQ 0.25 & VQ 0.5 & Llama 0.1 & Llama 0.25 & Llama 0.5 \\ \hline
+\endfirsthead
+\multicolumn{7}{l}{\small\itshape Continued from the previous page}\\
+\hline
+Distance & VQ 0.1 & VQ 0.25 & VQ 0.5 & Llama 0.1 & Llama 0.25 & Llama 0.5 \\ \hline
+\endhead
+\hline
+\endfoot
+0 & 0.788 & 0.952 & 0.988 & 0.822 & 0.960 & 0.991 \\
+1 & 0.597 & 0.827 & 0.917 & 0.613 & 0.832 & 0.922 \\
+2 & 0.420 & 0.634 & 0.741 & 0.426 & 0.614 & 0.710 \\
+3 & 0.295 & 0.448 & 0.536 & 0.285 & 0.413 & 0.494 \\
+4 & 0.226 & 0.339 & 0.411 & 0.221 & 0.317 & 0.385 \\
+5 & 0.196 & 0.294 & 0.360 & 0.196 & 0.281 & 0.346 \\
+6 & 0.184 & 0.277 & 0.343 & 0.187 & 0.269 & 0.335 \\
+7 & 0.178 & 0.270 & 0.336 & 0.182 & 0.263 & 0.331 \\
+8 & 0.171 & 0.260 & 0.328 & 0.176 & 0.257 & 0.326 \\
+9 & 0.164 & 0.255 & 0.324 & 0.169 & 0.250 & 0.321 \\
+10 & 0.162 & 0.252 & 0.323 & 0.167 & 0.246 & 0.320 \\
+11 & 0.160 & 0.248 & 0.318 & 0.166 & 0.248 & 0.321 \\
+12 & 0.161 & 0.249 & 0.319 & 0.164 & 0.246 & 0.320 \\
+13 & 0.157 & 0.245 & 0.316 & 0.165 & 0.245 & 0.320 \\
+14 & 0.158 & 0.243 & 0.312 & 0.165 & 0.246 & 0.323 \\
+15 & 0.155 & 0.242 & 0.313 & 0.175 & 0.256 & 0.330 \\
+16 & 0.154 & 0.233 & 0.291 & 0.160 & 0.242 & 0.316 \\
+\end{longtable}
+\endgroup
+
+\section{Token edits on ImageNet validation}
+
+\begingroup
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{lllrrr}
+\caption[ImageNet validation token-edit fidelity over the patch]{ImageNet validation token-edit fidelity over the patch. Patch fraction is the target fraction of the $16\times16$ token grid; PSNR is in dB. All metrics compare the edited reconstruction with the clean reconstruction.}\label{tab:app_imagenet_val_patch_fidelity}\\
+\hline
+Tokenizer & Patch & Edit & PSNR & SSIM & LPIPS \\ \hline
+\endfirsthead
+\multicolumn{6}{l}{\small\itshape Continued from the previous page}\\
+\hline
+Tokenizer & Patch & Edit & PSNR & SSIM & LPIPS \\ \hline
+\endhead
+\hline
+\endfoot
+LlamaGen & 10\% & Closest & -- & 0.629 & 0.109 \\
+LlamaGen & 10\% & Orthogonal & 11.95 & 0.139 & 0.519 \\
+LlamaGen & 10\% & Random & 11.97 & 0.150 & 0.511 \\
+LlamaGen & 10\% & Farthest & 8.42 & 0.035 & 0.630 \\
+LlamaGen & 25\% & Closest & 20.36 & 0.622 & 0.134 \\
+LlamaGen & 25\% & Orthogonal & 11.45 & 0.129 & 0.599 \\
+LlamaGen & 25\% & Random & 11.48 & 0.138 & 0.592 \\
+LlamaGen & 25\% & Farthest & 7.74 & 0.027 & 0.702 \\
+LlamaGen & 50\% & Closest & 20.44 & 0.629 & 0.144 \\
+LlamaGen & 50\% & Orthogonal & 11.24 & 0.129 & 0.638 \\
+LlamaGen & 50\% & Random & 11.27 & 0.138 & 0.633 \\
+LlamaGen & 50\% & Farthest & 7.28 & 0.024 & 0.742 \\
+LlamaGen & 75\% & Closest & 20.53 & 0.631 & 0.154 \\
+LlamaGen & 75\% & Orthogonal & 10.85 & 0.120 & 0.675 \\
+LlamaGen & 75\% & Random & 10.88 & 0.130 & 0.671 \\
+LlamaGen & 75\% & Farthest & 6.61 & 0.019 & 0.782 \\
+VQGAN & 10\% & Closest & 20.44 & 0.598 & 0.139 \\
+VQGAN & 10\% & Orthogonal & 11.14 & 0.110 & 0.537 \\
+VQGAN & 10\% & Random & 13.41 & 0.210 & 0.598 \\
+VQGAN & 10\% & Farthest & 3.96 & 0.050 & 0.730 \\
+VQGAN & 25\% & Closest & 20.00 & 0.579 & 0.182 \\
+VQGAN & 25\% & Orthogonal & 10.66 & 0.098 & 0.614 \\
+VQGAN & 25\% & Random & 12.83 & 0.232 & 0.749 \\
+VQGAN & 25\% & Farthest & 3.74 & 0.050 & 0.790 \\
+VQGAN & 50\% & Closest & 19.98 & 0.579 & 0.206 \\
+VQGAN & 50\% & Orthogonal & 10.41 & 0.096 & 0.655 \\
+VQGAN & 50\% & Random & 12.53 & 0.258 & 0.823 \\
+VQGAN & 50\% & Farthest & 3.67 & 0.049 & 0.828 \\
+VQGAN & 75\% & Closest & 19.92 & 0.573 & 0.230 \\
+VQGAN & 75\% & Orthogonal & 10.01 & 0.088 & 0.697 \\
+VQGAN & 75\% & Random & 12.08 & 0.269 & 0.879 \\
+VQGAN & 75\% & Farthest & 3.64 & 0.046 & 0.861 \\
+\end{longtable}
+\endgroup
+
+\begingroup
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{lllrrr}
+\caption[ImageNet validation token-edit fidelity over the full image]{ImageNet validation token-edit fidelity over the full image. Patch fraction is the target fraction of the $16\times16$ token grid; PSNR is in dB. All metrics compare the edited reconstruction with the clean reconstruction.}\label{tab:app_imagenet_val_full_image_fidelity}\\
+\hline
+Tokenizer & Patch & Edit & PSNR & SSIM & LPIPS \\ \hline
+\endfirsthead
+\multicolumn{6}{l}{\small\itshape Continued from the previous page}\\
+\hline
+Tokenizer & Patch & Edit & PSNR & SSIM & LPIPS \\ \hline
+\endhead
+\hline
+\endfoot
+LlamaGen & 10\% & Closest & 29.34 & 0.944 & 0.025 \\
+LlamaGen & 10\% & Orthogonal & 20.83 & 0.838 & 0.116 \\
+LlamaGen & 10\% & Random & 20.86 & 0.841 & 0.115 \\
+LlamaGen & 10\% & Farthest & 17.58 & 0.807 & 0.151 \\
+LlamaGen & 25\% & Closest & 25.53 & 0.874 & 0.057 \\
+LlamaGen & 25\% & Orthogonal & 16.74 & 0.656 & 0.261 \\
+LlamaGen & 25\% & Random & 16.77 & 0.660 & 0.258 \\
+LlamaGen & 25\% & Farthest & 13.22 & 0.600 & 0.324 \\
+LlamaGen & 50\% & Closest & 23.13 & 0.784 & 0.097 \\
+LlamaGen & 50\% & Orthogonal & 13.99 & 0.433 & 0.442 \\
+LlamaGen & 50\% & Random & 14.03 & 0.441 & 0.438 \\
+LlamaGen & 50\% & Farthest & 10.18 & 0.352 & 0.532 \\
+LlamaGen & 75\% & Closest & 21.42 & 0.687 & 0.138 \\
+LlamaGen & 75\% & Orthogonal & 11.76 & 0.219 & 0.617 \\
+LlamaGen & 75\% & Random & 11.79 & 0.228 & 0.613 \\
+LlamaGen & 75\% & Farthest & 7.60 & 0.122 & 0.723 \\
+VQGAN & 10\% & Closest & 28.30 & 0.929 & 0.034 \\
+VQGAN & 10\% & Orthogonal & 19.65 & 0.799 & 0.141 \\
+VQGAN & 10\% & Random & 21.29 & 0.806 & 0.136 \\
+VQGAN & 10\% & Farthest & 12.95 & 0.726 & 0.221 \\
+VQGAN & 25\% & Closest & 24.60 & 0.842 & 0.080 \\
+VQGAN & 25\% & Orthogonal & 15.77 & 0.604 & 0.295 \\
+VQGAN & 25\% & Random & 17.38 & 0.609 & 0.321 \\
+VQGAN & 25\% & Farthest & 9.03 & 0.474 & 0.440 \\
+VQGAN & 50\% & Closest & 22.27 & 0.734 & 0.139 \\
+VQGAN & 50\% & Orthogonal & 13.09 & 0.378 & 0.480 \\
+VQGAN & 50\% & Random & 14.82 & 0.425 & 0.557 \\
+VQGAN & 50\% & Farthest & 6.42 & 0.243 & 0.672 \\
+VQGAN & 75\% & Closest & 20.63 & 0.625 & 0.206 \\
+VQGAN & 75\% & Orthogonal & 10.91 & 0.175 & 0.651 \\
+VQGAN & 75\% & Random & 12.82 & 0.308 & 0.788 \\
+VQGAN & 75\% & Farthest & 4.54 & 0.091 & 0.839 \\
+\end{longtable}
+\endgroup
+
+\begingroup
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{lllrrrr}
+\caption[ImageNet validation decoder locality after token edits]{ImageNet validation decoder locality after token edits. Inside and outside are mean pixel RMSE relative to the clean reconstruction; leakage is the median per-image outside-to-inside ratio. The 99th percentile is the mean across images of each image's outside-patch 99th percentile.}\label{tab:app_imagenet_val_locality}\\
+\hline
+Tokenizer & Patch & Edit & Inside & Outside & Leakage & Outside P99 \\ \hline
+\endfirsthead
+\multicolumn{7}{l}{\small\itshape Continued from the previous page}\\
+\hline
+Tokenizer & Patch & Edit & Inside & Outside & Leakage & Outside P99 \\ \hline
+\endhead
+\hline
+\endfoot
+LlamaGen & 10\% & Closest & 0.067 & 0.008 & 0.122 & 0.080 \\
+LlamaGen & 10\% & Orthogonal & 0.210 & 0.023 & 0.111 & 0.198 \\
+LlamaGen & 10\% & Random & 0.208 & 0.023 & 0.111 & 0.196 \\
+LlamaGen & 10\% & Farthest & 0.329 & 0.030 & 0.091 & 0.256 \\
+LlamaGen & 25\% & Closest & 0.067 & 0.013 & 0.193 & 0.105 \\
+LlamaGen & 25\% & Orthogonal & 0.222 & 0.039 & 0.176 & 0.251 \\
+LlamaGen & 25\% & Random & 0.220 & 0.038 & 0.175 & 0.250 \\
+LlamaGen & 25\% & Farthest & 0.356 & 0.050 & 0.141 & 0.328 \\
+LlamaGen & 50\% & Closest & 0.066 & 0.019 & 0.292 & 0.131 \\
+LlamaGen & 50\% & Orthogonal & 0.229 & 0.061 & 0.267 & 0.303 \\
+LlamaGen & 50\% & Random & 0.226 & 0.060 & 0.267 & 0.302 \\
+LlamaGen & 50\% & Farthest & 0.376 & 0.078 & 0.210 & 0.403 \\
+LlamaGen & 75\% & Closest & 0.065 & 0.027 & 0.418 & 0.157 \\
+LlamaGen & 75\% & Orthogonal & 0.242 & 0.092 & 0.385 & 0.352 \\
+LlamaGen & 75\% & Random & 0.240 & 0.091 & 0.383 & 0.352 \\
+LlamaGen & 75\% & Farthest & 0.410 & 0.120 & 0.299 & 0.477 \\
+VQGAN & 10\% & Closest & 0.070 & 0.011 & 0.166 & 0.110 \\
+VQGAN & 10\% & Orthogonal & 0.227 & 0.029 & 0.126 & 0.258 \\
+VQGAN & 10\% & Random & 0.187 & 0.030 & 0.159 & 0.235 \\
+VQGAN & 10\% & Farthest & 0.592 & 0.053 & 0.088 & 0.549 \\
+VQGAN & 25\% & Closest & 0.072 & 0.019 & 0.263 & 0.148 \\
+VQGAN & 25\% & Orthogonal & 0.239 & 0.046 & 0.187 & 0.317 \\
+VQGAN & 25\% & Random & 0.200 & 0.050 & 0.249 & 0.302 \\
+VQGAN & 25\% & Farthest & 0.607 & 0.090 & 0.147 & 0.673 \\
+VQGAN & 50\% & Closest & 0.072 & 0.028 & 0.390 & 0.183 \\
+VQGAN & 50\% & Orthogonal & 0.247 & 0.067 & 0.270 & 0.373 \\
+VQGAN & 50\% & Random & 0.207 & 0.075 & 0.360 & 0.352 \\
+VQGAN & 50\% & Farthest & 0.611 & 0.140 & 0.231 & 0.746 \\
+VQGAN & 75\% & Closest & 0.074 & 0.039 & 0.531 & 0.216 \\
+VQGAN & 75\% & Orthogonal & 0.261 & 0.097 & 0.375 & 0.425 \\
+VQGAN & 75\% & Random & 0.220 & 0.104 & 0.485 & 0.382 \\
+VQGAN & 75\% & Farthest & 0.613 & 0.213 & 0.352 & 0.780 \\
+\end{longtable}
+\endgroup
+
+\begingroup
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{lllrrrr}
+\caption[ImageNet validation variation across images for each token-edit condition]{ImageNet validation variation across images for each token-edit condition. Columns are the saved per-condition standard deviations: patch PSNR in dB, patch LPIPS, and inside and outside pixel RMSE.}\label{tab:app_imagenet_val_variability}\\
+\hline
+Tokenizer & Patch & Edit & PSNR SD & LPIPS SD & Inside SD & Outside SD \\ \hline
+\endfirsthead
+\multicolumn{7}{l}{\small\itshape Continued from the previous page}\\
+\hline
+Tokenizer & Patch & Edit & PSNR SD & LPIPS SD & Inside SD & Outside SD \\ \hline
+\endhead
+\hline
+\endfoot
+LlamaGen & 10\% & Closest & -- & 0.041 & 0.026 & 0.003 \\
+LlamaGen & 10\% & Orthogonal & 2.23 & 0.081 & 0.056 & 0.007 \\
+LlamaGen & 10\% & Random & 2.32 & 0.081 & 0.058 & 0.007 \\
+LlamaGen & 10\% & Farthest & 2.16 & 0.100 & 0.092 & 0.008 \\
+LlamaGen & 25\% & Closest & 3.02 & 0.040 & 0.023 & 0.005 \\
+LlamaGen & 25\% & Orthogonal & 1.76 & 0.067 & 0.049 & 0.010 \\
+LlamaGen & 25\% & Random & 1.82 & 0.068 & 0.050 & 0.010 \\
+LlamaGen & 25\% & Farthest & 1.83 & 0.086 & 0.086 & 0.013 \\
+LlamaGen & 50\% & Closest & 2.75 & 0.040 & 0.021 & 0.007 \\
+LlamaGen & 50\% & Orthogonal & 1.57 & 0.062 & 0.046 & 0.015 \\
+LlamaGen & 50\% & Random & 1.62 & 0.061 & 0.046 & 0.015 \\
+LlamaGen & 50\% & Farthest & 1.66 & 0.080 & 0.083 & 0.020 \\
+LlamaGen & 75\% & Closest & 2.59 & 0.041 & 0.020 & 0.011 \\
+LlamaGen & 75\% & Orthogonal & 1.51 & 0.061 & 0.049 & 0.025 \\
+LlamaGen & 75\% & Random & 1.55 & 0.061 & 0.049 & 0.025 \\
+LlamaGen & 75\% & Farthest & 1.58 & 0.079 & 0.087 & 0.035 \\
+VQGAN & 10\% & Closest & 3.88 & 0.052 & 0.028 & 0.005 \\
+VQGAN & 10\% & Orthogonal & 2.05 & 0.088 & 0.056 & 0.010 \\
+VQGAN & 10\% & Random & 2.62 & 0.103 & 0.058 & 0.011 \\
+VQGAN & 10\% & Farthest & 1.34 & 0.089 & 0.104 & 0.014 \\
+VQGAN & 25\% & Closest & 3.16 & 0.053 & 0.025 & 0.008 \\
+VQGAN & 25\% & Orthogonal & 1.60 & 0.075 & 0.047 & 0.014 \\
+VQGAN & 25\% & Random & 2.17 & 0.082 & 0.054 & 0.017 \\
+VQGAN & 25\% & Farthest & 1.13 & 0.078 & 0.089 & 0.022 \\
+VQGAN & 50\% & Closest & 2.85 & 0.054 & 0.024 & 0.012 \\
+VQGAN & 50\% & Orthogonal & 1.39 & 0.069 & 0.043 & 0.020 \\
+VQGAN & 50\% & Random & 1.98 & 0.075 & 0.052 & 0.023 \\
+VQGAN & 50\% & Farthest & 1.08 & 0.076 & 0.084 & 0.029 \\
+VQGAN & 75\% & Closest & 2.65 & 0.056 & 0.023 & 0.017 \\
+VQGAN & 75\% & Orthogonal & 1.26 & 0.069 & 0.043 & 0.029 \\
+VQGAN & 75\% & Random & 1.93 & 0.075 & 0.056 & 0.030 \\
+VQGAN & 75\% & Farthest & 1.09 & 0.076 & 0.086 & 0.049 \\
+\end{longtable}
+\endgroup
+
+\section{Token edits on ImageNet-V2}
+
+\begingroup
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{lllrrr}
+\caption[ImageNet-V2 token-edit fidelity over the patch]{ImageNet-V2 token-edit fidelity over the patch. Patch fraction is the target fraction of the $16\times16$ token grid; PSNR is in dB. All metrics compare the edited reconstruction with the clean reconstruction.}\label{tab:app_imagenetv2_patch_fidelity}\\
+\hline
+Tokenizer & Patch & Edit & PSNR & SSIM & LPIPS \\ \hline
+\endfirsthead
+\multicolumn{6}{l}{\small\itshape Continued from the previous page}\\
+\hline
+Tokenizer & Patch & Edit & PSNR & SSIM & LPIPS \\ \hline
+\endhead
+\hline
+\endfoot
+LlamaGen & 10\% & Closest & 20.72 & 0.634 & 0.110 \\
+LlamaGen & 10\% & Orthogonal & 11.92 & 0.139 & 0.513 \\
+LlamaGen & 10\% & Random & 11.93 & 0.149 & 0.505 \\
+LlamaGen & 10\% & Farthest & 8.29 & 0.031 & 0.625 \\
+LlamaGen & 25\% & Closest & 20.44 & 0.628 & 0.136 \\
+LlamaGen & 25\% & Orthogonal & 11.43 & 0.128 & 0.592 \\
+LlamaGen & 25\% & Random & 11.45 & 0.139 & 0.586 \\
+LlamaGen & 25\% & Farthest & 7.59 & 0.024 & 0.698 \\
+LlamaGen & 50\% & Closest & 20.54 & 0.636 & 0.146 \\
+LlamaGen & 50\% & Orthogonal & 11.22 & 0.129 & 0.632 \\
+LlamaGen & 50\% & Random & 11.22 & 0.138 & 0.627 \\
+LlamaGen & 50\% & Farthest & 7.11 & 0.021 & 0.740 \\
+LlamaGen & 75\% & Closest & 20.65 & 0.638 & 0.155 \\
+LlamaGen & 75\% & Orthogonal & 10.82 & 0.121 & 0.670 \\
+LlamaGen & 75\% & Random & 10.85 & 0.130 & 0.666 \\
+LlamaGen & 75\% & Farthest & 6.45 & 0.015 & 0.780 \\
+VQGAN & 10\% & Closest & 20.52 & 0.605 & 0.140 \\
+VQGAN & 10\% & Orthogonal & 11.15 & 0.111 & 0.531 \\
+VQGAN & 10\% & Random & 13.38 & 0.210 & 0.596 \\
+VQGAN & 10\% & Farthest & 3.94 & 0.048 & 0.726 \\
+VQGAN & 25\% & Closest & 20.10 & 0.587 & 0.183 \\
+VQGAN & 25\% & Orthogonal & 10.68 & 0.099 & 0.608 \\
+VQGAN & 25\% & Random & 12.82 & 0.233 & 0.749 \\
+VQGAN & 25\% & Farthest & 3.71 & 0.047 & 0.786 \\
+VQGAN & 50\% & Closest & 20.10 & 0.588 & 0.207 \\
+VQGAN & 50\% & Orthogonal & 10.42 & 0.097 & 0.649 \\
+VQGAN & 50\% & Random & 12.51 & 0.259 & 0.822 \\
+VQGAN & 50\% & Farthest & 3.64 & 0.047 & 0.822 \\
+VQGAN & 75\% & Closest & 20.05 & 0.581 & 0.232 \\
+VQGAN & 75\% & Orthogonal & 10.01 & 0.089 & 0.691 \\
+VQGAN & 75\% & Random & 12.04 & 0.270 & 0.876 \\
+VQGAN & 75\% & Farthest & 3.60 & 0.044 & 0.854 \\
+\end{longtable}
+\endgroup
+
+\begingroup
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{lllrrr}
+\caption[ImageNet-V2 token-edit fidelity over the full image]{ImageNet-V2 token-edit fidelity over the full image. Patch fraction is the target fraction of the $16\times16$ token grid; PSNR is in dB. All metrics compare the edited reconstruction with the clean reconstruction.}\label{tab:app_imagenetv2_full_image_fidelity}\\
+\hline
+Tokenizer & Patch & Edit & PSNR & SSIM & LPIPS \\ \hline
+\endfirsthead
+\multicolumn{6}{l}{\small\itshape Continued from the previous page}\\
+\hline
+Tokenizer & Patch & Edit & PSNR & SSIM & LPIPS \\ \hline
+\endhead
+\hline
+\endfoot
+LlamaGen & 10\% & Closest & 29.41 & 0.945 & 0.025 \\
+LlamaGen & 10\% & Orthogonal & 20.85 & 0.841 & 0.117 \\
+LlamaGen & 10\% & Random & 20.87 & 0.843 & 0.115 \\
+LlamaGen & 10\% & Farthest & 17.50 & 0.809 & 0.151 \\
+LlamaGen & 25\% & Closest & 25.63 & 0.877 & 0.058 \\
+LlamaGen & 25\% & Orthogonal & 16.74 & 0.660 & 0.260 \\
+LlamaGen & 25\% & Random & 16.77 & 0.664 & 0.257 \\
+LlamaGen & 25\% & Farthest & 13.10 & 0.603 & 0.324 \\
+LlamaGen & 50\% & Closest & 23.25 & 0.789 & 0.098 \\
+LlamaGen & 50\% & Orthogonal & 13.98 & 0.437 & 0.440 \\
+LlamaGen & 50\% & Random & 13.99 & 0.444 & 0.436 \\
+LlamaGen & 50\% & Farthest & 10.03 & 0.353 & 0.532 \\
+LlamaGen & 75\% & Closest & 21.55 & 0.694 & 0.139 \\
+LlamaGen & 75\% & Orthogonal & 11.74 & 0.222 & 0.613 \\
+LlamaGen & 75\% & Random & 11.77 & 0.231 & 0.608 \\
+LlamaGen & 75\% & Farthest & 7.44 & 0.120 & 0.721 \\
+VQGAN & 10\% & Closest & 28.46 & 0.931 & 0.034 \\
+VQGAN & 10\% & Orthogonal & 19.73 & 0.803 & 0.141 \\
+VQGAN & 10\% & Random & 21.37 & 0.810 & 0.137 \\
+VQGAN & 10\% & Farthest & 12.96 & 0.732 & 0.222 \\
+VQGAN & 25\% & Closest & 24.76 & 0.846 & 0.081 \\
+VQGAN & 25\% & Orthogonal & 15.83 & 0.610 & 0.293 \\
+VQGAN & 25\% & Random & 17.45 & 0.617 & 0.323 \\
+VQGAN & 25\% & Farthest & 9.02 & 0.482 & 0.439 \\
+VQGAN & 50\% & Closest & 22.43 & 0.741 & 0.141 \\
+VQGAN & 50\% & Orthogonal & 13.12 & 0.384 & 0.477 \\
+VQGAN & 50\% & Random & 14.84 & 0.431 & 0.557 \\
+VQGAN & 50\% & Farthest & 6.39 & 0.247 & 0.667 \\
+VQGAN & 75\% & Closest & 20.78 & 0.633 & 0.208 \\
+VQGAN & 75\% & Orthogonal & 10.91 & 0.178 & 0.645 \\
+VQGAN & 75\% & Random & 12.79 & 0.310 & 0.785 \\
+VQGAN & 75\% & Farthest & 4.50 & 0.091 & 0.832 \\
+\end{longtable}
+\endgroup
+
+\begingroup
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{lllrrrr}
+\caption[ImageNet-V2 decoder locality after token edits]{ImageNet-V2 decoder locality after token edits. Inside and outside are mean pixel RMSE relative to the clean reconstruction; leakage is the median per-image outside-to-inside ratio. The 99th percentile is the mean across images of each image's outside-patch 99th percentile.}\label{tab:app_imagenetv2_locality}\\
+\hline
+Tokenizer & Patch & Edit & Inside & Outside & Leakage & Outside P99 \\ \hline
+\endfirsthead
+\multicolumn{7}{l}{\small\itshape Continued from the previous page}\\
+\hline
+Tokenizer & Patch & Edit & Inside & Outside & Leakage & Outside P99 \\ \hline
+\endhead
+\hline
+\endfoot
+LlamaGen & 10\% & Closest & 0.067 & 0.008 & 0.120 & 0.078 \\
+LlamaGen & 10\% & Orthogonal & 0.210 & 0.023 & 0.109 & 0.194 \\
+LlamaGen & 10\% & Random & 0.209 & 0.023 & 0.108 & 0.192 \\
+LlamaGen & 10\% & Farthest & 0.334 & 0.029 & 0.088 & 0.253 \\
+LlamaGen & 25\% & Closest & 0.067 & 0.013 & 0.190 & 0.102 \\
+LlamaGen & 25\% & Orthogonal & 0.223 & 0.038 & 0.173 & 0.246 \\
+LlamaGen & 25\% & Random & 0.221 & 0.038 & 0.172 & 0.245 \\
+LlamaGen & 25\% & Farthest & 0.362 & 0.049 & 0.137 & 0.325 \\
+LlamaGen & 50\% & Closest & 0.065 & 0.019 & 0.288 & 0.126 \\
+LlamaGen & 50\% & Orthogonal & 0.229 & 0.060 & 0.265 & 0.298 \\
+LlamaGen & 50\% & Random & 0.228 & 0.059 & 0.263 & 0.298 \\
+LlamaGen & 50\% & Farthest & 0.384 & 0.077 & 0.206 & 0.402 \\
+LlamaGen & 75\% & Closest & 0.064 & 0.027 & 0.411 & 0.151 \\
+LlamaGen & 75\% & Orthogonal & 0.244 & 0.092 & 0.381 & 0.348 \\
+LlamaGen & 75\% & Random & 0.241 & 0.090 & 0.378 & 0.348 \\
+LlamaGen & 75\% & Farthest & 0.419 & 0.120 & 0.293 & 0.478 \\
+VQGAN & 10\% & Closest & 0.069 & 0.011 & 0.162 & 0.106 \\
+VQGAN & 10\% & Orthogonal & 0.227 & 0.028 & 0.124 & 0.250 \\
+VQGAN & 10\% & Random & 0.187 & 0.029 & 0.154 & 0.228 \\
+VQGAN & 10\% & Farthest & 0.593 & 0.052 & 0.086 & 0.543 \\
+VQGAN & 25\% & Closest & 0.072 & 0.018 & 0.258 & 0.141 \\
+VQGAN & 25\% & Orthogonal & 0.239 & 0.044 & 0.184 & 0.308 \\
+VQGAN & 25\% & Random & 0.200 & 0.049 & 0.242 & 0.291 \\
+VQGAN & 25\% & Farthest & 0.609 & 0.088 & 0.145 & 0.668 \\
+VQGAN & 50\% & Closest & 0.071 & 0.027 & 0.385 & 0.174 \\
+VQGAN & 50\% & Orthogonal & 0.247 & 0.066 & 0.267 & 0.364 \\
+VQGAN & 50\% & Random & 0.209 & 0.073 & 0.353 & 0.341 \\
+VQGAN & 50\% & Farthest & 0.613 & 0.138 & 0.229 & 0.744 \\
+VQGAN & 75\% & Closest & 0.073 & 0.038 & 0.523 & 0.205 \\
+VQGAN & 75\% & Orthogonal & 0.262 & 0.096 & 0.371 & 0.417 \\
+VQGAN & 75\% & Random & 0.222 & 0.103 & 0.480 & 0.372 \\
+VQGAN & 75\% & Farthest & 0.616 & 0.213 & 0.350 & 0.779 \\
+\end{longtable}
+\endgroup
+
+\begingroup
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{lllrrrr}
+\caption[ImageNet-V2 variation across images for each token-edit condition]{ImageNet-V2 variation across images for each token-edit condition. Columns are the saved per-condition standard deviations: patch PSNR in dB, patch LPIPS, and inside and outside pixel RMSE.}\label{tab:app_imagenetv2_variability}\\
+\hline
+Tokenizer & Patch & Edit & PSNR SD & LPIPS SD & Inside SD & Outside SD \\ \hline
+\endfirsthead
+\multicolumn{7}{l}{\small\itshape Continued from the previous page}\\
+\hline
+Tokenizer & Patch & Edit & PSNR SD & LPIPS SD & Inside SD & Outside SD \\ \hline
+\endhead
+\hline
+\endfoot
+LlamaGen & 10\% & Closest & 3.65 & 0.040 & 0.025 & 0.003 \\
+LlamaGen & 10\% & Orthogonal & 2.20 & 0.079 & 0.055 & 0.006 \\
+LlamaGen & 10\% & Random & 2.31 & 0.079 & 0.057 & 0.006 \\
+LlamaGen & 10\% & Farthest & 2.11 & 0.100 & 0.091 & 0.008 \\
+LlamaGen & 25\% & Closest & 2.98 & 0.040 & 0.022 & 0.005 \\
+LlamaGen & 25\% & Orthogonal & 1.76 & 0.068 & 0.049 & 0.010 \\
+LlamaGen & 25\% & Random & 1.83 & 0.067 & 0.050 & 0.010 \\
+LlamaGen & 25\% & Farthest & 1.79 & 0.086 & 0.086 & 0.013 \\
+LlamaGen & 50\% & Closest & 2.72 & 0.040 & 0.021 & 0.007 \\
+LlamaGen & 50\% & Orthogonal & 1.57 & 0.061 & 0.046 & 0.015 \\
+LlamaGen & 50\% & Random & 1.62 & 0.061 & 0.047 & 0.015 \\
+LlamaGen & 50\% & Farthest & 1.62 & 0.080 & 0.083 & 0.019 \\
+LlamaGen & 75\% & Closest & 2.58 & 0.040 & 0.020 & 0.011 \\
+LlamaGen & 75\% & Orthogonal & 1.53 & 0.060 & 0.050 & 0.025 \\
+LlamaGen & 75\% & Random & 1.57 & 0.060 & 0.050 & 0.025 \\
+LlamaGen & 75\% & Farthest & 1.54 & 0.078 & 0.087 & 0.035 \\
+VQGAN & 10\% & Closest & 3.79 & 0.052 & 0.027 & 0.005 \\
+VQGAN & 10\% & Orthogonal & 2.05 & 0.087 & 0.056 & 0.009 \\
+VQGAN & 10\% & Random & 2.61 & 0.103 & 0.057 & 0.010 \\
+VQGAN & 10\% & Farthest & 1.33 & 0.089 & 0.103 & 0.013 \\
+VQGAN & 25\% & Closest & 3.09 & 0.053 & 0.025 & 0.008 \\
+VQGAN & 25\% & Orthogonal & 1.62 & 0.075 & 0.047 & 0.014 \\
+VQGAN & 25\% & Random & 2.16 & 0.082 & 0.053 & 0.016 \\
+VQGAN & 25\% & Farthest & 1.13 & 0.078 & 0.089 & 0.021 \\
+VQGAN & 50\% & Closest & 2.80 & 0.054 & 0.023 & 0.011 \\
+VQGAN & 50\% & Orthogonal & 1.41 & 0.068 & 0.043 & 0.019 \\
+VQGAN & 50\% & Random & 1.98 & 0.074 & 0.052 & 0.022 \\
+VQGAN & 50\% & Farthest & 1.07 & 0.075 & 0.084 & 0.028 \\
+VQGAN & 75\% & Closest & 2.63 & 0.057 & 0.023 & 0.017 \\
+VQGAN & 75\% & Orthogonal & 1.28 & 0.068 & 0.044 & 0.028 \\
+VQGAN & 75\% & Random & 1.95 & 0.073 & 0.056 & 0.029 \\
+VQGAN & 75\% & Farthest & 1.09 & 0.074 & 0.086 & 0.048 \\
+\end{longtable}
+\endgroup
+
+\section{Distribution-shift artifact inventory}
+
+\begingroup
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{llrrr}
+\caption[Encoded Chapter 8 artifacts]{Encoded Chapter 8 artifacts. Every row has a $16\times16$ token grid and satisfies total tokens = images $\times$ 256. Active codes count indices observed at least once on that dataset.}\label{tab:app_shift_inventory}\\
+\hline
+Tokenizer & Dataset & Images & Total tokens & Active codes \\ \hline
+\endfirsthead
+\multicolumn{5}{l}{\small\itshape Continued from the previous page}\\
+\hline
+Tokenizer & Dataset & Images & Total tokens & Active codes \\ \hline
+\endhead
+\hline
+\endfoot
+LlamaGen & BloodMNIST & 17{,}092 & 4{,}375{,}552 & 16{,}124 \\
+LlamaGen & ImageNet & 50{,}000 & 12{,}800{,}000 & 16{,}384 \\
+LlamaGen & ImageNet-Sketch & 50{,}889 & 13{,}027{,}584 & 16{,}383 \\
+LlamaGen & ImageNet-V2 & 10{,}000 & 2{,}560{,}000 & 16{,}384 \\
+LlamaGen & ObjectNet & 50{,}273 & 12{,}869{,}888 & 16{,}384 \\
+LlamaGen & OrganAMNIST & 57{,}187 & 14{,}639{,}872 & 16{,}383 \\
+LlamaGen & RVL-CDIP & 39{,}996 & 10{,}238{,}976 & 16{,}288 \\
+VQGAN & BloodMNIST & 17{,}092 & 4{,}375{,}552 & 966 \\
+VQGAN & ImageNet & 50{,}000 & 12{,}800{,}000 & 972 \\
+VQGAN & ImageNet-Sketch & 50{,}889 & 13{,}027{,}584 & 972 \\
+VQGAN & ImageNet-V2 & 10{,}000 & 2{,}560{,}000 & 972 \\
+VQGAN & ObjectNet & 50{,}273 & 12{,}869{,}888 & 972 \\
+VQGAN & OrganAMNIST & 57{,}187 & 14{,}639{,}872 & 972 \\
+VQGAN & RVL-CDIP & 39{,}996 & 10{,}238{,}976 & 971 \\
+\end{longtable}
+\endgroup
+
+\section{Reproducibility index}
+
+\begingroup
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{p{0.38\textwidth}p{0.32\textwidth}ll}
+\caption[Script and notebook revisions in the audited snapshot]{Script and notebook revisions in the audited snapshot. Modified means the saved file differs from the listed commit. The complete SHA-256 digests and file paths are in the versioned reproducibility manifest.}\label{tab:app_reproducibility_index}\\
+\hline
+Component & Repository & Revision & State \\ \hline
+\endfirsthead
+\multicolumn{4}{l}{\small\itshape Continued from the previous page}\\
+\hline
+Component & Repository & Revision & State \\ \hline
+\endhead
+\hline
+\endfoot
+LlamaGen reconstruction exporter & LlamaGen & \texttt{69154557} & modified \\
+LlamaGen robustness exporter & LlamaGen & \texttt{d5e9f357} & committed \\
+LlamaGen code-usage exporter & LlamaGen & \texttt{e223eb4d} & committed \\
+VQGAN reconstruction exporter & taming-transformers & \texttt{c8e99635} & modified \\
+VQGAN robustness exporter & taming-transformers & \texttt{b3ecc869} & committed \\
+VQGAN code-usage exporter & taming-transformers & \texttt{f9d98b81} & committed \\
+RQ1 analysis notebook & vq-explore & \texttt{16025e81} & committed \\
+RQ2 analysis notebook & vq-explore & \texttt{5cb7bc26} & modified \\
+RQ3 analysis notebook & vq-explore & \texttt{02f0e527} & committed \\
+RQ4 analysis notebook & vq-explore & \texttt{fa16dcb9} & committed \\
+RQ5 analysis notebook & vq-explore & \texttt{929634c9} & committed \\
+\end{longtable}
+\endgroup
