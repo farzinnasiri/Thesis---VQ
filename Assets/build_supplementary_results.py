@@ -26,11 +26,11 @@ def model_name(value):
     return "LlamaGen" if value.lower() == "llamagen" else "VQGAN"
 
 
-def latex_table(caption, label, columns, headers, body, font_size="small"):
+def latex_table(caption, label, columns, headers, body):
     short_caption = caption.split(". ", 1)[0].rstrip(".")
     result = [
         "\\begingroup",
-        f"\\{font_size}",
+        "\\small",
         "\\setlength{\\tabcolsep}{4pt}",
         f"\\begin{{longtable}}{{{columns}}}",
         f"\\caption[{short_caption}]{{{caption}}}\\label{{{label}}}\\\\",
@@ -231,28 +231,5 @@ parts.append(
     )
 )
 
-manifest = rows("Assets/reproducibility_manifest.csv")
-parts.extend([r"\section{Reproducibility index}", ""])
-parts.append(
-    latex_table(
-        "Script and notebook revisions in the audited snapshot. Modified means "
-        "the saved file differs from the listed commit. The complete SHA-256 "
-        "digests and file paths are in the versioned reproducibility manifest.",
-        "tab:app_reproducibility_index",
-        r"p{0.38\textwidth}p{0.32\textwidth}ll",
-        ["Component", "Repository", "Revision", "State"],
-        [
-            [
-                row["component"],
-                row["repository"].split("/")[-1].replace("_", r"\_"),
-                r"\texttt{" + row["revision"][:8] + "}",
-                row["working_tree_state"],
-            ]
-            for row in manifest
-        ],
-        font_size="scriptsize",
-    )
-)
-
 OUTPUT.write_text("\n".join(parts).rstrip() + "\n")
-print(f"Wrote {OUTPUT} from {len(manifest)} manifest records and archived chapter summaries")
+print(f"Wrote {OUTPUT} from archived chapter summaries")
