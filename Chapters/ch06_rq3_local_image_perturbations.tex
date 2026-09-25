@@ -76,7 +76,9 @@ We define the encoder leakage ratio as
          {R_{\mathrm{in}}(\sigma,P) + \varepsilon}
     \label{eq:rq3_leakage_ratio}
 \end{equation}
-where $\varepsilon>0$ prevents division by zero. All responses are fractions of
+where $\varepsilon=10^{-8}$ prevents division by zero. The reported
+$\lambda_{\mathrm{enc}}$ is the mean of per-image ratios, not the ratio of the
+tabulated mean responses. All responses are fractions of
 token assignments that differ from the clean encoding. A value of
 $\lambda_{\mathrm{enc}}$ near zero indicates that changes are mostly confined
 to the patch, while a value near one indicates similar change rates inside and
@@ -131,7 +133,7 @@ Figure~\ref{fig:rq3_qual_combined} shows selected examples for the two tokenizer
         $\sigma=0.25$ ($0.938$, $0.526$, $0.561$);
         $\sigma=0.5$ ($0.984$, $0.656$, $0.667$).
     \end{minipage}
-    \caption{Selected local patch-noise examples for (a) VQGAN and (b) LlamaGen using the same input ID. The binary response maps use dark cells for unchanged assignments (0) and yellow cells for changed assignments (1); the marked rectangle identifies the perturbed patch. Metrics below each panel are sample-specific and ordered as $R_{\mathrm{in}}$, $R_{\mathrm{out}}$, and $\lambda_{\mathrm{enc}}$.}
+    \caption{Selected local patch-noise examples for (a) VQGAN and (b) LlamaGen using the same input ID. The binary response maps use dark cells for unchanged assignments (0) and yellow cells for changed assignments (1); the marked rectangle identifies the perturbed patch. Metrics below each panel are sample-specific and ordered as $R_{\mathrm{in}}$, $R_{\mathrm{out}}$, and $\lambda_{\mathrm{enc}}$. This example has higher leakage than the dataset mean at the two stronger levels and is not representative of the average response.}
     \label{fig:rq3_qual_combined}
 \end{figure}
 \paragraph{Local response and leakage.}
@@ -234,7 +236,9 @@ Both tokenizers show the same measured pattern: token changes are most frequent
 inside and near the perturbed patch, decline over the nearby token cells, and
 remain nonzero at distant positions. LlamaGen has a slightly higher inside
 response at $\sigma=0.1$ and a slightly lower leakage ratio at each tested
-value, but the spatial pattern is shared.
+value, but the spatial pattern is shared. These small cross-checkpoint
+differences are descriptive because the patch locations and noise draws were
+not matched.
 
 The evaluated architecture contains overlapping $3\times3$ convolutions,
 GroupNorm, and an attention layer. A small feature movement can also cross a

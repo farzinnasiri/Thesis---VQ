@@ -13,7 +13,9 @@ measure reconstruction quality, codebook use, and spatial behavior.
 \label{sec:models_under_study}
 
 These two tokenizers share the same external task, mapping $256\times256$
-images to discrete token grids, but differ in architecture and codebook design.
+images to discrete token grids. They use the same VQGAN-style convolutional
+encoder--decoder backbone, while their quantizer projections, codebook
+geometry, and training recipes differ~\cite{esser2021taming,sun2024llamagen}.
 
 VQGAN uses an encoder, vector quantizer, and decoder with a convolutional
 architecture and attention at the lowest-resolution level
@@ -43,12 +45,13 @@ evaluated tokenizers.
         Main tokenizer & ImageNet first stage, $f=16$ & \texttt{VQ-16} \\
         Input resolution & $256\times256$ & $256\times256$ \\
         Token grid & $16\times16$ & $16\times16$ \\
+        Encoder/decoder & VQGAN-style convolutional backbone & VQGAN-style convolutional backbone \\
         Nominal codebook size & $K=16{,}384$ & $K=16{,}384$ \\
         Embedding dimension & $256$ & $8$ \\
         Codebook normalization & none & L2-normalized lookup \\
-        Training objective & perceptual and adversarial reconstruction & reconstruction and codebook use \\
+        Training loss components & pixel, perceptual, adversarial, codebook/commitment & pixel, perceptual, adversarial, codebook/commitment \\
     \end{tabularx}
-    \caption{Tokenizer configurations compared in the thesis. Both models produce the same token-grid size and nominal vocabulary size, but differ in codebook geometry and training recipe.}
+    \caption{Tokenizer configurations compared in the thesis. Both models produce the same token-grid size and nominal vocabulary size and share the encoder--decoder backbone. LlamaGen uses an L2 pixel loss with LPIPS and PatchGAN terms~\cite{sun2024llamagen}; the objectives differ in details and weights, rather than in the presence of perceptual or adversarial supervision.}
     \label{tab:model_config_summary}
 \end{table}
 

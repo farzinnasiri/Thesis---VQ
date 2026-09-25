@@ -241,8 +241,9 @@ vector-quantized tokenizer converts images to discrete grids, and an
 autoregressive model predicts their tokens.
 
 A large nominal codebook is of limited value if the tokenizer uses only a small
-fraction of its entries. LlamaGen addresses this problem with low-dimensional
-codebook embeddings and L2-normalized lookup~\cite{sun2024llamagen}. Reducing
+fraction of its entries. Following the factorized, L2-normalized codebook
+design of ViT-VQGAN~\cite{yu2021vector}, LlamaGen uses low-dimensional
+embeddings and normalized lookup~\cite{sun2024llamagen}. Reducing
 the embedding dimension makes nearest-neighbor assignment less sparse, while
 normalization places encoder projections and codebook entries on a common unit
 sphere before assignment. LlamaGen also evaluates longer token sequences as a
@@ -263,9 +264,11 @@ the decoder. Chapters~\ref{ch:rq1}, \ref{ch:rq3}, and \ref{ch:rq4} measure these
 properties because the autoregressive model learns the distribution created by
 the tokenizer rather than the original pixel distribution directly.
 
-VQGAN and LlamaGen represent two stages in the development of discrete image
-tokenization. Both learn a finite visual vocabulary and expose token grids to
-an autoregressive model, but they differ in tokenizer design and in the
-empirical distributions induced over their vocabularies. Their comparison
-separates behavior shared by vector-quantized tokenizers from behavior tied to
-a particular design.
+The two evaluated tokenizers share a VQGAN-style convolutional encoder and
+decoder but differ in their codebook projection, normalization, and training
+recipes~\cite{esser2021taming,sun2024llamagen}. Their comparison describes
+the behavior of these two complete checkpoints. It cannot establish which
+design choice causes a difference or which behavior extends to all
+vector-quantized tokenizers. Chapters~\ref{ch:rq2}--\ref{ch:rq5} add
+perturbation, spatial-response, and distribution-shift measurements to the
+clean reconstruction and utilization baseline.

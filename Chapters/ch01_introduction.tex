@@ -27,11 +27,13 @@ tokenizer may use only a small part of its nominal vocabulary, change many
 token assignments after a small image perturbation, or spread a local intervention
 across distant spatial positions. Since the downstream autoregressive model
 learns the token sequences produced by the tokenizer, these properties define
-the learning problem it receives. Existing evaluations emphasize reconstruction
-and generation quality~\cite{esser2021taming,sun2024llamagen}, while the
-representations themselves remain less well characterized. This thesis studies
-how two pretrained tokenizers use their codebooks and respond to controlled
-perturbations.
+the learning problem it receives. Prior studies report reconstruction,
+generation, and codebook utilization, including underuse by the evaluated
+VQGAN checkpoint~\cite{esser2021taming,sun2024llamagen,liu2024elucidating}.
+This thesis extends those measurements with controlled noise and locality
+probes and compares code-frequency changes across several input domains. It
+characterizes two released checkpoints; it does not claim that token flips or
+codebook underuse were previously unknown.
 
 \section{Problem Statement and Research Questions}
 \label{sec:research_questions}
@@ -42,25 +44,28 @@ which permits direct spatial comparisons. The analysis isolates the tokenizer,
 including its encoder, vector quantizer, and decoder, from the autoregressive
 model trained on its output. This study addresses five research questions.
 
-First, we assess reconstruction quality and empirical codebook usage. This
+First, how do reconstruction quality and empirical codebook usage differ between
+the two checkpoints (RQ1)? This
 establishes the clean baseline used throughout the rest of the study
 (Chapter~\ref{ch:rq1}).
 
-We then examine robustness to global image perturbations. Although the
+Next, how do global image perturbations affect token assignments, code
+frequencies, and reconstruction fidelity (RQ2)? Although the
 encoder-decoder bottleneck compresses the input, it is unclear how much noise it
 filters and how much reaches the discrete representation and reconstruction.
 Chapter~\ref{ch:rq2} therefore compares clean and noisy processing paths in both
 image and token space.
 
-After measuring global effects, we study whether a local image perturbation
-remains local during encoding. Chapter~\ref{ch:rq3} measures token changes
+After measuring global effects, we ask whether a local image perturbation
+remains local in the token grid (RQ3). Chapter~\ref{ch:rq3} measures token changes
 inside and outside the perturbed image region.
 
-We next intervene directly in token space to examine decoder locality.
+We next ask how far a local token edit changes the decoded image (RQ4).
 Chapter~\ref{ch:rq4} measures how a local token edit changes the reconstructed
 image inside and outside the corresponding region.
 
-Finally, we consider changes that occur across natural data distributions.
+Finally, how do code use and reconstruction metrics respond to a change in the
+input distribution (RQ5)?
 Chapter~\ref{ch:rq5} compares reconstruction quality, codebook usage, and the
 spatial allocation of tokens across input domains.
 

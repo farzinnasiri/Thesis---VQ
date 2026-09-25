@@ -155,22 +155,25 @@ to local token edits, and distribution shift across natural, medical, and
 document-image datasets.
 
 On ImageNet validation, LlamaGen obtains better reconstruction scores and uses
-all 16{,}384 nominal codebook entries observed in this evaluation. VQGAN uses about 972 active codes
-under the same protocol. Global Gaussian noise causes extensive token
-replacement in both models even when reconstructions remain visually
-structured, and it concentrates code usage without greatly changing the raw
-number of active codes. Local image perturbations change token assignments well
-beyond the perturbed patch. Direct token edits have a more concentrated decoder
-response, but still produce measurable changes outside the corresponding image
-region. Under distribution shift, the active vocabulary remains largely fixed
-for both models while code frequencies and positional diversity change,
-especially for sketches, medical images, and document pages.
+all 16{,}384 codebook entries at least once in this evaluation. VQGAN uses 972
+entries on the same image set, confirming earlier reports of severe underuse
+for this checkpoint. At the tested noise levels, many token identities change;
+reconstruction fidelity to the original image declines more gradually, although
+this experiment does not directly measure change relative to the clean
+reconstruction. Noise also concentrates code usage without greatly changing
+raw active-code counts. Local image perturbations change token assignments
+well beyond the perturbed patch. Direct token edits produce measurable pixel
+changes outside the edited region, under a different intervention and response
+measure. Under distribution shift, the active vocabulary remains largely fixed
+while code frequencies change, especially for sketches, medical images, and
+document pages. Positional-diversity estimates also change, but smaller datasets
+are affected by sampling bias.
 
 The results show that reconstruction quality alone does not characterize a
 discrete image tokenizer. Codebook utilization, token stability, spatial
 response, and distribution-dependent token usage expose different properties of
-the representation. Across the tested datasets, substantial changes in token
-frequencies coexist with modest changes in reconstruction quality.
+the representation. Reconstruction metrics vary with dataset content, so their
+absolute values do not establish how much quality is preserved across domains.
 \\
 \\
 \textbf{Keywords:} vector quantization, image tokenization, VQGAN, LlamaGen, robustness, autoregressive image generation % Keywords
@@ -191,23 +194,27 @@ modifiche locali dei token e variazioni di distribuzione su dataset naturali,
 medici e documentali.
 
 Su ImageNet validation, LlamaGen ottiene metriche di ricostruzione migliori e
-utilizza tutti i 16.384 elementi nominali del codebook osservati in questa
-valutazione. VQGAN utilizza
-circa 972 codici attivi nello stesso protocollo. Il rumore gaussiano globale
-provoca una sostituzione estesa dei token in entrambi i modelli anche quando le
-ricostruzioni restano visivamente strutturate e concentra l'uso dei codici
-senza modificare in modo rilevante il numero grezzo di codici attivi. Le
-perturbazioni locali dell'immagine modificano le assegnazioni dei token anche
-oltre la regione perturbata. Le modifiche dirette dei token producono una
-risposta del decoder pi\`u concentrata, ma con effetti misurabili anche fuori
-dalla regione corrispondente. In presenza di shift di distribuzione, il
-vocabolario attivo rimane quasi invariato per entrambi i modelli, mentre
-cambiano le frequenze dei codici e la loro diversita' posizionale.
+utilizza tutti i 16.384 elementi del codebook almeno una volta in questa
+valutazione; VQGAN ne utilizza 972, confermando precedenti osservazioni di
+sottoutilizzo. Ai livelli di rumore testati cambiano molte identit\`a dei token;
+la fedelt\`a della ricostruzione rispetto all'immagine originale diminuisce
+pi\`u gradualmente, ma non \`e stata misurata direttamente la differenza
+rispetto alla ricostruzione senza rumore. Il rumore concentra inoltre l'uso dei
+codici senza modificare molto il numero grezzo di codici attivi. Le
+perturbazioni locali dell'immagine modificano le assegnazioni dei token oltre
+la regione perturbata. Le modifiche dirette dei token causano cambiamenti
+misurabili nei pixel esterni alla regione modificata, con un intervento e una
+metrica di risposta diversi. In presenza di variazioni della distribuzione, il
+vocabolario attivo rimane quasi invariato, mentre cambiano le frequenze dei
+codici, specialmente per schizzi, immagini mediche e documenti. Le stime della
+diversit\`a posizionale risentono anche della diversa dimensione dei dataset.
 
 I risultati mostrano che la qualit\`a della ricostruzione non descrive da sola
-un tokenizer discreto per immagini. Utilizzo del codebook, stabilita' dei token,
-risposta spaziale e uso dei token sotto shift di distribuzione misurano
-proprieta' diverse della rappresentazione.
+un tokenizer discreto per immagini. Utilizzo del codebook, stabilit\`a dei token,
+risposta spaziale e uso dei token sotto variazioni della distribuzione misurano
+propriet\`a diverse della rappresentazione. Le metriche di ricostruzione
+dipendono anche dal contenuto delle immagini e non permettono da sole di
+quantificare la qualit\`a preservata tra domini diversi.
 \\
 \\
 \textbf{Parole chiave:} quantizzazione vettoriale, tokenizzazione di immagini, VQGAN, LlamaGen, robustezza, generazione autoregressiva di immagini % Keywords (italian)

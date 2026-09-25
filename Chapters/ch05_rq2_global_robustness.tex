@@ -27,8 +27,10 @@ defined by:
 \end{equation}
 Clipping keeps the perturbed image in the allowed range and can place values at
 its limits. The experiment uses $\sigma\in\{0.1,0.2,0.5\}$ together with the
-clean baseline $\sigma=0$. Images are converted to $[0,1]$ for reported image
-metrics.
+clean baseline $\sigma=0$. In the reported $[0,1]$ image range, these noise
+standard deviations are $0.05$, $0.10$, and $0.25$ before clipping. The input
+corruption measured over all 50{,}000 images is reported in
+Table~\ref{tab:rq2_psnr_summary}; only these three nonzero levels were tested.
 
 For a tokenizer with encoder $E$, quantizer $q$, and decoder $D$, the perturbed
 reconstruction and tokenization are given by:
@@ -56,7 +58,9 @@ by image and noise level, not by individual noise samples.
 PSNR measures the input corruption, $\mathrm{PSNR}(x,x_{\sigma})$; fidelity to
 the noisy input, $\mathrm{PSNR}(x_{\sigma},\hat{x}_{\sigma})$; and fidelity to
 the clean input, $\mathrm{PSNR}(x,\hat{x}_{\sigma})$. The last quantity is the
-main reconstruction measure in this chapter.
+main reconstruction measure in this chapter. None of these is
+$\mathrm{PSNR}(\hat{x}_0,\hat{x}_{\sigma})$: a comparison of the noisy and clean
+reconstructions would be needed to quantify decoded change directly.
 
 \paragraph{Token flip rate.}
 The token flip rate is the fraction of assignments that differ from the clean
@@ -125,19 +129,19 @@ broadly similar rather than monotonically widening.
 \begin{table}[t]
     \centering
     \small
-    \begin{tabular}{llrr}
-        \textbf{Tokenizer} & \textbf{Noise level} & $\boldsymbol{\sigma}$ & $\boldsymbol{\mathrm{PSNR}(x,\hat{x}_{\sigma})}$ \\ \hline
-        LlamaGen & clean & 0.0 & $20.79 \pm 3.18$ \\
-        LlamaGen & low & 0.1 & $20.32 \pm 2.71$ \\
-        LlamaGen & mid & 0.2 & $19.11 \pm 1.98$ \\
-        LlamaGen & high & 0.5 & $16.22 \pm 0.94$ \\
+    \begin{tabular}{llrrr}
+        \textbf{Tokenizer} & \textbf{Noise level} & $\boldsymbol{\sigma}$ & $\boldsymbol{\mathrm{PSNR}(x,x_{\sigma})}$ & $\boldsymbol{\mathrm{PSNR}(x,\hat{x}_{\sigma})}$ \\ \hline
+        LlamaGen & clean & 0.0 & --- & $20.79 \pm 3.18$ \\
+        LlamaGen & low & 0.1 & 26.29 & $20.32 \pm 2.71$ \\
+        LlamaGen & mid & 0.2 & 20.49 & $19.11 \pm 1.98$ \\
+        LlamaGen & high & 0.5 & 13.35 & $16.22 \pm 0.94$ \\
         \hline
-        VQGAN & clean & 0.0 & $19.65 \pm 3.41$ \\
-        VQGAN & low & 0.1 & $19.23 \pm 2.92$ \\
-        VQGAN & mid & 0.2 & $18.11 \pm 2.27$ \\
-        VQGAN & high & 0.5 & $14.90 \pm 1.03$ \\
+        VQGAN & clean & 0.0 & --- & $19.65 \pm 3.41$ \\
+        VQGAN & low & 0.1 & 26.30 & $19.23 \pm 2.92$ \\
+        VQGAN & mid & 0.2 & 20.50 & $18.11 \pm 2.27$ \\
+        VQGAN & high & 0.5 & 13.35 & $14.90 \pm 1.03$ \\
     \end{tabular}
-    \caption{End-to-end reconstruction fidelity under global Gaussian perturbations. Values are mean PSNR in dB $\pm$ standard deviation over 50{,}000 ImageNet validation images.}
+    \caption{Input corruption and end-to-end reconstruction fidelity under global Gaussian perturbations. Values are mean PSNR in dB over 50{,}000 ImageNet validation images. The reconstruction column also shows per-image standard deviation; input PSNR is reported as a mean only. Input PSNR is undefined for the clean row because the images are identical.}
     \label{tab:rq2_psnr_summary}
 \end{table}
 \begin{figure}[t]
@@ -172,9 +176,12 @@ reconstructions remain recognizable. The latter is a qualitative observation.
 At $\sigma=0.2$, the mean flip rates rise to $89.0\%$ and $91.0\%$; at
 $\sigma=0.5$, both exceed $97\%$.
 
-LlamaGen reconstructs better in image space, yet its mean flip rate is slightly
-higher than VQGAN's at every tested level. This implies that reconstruction
-quality and assignment stability describe different responses to noise.
+LlamaGen has higher clean-input reconstruction PSNR at every tested level. Its
+mean identity-flip rate is also slightly higher, but the codebooks induce
+different partitions and a cross-model flip-rate ranking is not a ranking of
+representation quality. These measurements describe fidelity to the original
+image and exact token identity; they do not measure change between the two
+decoded images or how far a flipped code moves in embedding space.
 
 \begin{table}[t]
     \centering
@@ -194,7 +201,7 @@ quality and assignment stability describe different responses to noise.
 \begin{figure}[t]
     \centering
     \includegraphics[width=0.86\textwidth]{ch05_fig_token_flip_vs_sigma.png}
-    \caption{Token flip rate under global Gaussian perturbations. The discrete token representation changes sharply even when the image-space reconstruction remains visually structured.}
+    \caption{Token identity changes under global Gaussian perturbations. Figure~\ref{fig:rq2_psnr_x_xhat} separately reports fidelity to the original image; decoded change relative to the clean reconstruction is not measured here.}
     \label{fig:rq2_token_flip}
 \end{figure}
 \subsection{Global Codebook Distribution}
@@ -250,9 +257,9 @@ Perplexity is more sensitive than active-code count. LlamaGen's perplexity decre
 \paragraph{Reconstruction and assignment response.}
 \label{subsec:rq2_reconstruction_token_divergence}
 
-The two tokenizers show different responses in reconstruction quality and token
-assignments. LlamaGen has higher PSNR at every tested level, yet its token flip
-rate is slightly above VQGAN's.
+The tokenizers show different clean-input reconstruction scores and high
+identity-flip rates under each tested perturbation. Their absolute flip rates
+cannot be used to rank stability across the two codebook geometries.
 
 One possible explanation is codebook geometry, but this experiment does not
 measure feature displacements or distances to codebook boundaries. Measuring

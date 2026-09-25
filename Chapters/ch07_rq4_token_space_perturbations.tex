@@ -141,6 +141,9 @@ token patch. Mean inside and outside responses are
     \Delta^{(m)}(u,v).
     \label{eq:rq4_inside_outside_change}
 \end{equation}
+Here $\overline{B}_{\mathrm{px}}$ is the complement of $B_{\mathrm{px}}$
+within the image. Its cardinality in the denominator is the number of
+\emph{outside} pixels, matching the summation over $(u,v)\notin B_{\mathrm{px}}$.
 The decoder leakage ratio is
 \begin{equation}
     \lambda_{\mathrm{dec}}^{(m)}
@@ -149,7 +152,7 @@ The decoder leakage ratio is
          {\Delta_{\mathrm{in}}^{(m)} + \varepsilon}.
     \label{eq:rq4_decoder_leakage}
 \end{equation}
-A small positive $\varepsilon$ stabilizes the denominator. A low ratio means
+A small positive $\varepsilon=10^{-8}$ stabilizes the denominator. A low ratio means
 that the average pixel change is smaller outside than inside the edited
 region. $\Delta_{\mathrm{in}}$ measures local edit strength, while
 $\Delta_{\mathrm{out}}$ measures leakage outside the intended image region. The analysis also reports the 99th and 99.9th percentiles of
@@ -216,9 +219,10 @@ effect of the VQGAN random edit.
 
 Farthest replacement is the strongest intervention. At the 25\% level,
 LlamaGen reaches a patch LPIPS of 0.702 and a patch PSNR of 7.74 dB. VQGAN is
-more severely affected, with patch LPIPS 0.790, patch PSNR 3.74 dB, and an
-inside response of 0.607. VQGAN is more sensitive than LlamaGen to
-farthest-code replacement under all three measures.
+more severely affected under its own farthest-code edit, with patch LPIPS
+0.790, patch PSNR 3.74 dB, and an inside response of 0.607. Farthest-code
+edits are defined separately in the two codebooks, so this is not a
+severity-matched comparison of the decoders.
 
 \begin{table}[t]
     \centering
@@ -387,14 +391,12 @@ assignments. This affects the interpretation of its scores and qualitative
 examples: the experiment does not isolate the effect of distance from the
 effect of using inactive codes.
 
-The differences between tokenizers persist across patch fractions. Closest
-replacement is milder for LlamaGen than for VQGAN under LPIPS.
-Farthest replacement exposes the largest difference: VQGAN has an inside
-response of 0.607 at the 25\% level, compared with 0.356 for LlamaGen, and its
-patch PSNR is approximately 4 dB lower. VQGAN also tends to have greater
-absolute outside response. LlamaGen is less sensitive to farthest-code
-replacement in this experiment, although neither decoder confines the effect
-completely.
+The same within-checkpoint edit patterns persist across patch fractions.
+At the 25\% level, the VQGAN farthest-code edit has an inside response of
+0.607, compared with 0.356 for LlamaGen's separately defined farthest-code
+edit; its patch PSNR is approximately 4 dB lower. These edits are not
+severity-matched across codebooks, so the difference does not isolate decoder
+sensitivity. Neither decoder confines the effect completely.
 
 These decoder-side findings contrast with the encoder-side results in
 Chapter~\ref{ch:rq3}. A local image-space perturbation caused widespread token

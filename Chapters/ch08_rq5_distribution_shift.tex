@@ -9,9 +9,9 @@ robustness by evaluating six out-of-distribution datasets.
 ImageNet validation remains the in-distribution reference, and six shifted
 datasets vary sampling, visual style, object presentation, imaging domain, and
 document layout. The experiment measures changes in global code frequency,
-positional code diversity and reconstruction quality. Its
-central question is whether larger changes in code usage coincide with worse
-reconstruction.
+positional code diversity and reconstruction quality. These measurements
+describe how each quantity behaves under shift; they do not test whether a
+change in code usage causes a change in reconstruction quality.
 
 Both tokenizers were trained on natural images. Chapter~\ref{ch:rq1} evaluates
 them on the ImageNet validation set as the in-distribution reference. A shifted dataset can change their token
@@ -136,6 +136,8 @@ We normalize entropy by $\log K$, its theoretical maximum for a codebook of
 size $K$. Both checkpoints have $K=16{,}384$. The plots report the average of
 $(H^{\mathrm{shift}}_{u,v}-H^{\mathrm{ImageNet}}_{u,v})/\log K$ over all
 positions and separately over border and interior positions.
+Here the border is the one-cell outer ring of the $16\times16$ grid (60
+positions); the remaining 196 positions form the interior.
 Negative values mean that fewer codes, or a more concentrated mix of codes,
 occur at that location under the shifted dataset.
 
@@ -264,8 +266,8 @@ Chapter~\ref{ch:rq1}.
     \label{tab:rq5_reconstruction_shift}
 \end{table}
 
-The paired reconstruction metrics show no uniform degradation across the
-OOD datasets. ImageNet-V2 is close to ImageNet for both tokenizers.
+The paired reconstruction metrics vary across the shifted datasets.
+ImageNet-V2 has similar scores to ImageNet for both tokenizers.
 ImageNet-Sketch has lower PSNR but higher SSIM and lower LPIPS, so the
 metrics do not support a single ordering of those datasets. Medical images
 have higher PSNR and SSIM and lower LPIPS than ImageNet, while document
@@ -273,19 +275,29 @@ images have higher SSIM and lower LPIPS but lower PSNR. These differences
 also reflect image content and complexity. The consistent comparison is
 between tokenizers on each dataset: all four metrics favor LlamaGen.
 
-Large shifts in code frequencies can therefore coexist with preserved
-reconstruction quality. FID is reported for the model comparison within each
+The different code-frequency profiles do not correspond to a uniform pattern
+in the reported reconstruction metrics. Scores across datasets are not a
+controlled measure of robustness, however, because image content and
+complexity also change. FID is reported for the model comparison within each
 dataset; its changing reference distribution and natural-image features
 limit interpretation across domains.
 
-\subsection{Positional Diversity Contracts under Larger Shifts}
+\subsection{Positional Entropy Estimates under Shift}
 \label{subsec:rq5_entropy_results}
 
 Figure~\ref{fig:rq5_positional_entropy} reports normalized changes in positional
 entropy on a common scale. Negative values indicate a more concentrated
 distribution at a typical grid position. Comparing border and interior
 averages tests whether that concentration is uniform across the grid.
-These averages describe spatial variation without identifying its cause.
+For ImageNet-Sketch, LlamaGen's mean change is $-2.21$ nats on the border
+versus $-0.85$ nats in the interior; for RVL-CDIP, it is $-2.45$ versus
+$-1.43$ nats. ObjectNet likewise shows a larger border than interior change
+($-0.92$ versus $-0.11$ nats). These averages describe spatial variation,
+which may reflect margins and backgrounds as well as preprocessing, without
+identifying its cause. Both panels divide by $\log 16{,}384$ for a common
+scale, although VQGAN's empirical ImageNet vocabulary of 972 codes has a
+smaller attainable range. Normalized bar heights therefore are not directly
+comparable as fractions of each checkpoint's empirical range.
 
 \begin{figure}[t]
     \centering
@@ -298,13 +310,15 @@ These averages describe spatial variation without identifying its cause.
 \end{figure}
 
 The ImageNet-V2 result illustrates why these maps require caution. Its global
-distribution is almost unchanged, but LlamaGen's mean positional entropy is
-0.68 lower. With only 10{,}000 images and 16{,}384 active codes, this decrease
-is partly imposed by finite sampling. VQGAN, with only 972 active codes, shows
-a much smaller mean decrease of 0.039. The larger decreases on datasets with
-sample sizes close to ImageNet are less exposed to this specific mismatch, but
-they remain empirical entropy estimates rather than intrinsic properties of
-the encoder.
+distribution is almost unchanged, but LlamaGen's estimated mean positional
+entropy is 0.68 nats lower (0.070 after division by $\log K$). ImageNet-V2 has
+only 10{,}000 images against 50{,}000 in the reference set, so an unknown part
+of this difference is sample-size bias; it cannot be assigned to domain shift.
+VQGAN's estimated decrease is 0.039 nats (0.004 normalized). Its smaller
+empirical vocabulary makes this particular sparsity effect less severe. The
+other datasets with sample sizes close to ImageNet are less exposed to this
+specific mismatch, but their maps remain descriptive entropy estimates, not
+intrinsic properties of the encoder.
 
 \section{Discussion}
 \label{sec:rq5_discussion}
@@ -324,9 +338,10 @@ with RVL-CDIP producing the largest JSD. The two tokenizers show the same
 qualitative JSD ranking despite their different empirical vocabulary sizes.
 
 Changing the input domain substantially changes token frequencies for sketches,
-medical images, and documents, while paired reconstruction scores show no
-uniform decline. Both tokenizers can reconstruct images whose token
-distribution differs from ImageNet. An autoregressive model trained on the
+medical images, and documents, while the reported reconstruction scores show
+no uniform ordering across these different datasets. Each tokenizer produces
+reconstructions on these datasets, but the scores do not isolate the effect
+of distribution shift from image content. An autoregressive model trained on the
 ID token distribution would receive a changed frequency distribution, with
 potential consequences for its performance.
 

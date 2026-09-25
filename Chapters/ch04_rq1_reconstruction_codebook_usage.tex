@@ -27,9 +27,10 @@ token assignments for the ImageNet baseline.
 
 The codebook analysis reports both raw and effective vocabulary use. The raw active count is the number of codebook entries assigned at least once. The effective active count uses a minimum-frequency threshold of $10^{-6}$ of all token assignments, corresponding to at least 13 assignments out of 12.8 million tokens in this experiment. Entropy and perplexity summarize the effective size of the empirical distribution, and top-$k$ mass measures how much of the token stream is captured by the most frequent codes.
 
-The experiment uses the ImageNet validation split and the shared preprocessing
-and deterministic inference protocol described in
-Chapter~\ref{ch:datasets_models_metrics}.
+The experiment uses the same ImageNet validation images and deterministic
+inference for both models. Each exporter applies its own resize filter before
+the $256\times256$ center crop; Appendix~\ref{app:computational_environment}
+documents this preprocessing difference.
 
 \section{Reconstruction Baseline}
 \label{sec:rq1_reconstruction_baseline}
@@ -53,10 +54,24 @@ The PSNR gap is modest in absolute terms, but it is consistent with the other me
 
 The corresponding per-image standard deviations are 3.18 dB, 0.167, and
 0.058 for LlamaGen PSNR, SSIM, and LPIPS, and 3.41 dB, 0.176, and 0.066 for
-VQGAN. The distributions therefore overlap substantially even though all
-three dataset means favor LlamaGen. FID and related distribution metrics do
+VQGAN. These standard deviations describe variation across images, not
+uncertainty in the dataset means or the fraction of images on which one model
+wins. FID and related distribution metrics do
 not decompose into per-image observations and are consequently reported as
 dataset-level estimates.
+
+The published LlamaGen comparison reports PSNR $20.79$, SSIM $0.675$, and
+reconstruction FID $2.19$ for VQ-16, versus PSNR $20.00$, SSIM $0.629$, and
+FID $4.99$ for VQGAN-f16-16384~\cite{sun2024llamagen}. Our LlamaGen PSNR and
+FID agree to the displayed precision. The SSIM values are not directly
+comparable. The public LlamaGen evaluation script sets the SSIM data range to
+$2.0$ for images in $[0,1]$, whereas our exporters set it to $1.0$ and use
+scikit-image's default window with the last axis as the color channel. Our
+VQGAN PSNR and FID also differ from the published values;
+the resize filters differ between exporters, so these numbers do not establish
+the cause of that offset. LlamaGen's published $97\%$ usage is measured in a
+65{,}536-token queue, whereas our $100\%$ denotes codes observed at least once
+across 12.8 million assignments.
 
 Figure~\ref{fig:rq1_reconstruction_metric_comparison} visualizes the same comparison across metrics that differ in scale and direction. Excluding Inception Score, whose interpretation is not paired to a reference image, the reconstruction metrics consistently favor LlamaGen.
 
@@ -81,7 +96,7 @@ examples.
 \section{Codebook Usage}
 \label{sec:rq1_codebook_usage}
 
-The metrics above show that LlamaGen reconstructs ImageNet validation images more accurately than VQGAN under the shared protocol. The following analysis examines whether the two tokenizers also differ in how they use their discrete vocabularies. Table~\ref{tab:rq1_codebook_usage} reports the main usage statistics.
+The metrics above show that LlamaGen reconstructs the ImageNet validation images more accurately than VQGAN under the recorded exporter settings. The following analysis examines whether the two tokenizers also differ in how they use their discrete vocabularies. Table~\ref{tab:rq1_codebook_usage} reports the main usage statistics.
 
 \begin{table}[t]
     \centering
@@ -98,7 +113,7 @@ The metrics above show that LlamaGen reconstructs ImageNet validation images mor
     \label{tab:rq1_codebook_usage}
 \end{table}
 
-LlamaGen uses all 16,384 codebook entries on ImageNet with a perplexity of 16,179. This means that the empirical token distribution is close to uniform over the full nominal vocabulary. VQGAN uses only 972 of 16,384 codes, or about 5.9\% of the nominal codebook. This drop is caused by dead or inactive codes: most nominal entries are never assigned to any ImageNet validation patch. Its perplexity of 910 is close to the raw active count, so the active subset is small but not dominated by only a handful of codes.
+LlamaGen uses all 16,384 codebook entries on ImageNet with a perplexity of 16,179. This means that the empirical token distribution is close to uniform over the full nominal vocabulary. VQGAN uses only 972 of 16,384 codes, or about 5.9\% of the nominal codebook. Liu et al.~\cite{liu2024elucidating} previously reported approximately 1{,}000 used codes for this released VQGAN checkpoint on ImageNet training data; our validation-set count confirms that underuse under a different sample and protocol. Its perplexity of 910 is close to the raw active count, so the active subset is small but not dominated by only a handful of codes.
 
 LlamaGen's top-500 codes account for only 4.6\% of all token assignments; VQGAN's top-500 account for 66.5\%. Thus, although the two tokenizers expose the same nominal vocabulary size, the sequences they would provide to a downstream autoregressive model have very different empirical vocabularies. The downstream model is trained on this empirical token stream, not on the unused portion of the nominal codebook.
 
