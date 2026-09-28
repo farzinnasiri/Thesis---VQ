@@ -1,0 +1,16 @@
+\begin{tikzpicture}[font=\sffamily\small]
+    \filldraw[fill=blue!10,draw=blue!65!black,thick] (-1,0) ellipse (2.8cm and 1.5cm);
+    \filldraw[fill=orange!15,fill opacity=0.6,draw=orange!80!black,thick] (1,0) ellipse (2.8cm and 1.5cm);
+    \node[blue!65!black] at (-2,1.95) {Reference support};
+    \node[orange!80!black] at (2,1.95) {Reconstruction support};
+    \fill[blue!65!black] (-2.6,0) circle (2pt);
+    \fill[orange!80!black] (2.6,0) circle (2pt);
+    \fill[blue!65!black] (-0.3,0.4) circle (2pt);
+    \fill[orange!80!black] (0.3,-0.4) circle (2pt);
+    \node[align=center,text width=3.8cm,anchor=north] at (-2.4,-1.9)
+        {Uncovered reference sample\\reduces recall};
+    \node[align=center,text width=3.8cm,anchor=north] at (2.4,-1.9)
+        {Reconstruction outside reference support\\reduces precision};
+    \draw[-{Latex},black!60] (-2.4,-1.8) -- (-2.6,-0.15);
+    \draw[-{Latex},black!60] (2.4,-1.8) -- (2.6,-0.15);
+\end{tikzpicture}

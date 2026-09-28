@@ -19,8 +19,8 @@ position $i$ and $T$ is the sequence length. The chain rule gives
     p(s)=\prod_{i=1}^{T}p(s_i\mid s_{<i}),
     \qquad s_{<i}=(s_1,\ldots,s_{i-1}).
 \end{equation}
-This factorization has long been used for statistical language
-modeling~\cite{bengio2003neural}. A text tokenizer converts text into a sequence
+Bengio et al.\ use learned conditional probabilities in a neural language
+model~\cite{bengio2003neural}. A text tokenizer converts text into a sequence
 of tokens drawn from a finite vocabulary, and a language model learns the
 conditional distribution of the next token. Transformers made this approach
 effective at scale by using self-attention to model dependencies between
@@ -218,14 +218,14 @@ The first-stage model is convolutional, with non-local attention at its lowest-r
 \begin{figure}[t]
     \centering
     \includegraphics[width=0.94\textwidth]{ch02_taming_transformers_architecture.png}
-    \caption{Taming Transformers architecture, comprising the VQGAN tokenizer, learned codebook, autoregressive transformer, and patch discriminator. Reproduced from Esser et al.~\cite{esser2021taming}.}
+    \caption[Taming Transformers architecture]{Taming Transformers architecture, comprising the VQGAN tokenizer, learned codebook, autoregressive transformer, and patch discriminator. Reproduced from Esser et al.~\cite{esser2021taming}.}
     \label{fig:vqgan_first_stage_model}
 \end{figure}
 
 A smaller token grid reduces the sequence length processed by the transformer,
 but forces each token to carry more image information and can reduce
 reconstruction fidelity. Esser et al.\ study this trade-off through different
-codebook sizes and latent resolutions~\cite{esser2021taming}.
+latent resolutions and two reported codebook sizes~\cite{esser2021taming}.
 
 \section{\texorpdfstring{\mbox{LlamaGen}}{LlamaGen}}
 \label{sec:llamagen_tokenizer}
@@ -260,7 +260,7 @@ spatial response to perturbations. Two tokenizers with similar reconstruction
 quality may use different fractions of their codebooks. A small image
 perturbation may leave one token grid largely unchanged while altering many
 entries in another. A local token edit may remain local or propagate through
-the decoder. Chapters~\ref{ch:rq1}, \ref{ch:rq3}, and \ref{ch:rq4} measure these
+the decoder. Chapters~\ref{ch:rq1}--\ref{ch:rq5} measure these
 properties because the autoregressive model learns the distribution created by
 the tokenizer rather than the original pixel distribution directly.
 
@@ -269,6 +269,18 @@ decoder but differ in their codebook projection, normalization, and training
 recipes~\cite{esser2021taming,sun2024llamagen}. Their comparison describes
 the behavior of these two complete checkpoints. It cannot establish which
 design choice causes a difference or which behavior extends to all
-vector-quantized tokenizers. Chapters~\ref{ch:rq2}--\ref{ch:rq5} add
-perturbation, spatial-response, and distribution-shift measurements to the
-clean reconstruction and utilization baseline.
+vector-quantized tokenizers. Earlier work on ViT-VQGAN and LlamaGen studied
+codebook use and reconstruction~\cite{yu2021vector,sun2024llamagen}, and
+EdiBERT showed qualitatively that changing a local image region can alter
+VQGAN tokens beyond that region~\cite{issenhuth2021edibert}. The present
+study does not claim that either phenomenon is new. TokenSet also reports
+Gaussian-noise token overlap for a VQGAN baseline under a different protocol
+and uses that comparison to motivate a set tokenizer~\cite{geng2025tokenize}.
+Qiu et al.\ replace tokens with nearby codebook entries during tokenizer
+training to model sampling errors~\cite{qiu2025imagetokenizer}; that is a
+precedent for studying near-code edits, not the same as measuring the spatial
+response of an unchanged decoder. The contribution here is a common evaluation of
+two specified frozen checkpoints: full-validation-set global and local
+perturbation responses, encoder distance profiles, decoder edit responses,
+and code-frequency redistribution across datasets in
+Chapters~\ref{ch:rq2}--\ref{ch:rq5}.

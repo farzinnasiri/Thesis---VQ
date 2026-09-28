@@ -15,6 +15,7 @@ MODES = ['closest', 'orthogonal', 'random_uniform', 'farthest']
 NAMES = ['Closest', 'Orthogonal', 'Random', 'Farthest']
 MODELS = ['llamagen', 'vqgan']
 TITLES = ['LlamaGen', 'VQGAN']
+MODEL_COLORS = ['#2F70A2', '#BF5934']
 COLORS = ['#0072B2', '#009E73', '#E69F00', '#CC79A7']
 
 def save(fig, name):
@@ -42,6 +43,27 @@ for row, sample_id in enumerate(sample_ids):
 for ax, title in zip(axes[0], ['Original', 'VQGAN', 'LlamaGen']):
     ax.set_title(title)
 save(fig, 'ch04_fig_reconstruction_triplets.png')
+
+for model in MODELS:
+    fig, axes = plt.subplots(4, 4, figsize=(8, 8.7), layout='constrained')
+    for sample_index, sample_id in enumerate(sample_ids[:2]):
+        base = ROOT / 'Assets/rq2/qualitative_samples' / model / sample_id
+        for row_offset, files in enumerate([
+            ['0_original.png', '2_input_noise_low.png', '4_input_noise_mid.png', '6_input_noise_high.png'],
+            ['1_recon_clean.png', '3_recon_noise_low.png', '5_recon_noise_mid.png', '7_recon_noise_high.png'],
+        ]):
+            row = 2 * sample_index + row_offset
+            for col, filename in enumerate(files):
+                ax = axes[row, col]
+                ax.imshow(Image.open(base / filename).convert('RGB'))
+                ax.set(xticks=[], yticks=[])
+                for spine in ax.spines.values():
+                    spine.set_visible(False)
+            axes[row, 0].set_ylabel('Input' if row_offset == 0 else r'$D(Q(E(x_\sigma)))$')
+        axes[2 * sample_index, 0].set_title(sample_id.removeprefix('ILSVRC2012_val_'), fontsize=9, loc='left')
+    for col, title in enumerate(['Clean', r'$\sigma=0.1$', r'$\sigma=0.2$', r'$\sigma=0.5$']):
+        axes[0, col].set_title(title)
+    save(fig, f'ch05_fig_global_noise_qualitative_{model}.png')
 
 # The token-response maps are binary. Remove the old continuous colorbar; the
 # thesis caption now gives the two-value legend explicitly.
@@ -73,7 +95,7 @@ sweep(locality, 'leakage_ratio_median', 'Median outside / inside response', 'ch0
 
 fig, axes = plt.subplots(1, 3, figsize=(10, 3.4), layout='constrained')
 for ax, metric, label in zip(axes, ['psnr_patch_mean', 'ssim_patch_mean', 'lpips_patch_mean'], ['Patch PSNR (dB)', 'Patch SSIM', 'Patch LPIPS']):
-    for offset, model, title, color in zip([-.18, .18], MODELS, TITLES, COLORS):
+    for offset, model, title, color in zip([-.18, .18], MODELS, TITLES, MODEL_COLORS):
         d = fidelity[(fidelity.model.str.lower() == model) & (fidelity.fraction_label == 25)].set_index('mode')
         ax.bar([i+offset for i in range(4)], d.loc[MODES, metric], width=.36, label=title, color=color)
     ax.set_ylabel(label)
@@ -101,10 +123,10 @@ sweep(shift[shift.metric == 'lpips_patch'], 'delta', 'Mean patch LPIPS: V2 minus
 
 usage = pd.read_csv(ROOT / 'Assets/rq5/data/ch08_global_code_usage.csv')
 order = ['imagenet_v2', 'objectnet', 'imagenet_sketch', 'organamnist', 'bloodmnist', 'rvlcdip']
-labels = ['ImageNet-V2', 'ObjectNet', 'Sketch', 'OrganAMNIST', 'BloodMNIST', 'RVL-CDIP']
+labels = ['ImageNet-V2', 'ObjectNet*', 'Sketch', 'OrganAMNIST*', 'BloodMNIST', 'RVL-CDIP']
 fig, axes = plt.subplots(1, 2, figsize=(10, 3.8), layout='constrained')
 for ax, metric, label in zip(axes, ['js_divergence_vs_imagenet', 'perplexity_ratio_vs_imagenet'], ['JSD (nats)', r'$R_P$']):
-    for offset, model, color in zip([-.18, .18], TITLES, COLORS):
+    for offset, model, color in zip([-.18, .18], TITLES, MODEL_COLORS):
         d = usage[usage.model == model].set_index('dataset')
         ax.bar([i+offset for i in range(6)], d.loc[order, metric], width=.36, label=model, color=color)
     ax.set_xticks(range(6), labels, rotation=40, ha='right')
@@ -118,7 +140,7 @@ save(fig, 'ch08_fig_global_shift_summary.png')
 entropy = pd.read_csv(ROOT / 'Assets/rq5/data/ch08_positional_entropy_summary.csv')
 fig, axes = plt.subplots(1, 3, figsize=(12, 3.8), sharey=True, layout='constrained')
 for ax, field, title in zip(axes, ['mean_entropy_delta', 'border_entropy_delta', 'interior_entropy_delta'], ['All positions', 'Border positions', 'Interior positions']):
-    for offset, model, color in zip([-.18, .18], TITLES, COLORS):
+    for offset, model, color in zip([-.18, .18], TITLES, MODEL_COLORS):
         d = entropy[entropy.model == model].set_index('dataset')
         ax.bar([i+offset for i in range(6)], d.loc[order, field] / np.log(16384), width=.36, label=model, color=color)
     ax.set_xticks(range(6), labels, rotation=45, ha='right')
@@ -127,3 +149,46 @@ for ax, field, title in zip(axes, ['mean_entropy_delta', 'border_entropy_delta',
 axes[0].set_ylabel(r'Mean $\Delta H / \log K$')
 axes[0].legend(fontsize=8)
 save(fig, 'ch08_fig_normalized_positional_entropy.png')
+
+# Presentation-only redraws from the stored aggregate tables. No inference or
+# statistical estimation is performed here.
+noise = pd.read_csv(ROOT / 'Assets/rq2/data/ch05_table_token_distribution_summary.csv')
+fig, axes = plt.subplots(1, 2, figsize=(9, 3.5), layout='constrained')
+for model, title, color in zip(MODELS, TITLES, MODEL_COLORS):
+    d = noise[noise.model == model].sort_values('sigma')
+    axes[0].plot(d.sigma, d.perplexity, 'o-', label=title, color=color)
+    axes[1].plot(d.sigma, d.perplexity / d.iloc[0].perplexity, 'o-', label=title, color=color)
+for ax in axes:
+    ax.set(xlabel=r'Noise standard deviation $\sigma$', xticks=[0, .1, .2, .5])
+    ax.grid(alpha=.2)
+axes[0].set(ylabel='Perplexity', ylim=(0, 17500))
+axes[1].set(ylabel='Perplexity / clean perplexity', ylim=(0, 1.05))
+axes[0].legend()
+save(fig, 'ch05_fig_perplexity_vs_sigma.png')
+
+encoder = pd.read_csv(ROOT / 'Assets/rq3/data/ch06_table_inside_outside_summary.csv')
+fig, axes = plt.subplots(1, 2, figsize=(9, 3.5), layout='constrained')
+for title, color in zip(TITLES, MODEL_COLORS):
+    d = encoder[encoder.model == title].sort_values('sigma')
+    axes[0].plot(d.sigma, d.inside_response_mean, 'o-', label=f'{title} inside', color=color)
+    axes[0].plot(d.sigma, d.outside_response_mean, 's--', label=f'{title} outside', color=color)
+    axes[1].plot(d.sigma, d.leakage_ratio_mean, 'o-', label=title, color=color)
+for ax in axes:
+    ax.set(xlabel=r'Patch-noise standard deviation $\sigma$', xticks=[.1, .25, .5], ylim=(0, 1.05))
+    ax.grid(alpha=.2)
+    ax.legend(fontsize=8)
+axes[0].set_ylabel('Mean token-flip fraction')
+axes[1].set_ylabel('Mean per-image outside / inside ratio')
+save(fig, 'ch06_fig_inside_outside_response.png')
+
+distance = pd.read_csv(ROOT / 'Assets/rq3/data/ch06_table_distance_profile.csv')
+fig, axes = plt.subplots(1, 2, figsize=(9, 3.5), sharey=True, layout='constrained')
+for ax, model, title in zip(axes, MODELS, TITLES):
+    for sigma, color in zip([.1, .25, .5], COLORS):
+        d = distance[(distance.model.str.lower() == model) & (distance.sigma == sigma)].sort_values('distance')
+        ax.plot(d.distance, d.flip_probability, 'o-', color=color, label=rf'$\sigma={sigma}$')
+    ax.set(title=title, xlabel='Manhattan distance from patch (token cells)', ylim=(0, 1.05))
+    ax.grid(alpha=.2)
+    ax.legend(fontsize=8)
+axes[0].set_ylabel('Token-flip probability')
+save(fig, 'ch06_fig_distance_profile_flip.png')

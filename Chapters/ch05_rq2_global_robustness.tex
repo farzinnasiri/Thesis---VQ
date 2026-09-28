@@ -9,6 +9,10 @@ sequences, so a reconstruction may remain recognizable even when many
 assignments change. Nearest-neighbor quantization can switch an assignment when
 an encoder output crosses a codebook boundary, although this experiment does
 not measure distances to those boundaries.
+Gaussian-noise token overlap has also been reported for a VQGAN baseline in
+TokenSet~\cite{geng2025tokenize}. The present experiment uses the two specified
+checkpoints, reports reconstruction and frequency response as well as identity
+flips, and does not assume the papers' noise scales or checkpoints coincide.
 
 \section{Experimental Setup}
 \label{sec:rq2_setup}
@@ -26,22 +30,26 @@ defined by:
     \label{eq:rq2_global_noise}
 \end{equation}
 Clipping keeps the perturbed image in the allowed range and can place values at
-its limits. The experiment uses $\sigma\in\{0.1,0.2,0.5\}$ together with the
+its limits. The applied perturbation is therefore clipped Gaussian noise,
+not an unbounded Gaussian draw; the fraction of clipped values was not archived.
+The experiment uses $\sigma\in\{0.1,0.2,0.5\}$ together with the
 clean baseline $\sigma=0$. In the reported $[0,1]$ image range, these noise
 standard deviations are $0.05$, $0.10$, and $0.25$ before clipping. The input
 corruption measured over all 50{,}000 images is reported in
 Table~\ref{tab:rq2_psnr_summary}; only these three nonzero levels were tested.
 
-For a tokenizer with encoder $E$, quantizer $q$, and decoder $D$, the perturbed
+For a tokenizer with encoder $E$, quantizer $Q$, and decoder $D$, the perturbed
 reconstruction and tokenization are given by:
 \begin{equation}
-    \hat{x}_{\sigma} = D(q(E(x_{\sigma}))),
+    \hat{x}_{\sigma} = D(Q(E(x_{\sigma}))),
     \qquad
-    z_{\sigma} = q(E(x_{\sigma})).
+    z_{\sigma} = \operatorname{indices}(Q(E(x_{\sigma}))).
     \label{eq:rq2_reconstruction_tokenization}
 \end{equation}
 Applying the same operations to $x$ gives the clean reconstruction
-$\hat{x}_0=D(q(E(x)))$ and clean token grid $z_0=q(E(x))$. Each $z_{\sigma}$ is
+$\hat{x}_0=D(Q(E(x)))$ and clean token grid
+$z_0=\operatorname{indices}(Q(E(x)))$. Here $Q$ returns selected embeddings,
+and $\operatorname{indices}$ records their codebook IDs. Each $z_{\sigma}$ is
 a $16\times16$ grid.
 
 The experiment was performed on the full ImageNet validation set for VQGAN and
@@ -59,8 +67,11 @@ PSNR measures the input corruption, $\mathrm{PSNR}(x,x_{\sigma})$; fidelity to
 the noisy input, $\mathrm{PSNR}(x_{\sigma},\hat{x}_{\sigma})$; and fidelity to
 the clean input, $\mathrm{PSNR}(x,\hat{x}_{\sigma})$. The last quantity is the
 main reconstruction measure in this chapter. None of these is
-$\mathrm{PSNR}(\hat{x}_0,\hat{x}_{\sigma})$: a comparison of the noisy and clean
-reconstructions would be needed to quantify decoded change directly.
+$\mathrm{PSNR}(\hat{x}_0,\hat{x}_{\sigma})$. A separate fixed-seed sample of
+2{,}000 images compares saved clean and noisy reconstruction PNGs directly.
+Those PNGs are eight-bit outputs, so the direct-change values include output
+quantization; the 50{,}000-image fidelity values above retain their original
+evaluation pipeline.
 
 \paragraph{Token flip rate.}
 The token flip rate is the fraction of assignments that differ from the clean
@@ -89,10 +100,10 @@ $p_k$, the entropy and corresponding perplexity are given by:
 \begin{equation}
     H(p) = -\sum_k p_k \log p_k,
     \qquad
-    \mathrm{PPL}(p) = \exp(H(p)).
+    P(p) = \exp(H(p)).
     \label{eq:rq2_perplexity}
 \end{equation}
-Active count measures codebook coverage. Top-$k$ mass measures how strongly
+Active count measures codebook coverage. Top-$m$ mass measures how strongly
 assignments concentrate into a small number of codes.
 
 \section{Experimental Results}
@@ -101,21 +112,26 @@ assignments concentrate into a small number of codes.
 \subsection{Qualitative Behavior}
 \label{subsec:rq2_qualitative}
 
-Figure~\ref{fig:rq2_qual_combined} shows selected
-ImageNet examples for both tokenizers. Each example contains the clean image,
+Figures~\ref{fig:rq2_qual_vqgan} and~\ref{fig:rq2_qual_llamagen} show selected
+ImageNet examples for the two tokenizers. Each example contains the clean image,
 inputs at $\sigma=0.1$, $0.2$, and $0.5$, the clean reconstruction, and the
 three perturbed reconstructions. These panels are qualitative examples; the
 quantitative conclusions use the full validation set.
 
 \begin{figure}[p]
     \centering
-    \textbf{(a) VQGAN}\\[2pt]
-    \includegraphics[width=0.94\textwidth,height=0.36\textheight,keepaspectratio]{ch05_fig_global_noise_qualitative_vqgan.png}\\[6pt]
-    \textbf{(b) LlamaGen}\\[2pt]
-    \includegraphics[width=0.94\textwidth,height=0.36\textheight,keepaspectratio]{ch05_fig_global_noise_qualitative_llamagen.png}
-    \caption{Selected reconstructions under global Gaussian noise. Both panels
-    use the same ImageNet samples and show $\sigma=0.1$, $0.2$, and $0.5$.}
-    \label{fig:rq2_qual_combined}
+    \includegraphics[width=0.96\textwidth,height=0.78\textheight,keepaspectratio]{ch05_fig_global_noise_qualitative_vqgan.png}
+    \caption{Selected VQGAN reconstructions under global Gaussian noise at
+    $\sigma=0.1$, $0.2$, and $0.5$. The examples are illustrative; aggregate
+    results use the full validation set.}
+    \label{fig:rq2_qual_vqgan}
+\end{figure}
+\begin{figure}[p]
+    \centering
+    \includegraphics[width=0.96\textwidth,height=0.78\textheight,keepaspectratio]{ch05_fig_global_noise_qualitative_llamagen.png}
+    \caption{LlamaGen reconstructions for the same ImageNet examples and noise
+    levels as Figure~\ref{fig:rq2_qual_vqgan}.}
+    \label{fig:rq2_qual_llamagen}
 \end{figure}
 \subsection{Reconstruction Degradation}
 \label{subsec:rq2_image_space}
@@ -180,8 +196,9 @@ LlamaGen has higher clean-input reconstruction PSNR at every tested level. Its
 mean identity-flip rate is also slightly higher, but the codebooks induce
 different partitions and a cross-model flip-rate ranking is not a ranking of
 representation quality. These measurements describe fidelity to the original
-image and exact token identity; they do not measure change between the two
-decoded images or how far a flipped code moves in embedding space.
+image and exact token identity; they do not determine how far a flipped code
+moves in embedding space. The saved-image comparison below measures decoded
+change separately.
 
 \begin{table}[t]
     \centering
@@ -201,16 +218,31 @@ decoded images or how far a flipped code moves in embedding space.
 \begin{figure}[t]
     \centering
     \includegraphics[width=0.86\textwidth]{ch05_fig_token_flip_vs_sigma.png}
-    \caption{Token identity changes under global Gaussian perturbations. Figure~\ref{fig:rq2_psnr_x_xhat} separately reports fidelity to the original image; decoded change relative to the clean reconstruction is not measured here.}
+    \caption{Token identity changes under global Gaussian perturbations. Figure~\ref{fig:rq2_psnr_x_xhat} separately reports fidelity to the original image; the text below compares clean and noisy reconstructions directly on a 2{,}000-image sample.}
     \label{fig:rq2_token_flip}
 \end{figure}
+
+\paragraph{Direct decoded-image change.}
+A separate check compares each noisy reconstruction with the clean
+reconstruction of the same input, rather than with the original image. The
+same 2{,}000 ImageNet validation IDs were selected for both models
+without replacement (seed 20260925), then read from the archived PNGs and
+token-index records; the two models' noise realizations were not matched.
+Mean per-image decoded RMSE in $[0,1]$ pixel units is
+0.092/0.112/0.158 for LlamaGen and 0.099/0.122/0.182 for VQGAN at
+$\sigma=0.1/0.2/0.5$, respectively. At $\sigma=0.1$, LlamaGen has a higher
+identity-flip fraction than VQGAN in this sample (0.795 versus 0.751), but
+a lower decoded RMSE. The same descriptive ordering
+holds at the two larger noise levels. Thus the
+identity-flip ordering does not carry over to decoded-image change in this
+sample; neither measure identifies the cause of the difference.
 \subsection{Global Codebook Distribution}
 \label{subsec:rq2_codebook_distribution}
 
 After measuring changes at individual positions, we aggregate assignments
 across images to examine code-frequency changes.
 Table~\ref{tab:rq2_codebook_distribution} summarizes active-code counts,
-perplexity, and top-$k$ concentration; Figure~\ref{fig:rq2_perplexity}
+perplexity, and top-$m$ concentration; Figure~\ref{fig:rq2_perplexity}
 visualizes the main trend. Figure~\ref{fig:rq2_code_frequency_comparison}
 compares clean and $\sigma=0.5$ assignment frequencies for the same codes.
 
@@ -219,30 +251,32 @@ clean ImageNet, with 16{,}384 active codes and a perplexity of 16{,}179. VQGAN
 uses 972 active codes, with a perplexity of 910. Under noise, LlamaGen's active
 count remains high and reaches 16{,}203 at $\sigma=0.5$; VQGAN's stays near 972.
 
-Perplexity is more sensitive than active-code count. LlamaGen's perplexity decreases from 16{,}179 to 6{,}434 as $\sigma$ increases from 0 to 0.5. VQGAN's perplexity decreases from 910 to 560. Thus, both distributions become more concentrated even when the number of active codes changes little. The top-100 mass confirms this concentration: LlamaGen increases from 0.012 to 0.115, while VQGAN increases from 0.165 to 0.388.
+Perplexity is more sensitive than active-code count. LlamaGen's perplexity decreases from 16{,}179 to 6{,}434 as $\sigma$ increases from 0 to 0.5. VQGAN's perplexity decreases from 910 to 560. Thus, both distributions become more concentrated even when the number of active codes changes little. The top-100 mass confirms this concentration: LlamaGen increases from 0.012 to 0.115, while VQGAN increases from 0.165 to 0.388. Top-1000 mass is omitted because VQGAN uses at most 973 codes at these levels, making that statistic identically one for VQGAN.
 
 \begin{table}[t]
     \centering
     \small
-    \begin{tabular}{llrrrr}
-        \textbf{Tokenizer} & \textbf{Level} & \textbf{Active codes} & \textbf{Perplexity} & \textbf{Top-100 mass} & \textbf{Top-1000 mass} \\ \hline
-        LlamaGen & clean & 16{,}384 & 16{,}179 & 0.012 & 0.084 \\
-        LlamaGen & low & 16{,}381 & 12{,}829 & 0.040 & 0.198 \\
-        LlamaGen & mid & 16{,}369 & 10{,}388 & 0.063 & 0.269 \\
-        LlamaGen & high & 16{,}203 & 6{,}434 & 0.115 & 0.416 \\
+    \begin{tabular}{llrrr}
+        \textbf{Tokenizer} & \textbf{Level} & \textbf{Active codes} & \textbf{Perplexity} & \textbf{Top-100 mass} \\ \hline
+        LlamaGen & clean & 16{,}384 & 16{,}179 & 0.012 \\
+        LlamaGen & low & 16{,}381 & 12{,}829 & 0.040 \\
+        LlamaGen & mid & 16{,}369 & 10{,}388 & 0.063 \\
+        LlamaGen & high & 16{,}203 & 6{,}434 & 0.115 \\
         \hline
-        VQGAN & clean & 972 & 910 & 0.165 & 1.000 \\
-        VQGAN & low & 973 & 859 & 0.202 & 1.000 \\
-        VQGAN & mid & 971 & 780 & 0.249 & 1.000 \\
-        VQGAN & high & 972 & 560 & 0.388 & 1.000 \\
+        VQGAN & clean & 972 & 910 & 0.165 \\
+        VQGAN & low & 973 & 859 & 0.202 \\
+        VQGAN & mid & 971 & 780 & 0.249 \\
+        VQGAN & high & 972 & 560 & 0.388 \\
     \end{tabular}
-    \caption{Global codebook distribution statistics under global perturbations. Top-$k$ mass is the fraction of all token assignments explained by the $k$ most frequent codes at that noise level.}
+    \caption{Global codebook distribution statistics under global perturbations. Top-$m$ mass is the fraction of all token assignments explained by the $k$ most frequent codes at that noise level.}
     \label{tab:rq2_codebook_distribution}
 \end{table}
 \begin{figure}[t]
     \centering
     \includegraphics[width=0.86\textwidth]{ch05_fig_perplexity_vs_sigma.png}
-    \caption{Effective codebook perplexity under global perturbations. LlamaGen remains much broader than VQGAN, but its effective vocabulary contracts substantially as noise increases.}
+    \caption{Effective codebook perplexity under global perturbations, shown
+    both in absolute units and relative to each checkpoint's clean baseline.
+    Both empirical vocabularies contract as noise increases.}
     \label{fig:rq2_perplexity}
 \end{figure}
 \begin{figure}[t]
@@ -261,22 +295,21 @@ The tokenizers show different clean-input reconstruction scores and high
 identity-flip rates under each tested perturbation. Their absolute flip rates
 cannot be used to rank stability across the two codebook geometries.
 
-One possible explanation is codebook geometry, but this experiment does not
-measure feature displacements or distances to codebook boundaries. Measuring
-those quantities is future work.
-
-These assignment changes alter the sequences supplied to an autoregressive
-model. Their effect on generator robustness remains a hypothesis. The
-observations suggest that exact assignments can be sensitive even when selected
-reconstructions remain recognizable; they do not establish whether individual
-tokens carry stable semantics.
+The direct decoded-change sample gives the opposite checkpoint ordering from
+the identity-flip fractions. This shows why a changed code ID cannot be read as
+a fixed amount of image change. The sample does not calibrate that relationship
+for individual codes or isolate codebook geometry as its cause.
 
 \paragraph{Code-frequency concentration.}
 \label{subsec:rq2_noise_concentrates_usage}
 
 Perplexity decreases and top-100 mass increases for both tokenizers while
 active-code counts change comparatively little. The frequency distributions
-therefore become more concentrated under noise.
+therefore become more concentrated under noise. Figure~\ref{fig:rq2_code_frequency_comparison}
+shows this redistribution with code order fixed to the clean condition;
+the change cannot be explained by simply sorting the noisy frequencies again.
+The complete condition summaries are retained in
+Appendix~\ref{app:supporting_results}.
 
 The results above provide the reference point for the locality analyses. Global
 noise perturbs all image regions. Chapter~\ref{ch:rq3} isolates a local image

@@ -4,10 +4,27 @@
 The tables below retain the per-condition summaries behind the figures and
 selected comparisons in Chapters~\ref{ch:rq2}--\ref{ch:rq5}. A dash marks a
 measurement missing from the archived summary, not an estimated value.
+In particular, the LlamaGen 10\% closest-edit patch PSNR mean and standard
+deviation are absent from the saved fidelity summary. Their cause cannot be
+recovered from that summary, so no replacement value is inferred. Pixel RMSE
+uses RGB values in $[0,1]$. Standard deviations describe image-to-image
+variation and are not confidence intervals.
 The model runs used the same nominal settings but did not save shared random
 interventions; cross-model values are descriptive comparisons.
 
 \section{Global image noise}
+Table~\ref{tab:app_noisy_input_psnr} records fidelity to the noisy input,
+which has a different reference from the complete summary that follows.
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lrrr}
+Tokenizer & $\sigma=0.1$ & $\sigma=0.2$ & $\sigma=0.5$ \\ \hline
+LlamaGen & 19.26 & 16.76 & 11.87 \\
+VQGAN & 18.36 & 16.11 & 11.31 \\
+\end{tabular}
+\caption{Mean $\mathrm{PSNR}(x_\sigma,\hat{x}_\sigma)$ in dB, from the archived global-noise PSNR summary.}
+\label{tab:app_noisy_input_psnr}
+\end{table}
 \begingroup
 \small
 \setlength{\tabcolsep}{4pt}
@@ -22,11 +39,11 @@ Tokenizer & $\sigma$ & $\operatorname{PSNR}(x,\hat{x}_{\sigma})$ & Flip & Perple
 \endhead
 \hline
 \endfoot
-LlamaGen & 0.00 & 20.79 & -- & 16179 & 0.012 & 16{,}384 \\
+LlamaGen & 0.00 & 20.79 & 0.000 & 16179 & 0.012 & 16{,}384 \\
 LlamaGen & 0.10 & 20.32 & 0.795 & 12829 & 0.040 & 16{,}381 \\
 LlamaGen & 0.20 & 19.11 & 0.910 & 10388 & 0.063 & 16{,}369 \\
 LlamaGen & 0.50 & 16.22 & 0.979 & 6434 & 0.115 & 16{,}203 \\
-VQGAN & 0.00 & 19.65 & -- & 910 & 0.165 & 972 \\
+VQGAN & 0.00 & 19.65 & 0.000 & 910 & 0.165 & 972 \\
 VQGAN & 0.10 & 19.23 & 0.751 & 859 & 0.202 & 973 \\
 VQGAN & 0.20 & 18.11 & 0.890 & 780 & 0.249 & 971 \\
 VQGAN & 0.50 & 14.90 & 0.975 & 560 & 0.388 & 972 \\
@@ -39,34 +56,34 @@ VQGAN & 0.50 & 14.90 & 0.975 & 560 & 0.388 & 972 \\
 \begingroup
 \small
 \setlength{\tabcolsep}{4pt}
-\begin{longtable}{r|rrr|rrr}
-\caption[Token-flip probability by Manhattan distance from the perturbed patch]{Token-flip probability by Manhattan distance from the perturbed patch. Distance zero denotes tokens inside the patch. Every value is taken from the saved Chapter 6 distance profile; the six columns are model and noise-level pairs.}\label{tab:app_encoder_distance}\\
+\begin{longtable}{rr|rrr|rrr}
+\caption[Token-flip probability by Manhattan distance from the perturbed patch]{Token-flip probability and pooled token count $N_d$ by Manhattan distance from the patch. Counts are identical in the six saved model/noise conditions. Every value is taken from the saved Chapter 6 distance profile. Images with no tokens at a distance contribute nothing to that row.}\label{tab:app_encoder_distance}\\
 \hline
-Distance & VQ 0.1 & VQ 0.25 & VQ 0.5 & Llama 0.1 & Llama 0.25 & Llama 0.5 \\ \hline
+Distance & $N_d$ & VQ 0.1 & VQ 0.25 & VQ 0.5 & Llama 0.1 & Llama 0.25 & Llama 0.5 \\ \hline
 \endfirsthead
-\multicolumn{7}{l}{\small\itshape Continued from the previous page}\\
+\multicolumn{8}{l}{\small\itshape Continued from the previous page}\\
 \hline
-Distance & VQ 0.1 & VQ 0.25 & VQ 0.5 & Llama 0.1 & Llama 0.25 & Llama 0.5 \\ \hline
+Distance & $N_d$ & VQ 0.1 & VQ 0.25 & VQ 0.5 & Llama 0.1 & Llama 0.25 & Llama 0.5 \\ \hline
 \endhead
 \hline
 \endfoot
-0 & 0.788 & 0.952 & 0.988 & 0.822 & 0.960 & 0.991 \\
-1 & 0.597 & 0.827 & 0.917 & 0.613 & 0.832 & 0.922 \\
-2 & 0.420 & 0.634 & 0.741 & 0.426 & 0.614 & 0.710 \\
-3 & 0.295 & 0.448 & 0.536 & 0.285 & 0.413 & 0.494 \\
-4 & 0.226 & 0.339 & 0.411 & 0.221 & 0.317 & 0.385 \\
-5 & 0.196 & 0.294 & 0.360 & 0.196 & 0.281 & 0.346 \\
-6 & 0.184 & 0.277 & 0.343 & 0.187 & 0.269 & 0.335 \\
-7 & 0.178 & 0.270 & 0.336 & 0.182 & 0.263 & 0.331 \\
-8 & 0.171 & 0.260 & 0.328 & 0.176 & 0.257 & 0.326 \\
-9 & 0.164 & 0.255 & 0.324 & 0.169 & 0.250 & 0.321 \\
-10 & 0.162 & 0.252 & 0.323 & 0.167 & 0.246 & 0.320 \\
-11 & 0.160 & 0.248 & 0.318 & 0.166 & 0.248 & 0.321 \\
-12 & 0.161 & 0.249 & 0.319 & 0.164 & 0.246 & 0.320 \\
-13 & 0.157 & 0.245 & 0.316 & 0.165 & 0.245 & 0.320 \\
-14 & 0.158 & 0.243 & 0.312 & 0.165 & 0.246 & 0.323 \\
-15 & 0.155 & 0.242 & 0.313 & 0.175 & 0.256 & 0.330 \\
-16 & 0.154 & 0.233 & 0.291 & 0.160 & 0.242 & 0.316 \\
+0 & 3200000 & 0.788 & 0.952 & 0.988 & 0.822 & 0.960 & 0.991 \\
+1 & 1422912 & 0.597 & 0.827 & 0.917 & 0.613 & 0.832 & 0.922 \\
+2 & 1404408 & 0.420 & 0.634 & 0.741 & 0.426 & 0.614 & 0.710 \\
+3 & 1345483 & 0.295 & 0.448 & 0.536 & 0.285 & 0.413 & 0.494 \\
+4 & 1247461 & 0.226 & 0.339 & 0.411 & 0.221 & 0.317 & 0.385 \\
+5 & 1117010 & 0.196 & 0.294 & 0.360 & 0.196 & 0.281 & 0.346 \\
+6 & 951939 & 0.184 & 0.277 & 0.343 & 0.187 & 0.269 & 0.335 \\
+7 & 758797 & 0.178 & 0.270 & 0.336 & 0.182 & 0.263 & 0.331 \\
+8 & 539705 & 0.171 & 0.260 & 0.328 & 0.176 & 0.257 & 0.326 \\
+9 & 295818 & 0.164 & 0.255 & 0.324 & 0.169 & 0.250 & 0.321 \\
+10 & 206889 & 0.162 & 0.252 & 0.323 & 0.167 & 0.246 & 0.320 \\
+11 & 137713 & 0.160 & 0.248 & 0.318 & 0.166 & 0.248 & 0.321 \\
+12 & 85927 & 0.161 & 0.249 & 0.319 & 0.164 & 0.246 & 0.320 \\
+13 & 49090 & 0.157 & 0.245 & 0.316 & 0.165 & 0.245 & 0.320 \\
+14 & 24505 & 0.158 & 0.243 & 0.312 & 0.165 & 0.246 & 0.323 \\
+15 & 9855 & 0.155 & 0.242 & 0.313 & 0.175 & 0.256 & 0.330 \\
+16 & 2488 & 0.154 & 0.233 & 0.291 & 0.160 & 0.242 & 0.316 \\
 \end{longtable}
 \endgroup
 
@@ -498,3 +515,44 @@ VQGAN & OrganAMNIST & 57{,}187 & 14{,}639{,}872 & 972 \\
 VQGAN & RVL-CDIP & 39{,}996 & 10{,}238{,}976 & 971 \\
 \end{longtable}
 \endgroup
+
+\section{Additional reported contrasts}
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lrrr}
+Tokenizer & Outside mean & Outside P99 & Outside P99.9 \\ \hline
+LlamaGen & 0.050 & 0.328 & 0.554 \\
+VQGAN & 0.090 & 0.673 & 0.854 \\
+\end{tabular}
+\caption{Outside response for the 25\% farthest-code edit on ImageNet.
+Each tail entry is the mean of the corresponding per-image outside-pixel
+percentile, in RGB RMSE units on $[0,1]$. Values are from the archived
+decoder-locality summary.}
+\label{tab:app_decoder_tail_check}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{llrrr}
+Tokenizer & Dataset & All & Border & Interior \\ \hline
+LlamaGen & ImageNet-V2 & -0.682 & -0.672 & -0.686 \\
+LlamaGen & ImageNet-Sketch & -1.166 & -2.212 & -0.846 \\
+LlamaGen & ObjectNet & -0.298 & -0.924 & -0.106 \\
+LlamaGen & OrganAMNIST & -0.544 & -0.613 & -0.522 \\
+LlamaGen & BloodMNIST & -1.552 & -2.007 & -1.413 \\
+LlamaGen & RVL-CDIP & -1.668 & -2.447 & -1.429 \\ \hline
+VQGAN & ImageNet-V2 & -0.039 & -0.034 & -0.041 \\
+VQGAN & ImageNet-Sketch & -0.904 & -1.798 & -0.630 \\
+VQGAN & ObjectNet & -0.131 & -0.350 & -0.064 \\
+VQGAN & OrganAMNIST & -0.249 & -0.215 & -0.259 \\
+VQGAN & BloodMNIST & -1.003 & -1.259 & -0.925 \\
+VQGAN & RVL-CDIP & -1.254 & -2.025 & -1.018 \\
+\end{tabular}
+\caption{Mean positional-entropy change from the full ImageNet reference,
+in nats, from the archived positional summary. These are unequal-size
+descriptive estimates, not the matched estimates in
+Table~\ref{tab:rq5_matched_entropy}. Border is the one-cell outer ring.
+ObjectNet retains its red identification border; OrganAMNIST is incomplete.}
+\label{tab:app_positional_entropy}
+\end{table}

@@ -13,12 +13,12 @@ comparative analysis notebooks and the decoder-locality analysis utility. This
 separation keeps model-specific inference code close to each model while
 placing cross-model analysis in one location.
 
-The audited repositories are available at
+The repositories are available at
 \url{https://github.com/farzinnasiri/taming-transformers},
 \url{https://github.com/farzinnasiri/LlamaGen}, and
-\url{https://github.com/farzinnasiri/vq-explore}. The reproducibility manifest
-described below records the exact file revisions and content digests used for
-the thesis snapshot.
+\url{https://github.com/farzinnasiri/vq-explore}.
+The thesis source and compact results are available at
+\url{https://github.com/farzinnasiri/Thesis---VQ}.
 
 \section{Experiment Scripts}
 \label{sec:appendix_experiment_scripts}
@@ -73,16 +73,8 @@ the research-question number. Figures included by LaTeX are copied into
 \path{Images}. Raw reconstructions and complete run exports remain outside the
 thesis repository.
 
-\section{Reproducibility Record}
+\section{Experimental Configuration}
 \label{sec:appendix_reproducibility}
-
-The file \path{Assets/reproducibility_manifest.csv} records the repository
-revision, working-tree state, and SHA-256 digest of each experiment script and
-analysis notebook in the audited snapshot. The revision identifies the last
-commit that changed the file. The digest identifies its exact local contents.
-Most entries match their committed revision. The two reconstruction exporters
-and the RQ2 notebook contain later uncommitted changes, so the manifest marks
-them as modified rather than presenting the listed commit as an exact snapshot.
 
 Both tokenizers process RGB images at $256\times256$ resolution using a
 shortest-side resize followed by a center crop. Both expose a nominal

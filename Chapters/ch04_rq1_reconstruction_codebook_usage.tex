@@ -25,7 +25,7 @@ where $E$ is the encoder, $Q$ is the vector-quantization step, and $D$ is the de
 
 token assignments for the ImageNet baseline.
 
-The codebook analysis reports both raw and effective vocabulary use. The raw active count is the number of codebook entries assigned at least once. The effective active count uses a minimum-frequency threshold of $10^{-6}$ of all token assignments, corresponding to at least 13 assignments out of 12.8 million tokens in this experiment. Entropy and perplexity summarize the effective size of the empirical distribution, and top-$k$ mass measures how much of the token stream is captured by the most frequent codes.
+The codebook analysis reports both raw and effective vocabulary use. The raw active count is the number of codebook entries assigned at least once. The effective active count uses a minimum-frequency threshold of $10^{-6}$ of all token assignments, corresponding to at least 13 assignments out of 12.8 million tokens in this experiment. Entropy and perplexity summarize the effective size of the empirical distribution, and top-$m$ mass measures how much of the token stream is captured by the most frequent codes.
 
 The experiment uses the same ImageNet validation images and deterministic
 inference for both models. Each exporter applies its own resize filter before
@@ -35,7 +35,7 @@ documents this preprocessing difference.
 \section{Reconstruction Baseline}
 \label{sec:rq1_reconstruction_baseline}
 
-Table~\ref{tab:rq1_reconstruction_metrics} reports the ImageNet reconstruction metrics for LlamaGen and VQGAN. LlamaGen improves the paired-image metrics (PSNR, SSIM, LPIPS) and the reference-conditioned distribution metrics (FID, sFID, precision, and recall). Inception Score is retained as a diagnostic of classifier confidence and class diversity, not treated as a paired reconstruction metric or as having a universally preferred direction. The remaining metrics make LlamaGen the stronger clean reconstruction baseline on ImageNet.
+Table~\ref{tab:rq1_reconstruction_metrics} reports the ImageNet reconstruction metrics for LlamaGen and VQGAN. LlamaGen has better scores on the paired-image metrics (PSNR, SSIM, LPIPS) and the reference-conditioned distribution metrics (FID, sFID, precision, and recall). Inception Score is retained as a diagnostic of classifier confidence and class diversity, not treated as a paired reconstruction metric or as having a universally preferred direction. The remaining metrics make LlamaGen the stronger clean reconstruction baseline on ImageNet.
 
 \begin{table}[t]
     \centering
@@ -46,7 +46,7 @@ Table~\ref{tab:rq1_reconstruction_metrics} reports the ImageNet reconstruction m
         LlamaGen & 20.79 & 0.558 & 0.228 & 2.19 & 5.01 & 0.978 & 0.995 & 52.70 \\
         VQGAN    & 19.65 & 0.489 & 0.286 & 5.06 & 6.49 & 0.920 & 0.973 & 46.76 \\
     \end{tabular}
-    \caption{ImageNet reconstruction metrics for the two tokenizers. Higher PSNR, SSIM, precision, and recall are preferred; lower LPIPS, FID, and sFID are preferred. Inception Score is reported as a diagnostic and is not assigned a preferred reconstruction direction.}
+    \caption{ImageNet reconstruction metrics for the two tokenizers under their recorded preprocessing. PSNR is in dB. Higher PSNR, SSIM, precision, and recall are preferred; lower LPIPS, FID, and sFID are preferred. Inception Score has no preferred reconstruction direction.}
     \label{tab:rq1_reconstruction_metrics}
 \end{table}
 
@@ -55,10 +55,17 @@ The PSNR gap is modest in absolute terms, but it is consistent with the other me
 The corresponding per-image standard deviations are 3.18 dB, 0.167, and
 0.058 for LlamaGen PSNR, SSIM, and LPIPS, and 3.41 dB, 0.176, and 0.066 for
 VQGAN. These standard deviations describe variation across images, not
-uncertainty in the dataset means or the fraction of images on which one model
-wins. FID and related distribution metrics do
-not decompose into per-image observations and are consequently reported as
-dataset-level estimates.
+uncertainty in the dataset means. A separate clean-condition export from the
+robustness run supplies PSNR for both models on the same 50{,}000 ImageNet
+validation IDs. Its model means differ from the reconstruction export above by
+less than 0.001 dB. Pairing those rows by image, LlamaGen's mean PSNR advantage
+is 1.144 dB, with a 95\% image-level bootstrap percentile interval of
+[1.140, 1.148] dB from 2{,}000 resamples. LlamaGen has higher PSNR on 97.91\%
+of images. The interval describes sampling variation across validation
+images, not uncertainty from preprocessing or checkpoint choice. We do not
+have corresponding paired per-image SSIM or LPIPS rows from this export. FID
+and related distribution metrics do not decompose into per-image observations
+and are reported as dataset-level estimates.
 
 The published LlamaGen comparison reports PSNR $20.79$, SSIM $0.675$, and
 reconstruction FID $2.19$ for VQ-16, versus PSNR $20.00$, SSIM $0.629$, and
@@ -73,14 +80,10 @@ the cause of that offset. LlamaGen's published $97\%$ usage is measured in a
 65{,}536-token queue, whereas our $100\%$ denotes codes observed at least once
 across 12.8 million assignments.
 
-Figure~\ref{fig:rq1_reconstruction_metric_comparison} visualizes the same comparison across metrics that differ in scale and direction. Excluding Inception Score, whose interpretation is not paired to a reference image, the reconstruction metrics consistently favor LlamaGen.
-
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=0.98\textwidth]{ch04_fig_reconstruction_metric_comparison.png}
-    \caption{ImageNet reconstruction metric comparison for VQGAN and LlamaGen. Each panel names whether higher or lower values are preferred; the comparison should be read by direction within each metric, not by comparing bar heights across panels.}
-    \label{fig:rq1_reconstruction_metric_comparison}
-\end{figure}
+Excluding Inception Score, whose interpretation is not paired to a reference
+image, the reconstruction metrics in Table~\ref{tab:rq1_reconstruction_metrics}
+consistently favor LlamaGen. The table reports the values without assigning a
+preferred direction to the classifier-based score.
 
 Figure~\ref{fig:rq1_reconstruction_triplets} shows how much detail and structure
 each tokenizer preserves through the discrete bottleneck on three paired
@@ -89,7 +92,7 @@ examples.
 \begin{figure}[t]
     \centering
     \includegraphics[width=0.9\textwidth]{ch04_fig_reconstruction_triplets.png}
-    \caption{Qualitative ImageNet reconstruction examples. Each row shows the original image, the VQGAN reconstruction, and the LlamaGen reconstruction.}
+    \caption{Illustrative ImageNet reconstruction examples, selected from the saved archive to show different content. They are not a random or median-quality sample. Each row shows the original image and the two reconstructions.}
     \label{fig:rq1_reconstruction_triplets}
 \end{figure}
 
@@ -109,7 +112,7 @@ The metrics above show that LlamaGen reconstructs the ImageNet validation images
         VQGAN    & 16{,}384 & 972 (5.9\%)       & 971 (5.9\%)       & 910.46    & 0.022 & 0.165 & 0.665 \\
     \end{tabular}
     }
-    \caption{ImageNet codebook usage summary. Active counts report how many nominal codes appear on ImageNet; effective active counts use the threshold of at least 13 assignments. Top-$k$ values report the fraction of all token assignments covered by the most frequent $k$ codes.}
+    \caption{ImageNet codebook usage summary. Active counts report how many nominal codes appear on ImageNet; effective active counts use the threshold of at least 13 assignments. Top-$m$ values report the fraction of all token assignments covered by the most frequent $m$ codes.}
     \label{tab:rq1_codebook_usage}
 \end{table}
 
@@ -118,10 +121,10 @@ LlamaGen uses all 16,384 codebook entries on ImageNet with a perplexity of 16,17
 LlamaGen's top-500 codes account for only 4.6\% of all token assignments; VQGAN's top-500 account for 66.5\%. Thus, although the two tokenizers expose the same nominal vocabulary size, the sequences they would provide to a downstream autoregressive model have very different empirical vocabularies. The downstream model is trained on this empirical token stream, not on the unused portion of the nominal codebook.
 
 Entropy gives an idealized coding interpretation of the same result. Since
-$H=\log(\operatorname{PPL})$, the observed perplexities correspond to about
+$H=\log(P(p))$, the observed perplexities correspond to about
 $9.69$ nats ($13.98$ bits) per token for LlamaGen and $6.81$ nats ($9.83$
 bits) per token for VQGAN. For a 256-token grid, these are approximately
-$3{,}579$ and $2{,}516$ idealized bits per image under an optimal code matched
+$3{,}579$ and $2{,}517$ idealized bits per image under an optimal code matched
 to each empirical marginal distribution. LlamaGen's empirical marginal
 entropy is therefore about 42\% higher. These marginal entropies describe ideal
 code lengths for the observed token frequencies. They do not measure semantic
@@ -136,8 +139,8 @@ Figure~\ref{fig:rq1_code_usage_sorted} shows the full rank-frequency curve. Llam
     \label{fig:rq1_code_usage_sorted}
 \end{figure}
 
-The top-$k$ columns in Table~\ref{tab:rq1_codebook_usage} report the cumulative
-mass of the 10, 100, and 500 most frequent codes. High top-$k$ mass means that a
+The top-$m$ columns in Table~\ref{tab:rq1_codebook_usage} report the cumulative
+mass of the 10, 100, and 500 most frequent codes. High top-$m$ mass means that a
 large fraction of the token sequence comes from a small set of IDs.
 
 \section{Baseline Summary}

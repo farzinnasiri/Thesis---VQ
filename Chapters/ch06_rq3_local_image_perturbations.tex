@@ -9,9 +9,13 @@ present experiment tests whether changes also appear outside a bounded patch.
 
 Finite convolutional receptive fields create overlapping local dependencies,
 while attention and spatial normalization can couple distant positions. The
-evaluated VQGAN contains $3\times3$ stride-2 downsampling, $3\times3$ residual
-convolutions, GroupNorm, and attention at its lowest-resolution level. These
-facts identify candidate mechanisms, not the cause of the measured response.
+two evaluated encoders use VQGAN-style convolutional backbones with
+$3\times3$ stride-2 downsampling, $3\times3$ residual convolutions,
+GroupNorm, and attention at the lowest-resolution level. These facts identify
+candidate mechanisms, not the cause of the measured response. EdiBERT
+previously observed token changes outside a local image mask on a VQGAN
+model~\cite{issenhuth2021edibert}; here the distance profile measures their
+frequency across the ImageNet validation set for both checkpoints.
 
 \section{Experimental Setup}
 \label{sec:rq3_setup}
@@ -92,16 +96,30 @@ The inside and outside responses do not show how far token changes spread. Each
 token position $i$ is therefore assigned a Manhattan grid distance $d(i,P)$ to
 the nearest token in $I_P$: distance zero is inside the patch, distance one is
 the first ring of neighboring token cells, and larger values move farther
-across the token grid. We define the distance profile as
+across the token grid. For image $n$, let $A_{n,d}$ contain its token
+positions at distance $d$ from its patch $P_n$. The reported profile pools
+token counts across images:
 \begin{equation}
-    R_d(\sigma,P)
+    R_d(\sigma)
     =
-    \frac{1}{|\{i : d(i,P)=d\}|}
-    \sum_{i : d(i,P)=d}
-    \mathbf{1}\!\left[z_{\sigma,P,i} \neq z_{0,i}\right].
+    \frac{\sum_n\sum_{i\in A_{n,d}}
+    \mathbf{1}\!\left[z_{\sigma,P_n,i}^{(n)} \neq z_{0,i}^{(n)}\right]}
+    {\sum_n |A_{n,d}|}.
     \label{eq:rq3_distance_profile}
 \end{equation}
-The results report the full profile and a small set of bands: inside tokens ($d=0$), boundary-neighbor tokens ($d=1$), near tokens ($d \in \{1,2\}$), and far-field tokens ($d \geq 6$).
+Each eligible token has equal weight, so images with more tokens in a band
+contribute more weight. An image with no tokens at distance $d$ contributes
+neither flips nor observations there; a globally empty band is undefined,
+rather than assigned zero. The results report the full profile and three summaries: inside tokens
+($d=0$), boundary-neighbor tokens ($d=1$), and far-field tokens ($d\geq6$).
+Band summaries use the same pooled counts. Appendix~\ref{app:supporting_results}
+retains the per-distance probabilities and their token denominators.
+
+All 50,000 images contribute at distances zero through eight. Beyond that,
+eligibility depends on patch placement. At $d=16$, only corner placements
+contribute, with one opposite-corner token each: the saved denominator is
+2,488 tokens from 2,488 images. Tail values therefore describe eligible patch
+and image positions, not a fixed image population followed over distance.
 
 \section{Experimental Results}
 \label{sec:rq3_results}
@@ -114,7 +132,7 @@ Figure~\ref{fig:rq3_qual_combined} shows selected examples for the two tokenizer
 \begin{figure}[tbp]
     \centering
     \textbf{(a) VQGAN}\par\smallskip
-    \includegraphics[width=\textwidth,height=0.35\textheight,keepaspectratio]{ch06_fig_patch_noise_qualitative_vqgan.png}
+    \includegraphics[width=\textwidth,height=0.32\textheight,keepaspectratio]{ch06_fig_patch_noise_qualitative_vqgan.png}
     \begin{minipage}{0.96\textwidth}
         \footnotesize\centering
         Sample ILSVRC2012\_val\_00000293:
@@ -125,7 +143,7 @@ Figure~\ref{fig:rq3_qual_combined} shows selected examples for the two tokenizer
 
     \medskip
     \textbf{(b) LlamaGen}\par\smallskip
-    \includegraphics[width=\textwidth,height=0.35\textheight,keepaspectratio]{ch06_fig_patch_noise_qualitative_llamagen.png}
+    \includegraphics[width=\textwidth,height=0.32\textheight,keepaspectratio]{ch06_fig_patch_noise_qualitative_llamagen.png}
     \begin{minipage}{0.96\textwidth}
         \footnotesize\centering
         Sample ILSVRC2012\_val\_00000293:
@@ -205,7 +223,7 @@ $\sigma=0.1$. At $\sigma=0.5$, the fraction is roughly one third.
 \begin{figure}[t]
     \centering
     \includegraphics[width=0.86\textwidth]{ch06_fig_distance_profile_flip.png}
-    \caption{Token flip probability as a function of distance from the perturbed patch. The response is strongest inside and near the patch, but remains measurable far from it.}
+    \caption{Pooled token flip probability by distance from the perturbed patch. The response is strongest inside and near the patch, but remains measurable far from it. Beyond distance eight, the contributing image population depends on patch placement; Table~\ref{tab:app_encoder_distance} reports token denominators.}
     \label{fig:rq3_distance_profile_flip}
 \end{figure}
 \paragraph{Masked patch intervention.}
@@ -240,6 +258,11 @@ value, but the spatial pattern is shared. These small cross-checkpoint
 differences are descriptive because the patch locations and noise draws were
 not matched.
 
+At $\sigma=0.1$, inside-patch flip rates exceed the global-noise rates from
+Chapter~\ref{ch:rq2}. The input context and spatial support of the noise differ,
+so equal nominal $\sigma$ does not make these the same intervention. The
+experiment does not isolate a patch-edge explanation for this difference.
+
 The evaluated architecture contains overlapping $3\times3$ convolutions,
 GroupNorm, and an attention layer. A small feature movement can also cross a
 nearest-neighbor quantization boundary and change the assignment at that
@@ -251,5 +274,6 @@ receptive-field overlap through ablations and intermediate-feature analysis.
 This result complements Chapter~\ref{ch:rq2}. Global noise changed many token
 assignments when every image region was perturbed. The study of perturbation
 locality shows how far those changes spread when the image modification is
-bounded: token assignments change well beyond the selected patch. These
-changes also alter the token sequences supplied to an autoregressive model.
+bounded: token assignments change well beyond the selected patch. This
+establishes non-local dependence of code identity, but the experiment does not
+decode only the outside flips to measure their separate image contribution.

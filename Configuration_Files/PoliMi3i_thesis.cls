@@ -31,7 +31,8 @@
     \latexchapter{#1}
     \renewcommand{\headrulewidth}{0pt} %removing the horizontal line in the header
     %\addcontentsline{toc}{chapter}{#1} % Also adds the chapter name to the Contents
-    \fancyhead[LO, RE]{ \textbf{\textcolor{bluepoli}\thechapter\hsp\textcolor{bluepoli}{|   }\hsp \leftmark}}% Header
+    \markboth{\thechapter\ |\ #1}{}
+    \fancyhead[LO, RE]{\textbf{\textcolor{bluepoli}{\leftmark}}}% Header
     \fancyhead[LE, RO]{\thepage}
     \vspace{-1cm}
 }
@@ -42,7 +43,8 @@
     \latexchapter*{#1} 
    \renewcommand{\headrulewidth}{0pt} %removing the horizontal line in the header
     \addcontentsline{toc}{chapter}{#1} % Also adds the chapter name to the Contents
-    \fancyhead[LO, RE]{ \bfseries \textcolor{bluepoli}{|   } #1} % Header \textbf{\leftmark} \hspace{1mm}}
+    \markboth{#1}{}
+    \fancyhead[LO, RE]{\textbf{\textcolor{bluepoli}{\leftmark}}}
     \fancyhead[LE, RO]{\thepage}
     \vspace{-1cm}
 }
@@ -62,13 +64,17 @@
 %------------------------------------------------------------------------
 
 % Define new command: adding background picture (halo) on bottom left (used for empty pages)
+\newcommand\PolimiHalo[1]{%
+    \begin{tikzpicture}
+        \node[inner sep=0pt, opacity=0.4]{\includegraphics[width=#1]{./raggiera_polimi.pdf}};
+    \end{tikzpicture}%
+}
 \newcommand\BackgroundPic{
 	\put(-150,-200){%
 		\parbox[b][\paperheight]{\paperwidth}{%
 			\vfill
 			\centering
-			\transparent{0.4}
-			\includegraphics[width=0.85\paperwidth]{./raggiera_polimi.eps}
+			\PolimiHalo{0.85\paperwidth}
 			\vfill
 }}}
 
@@ -78,8 +84,7 @@
 		\parbox[b][\paperheight]{\paperwidth}{%
 			\vfill
 			\centering
-			\transparent{0.4}
-			\includegraphics[width=0.70\paperwidth]{./raggiera_polimi.eps}
+			\PolimiHalo{0.70\paperwidth}
 			\vfill
 }}}
 
@@ -110,12 +115,12 @@
 			\vfill
 			%\begin{minipage}{0.95\textwidth}
 			\begin{minipage}{0.95\textwidth}
-            \includegraphics[trim={1.2cm 0 0 0},clip, width=0.7\textwidth]{Images/02_ING_IND_INFORMAZIONE_COL_POSITIVO.eps}
+            \includegraphics[trim={1.2cm 0 0 0},clip, width=0.7\textwidth]{Images/02_ING_IND_INFORMAZIONE_COL_POSITIVO.pdf}
             \hfill
             \\
 			\vspace{2.5cm}
 			\\
-			{{\color{bluepoli} \singlespacing \huge \bfseries \thesistitle \par}}	
+			{{\color{bluepoli} \singlespacing \huge \bfseries \raggedright \hyphenpenalty=10000 \exhyphenpenalty=10000 \thesistitle \par}}
 			\vspace{1.5cm}
 			{\color{bluepoli} \bfseries \large{\textsc{Tesi di Laurea Magistrale in\\ \course}}\par}
 			\vspace{1.5 cm}
@@ -130,7 +135,7 @@
 			\\
 			Advisor: {\advisor}
 			\\
-			Co-advisors: {\coadvisor}
+			Co-advisor: {\coadvisor}
 			\\
 			Academic Year: {\academicyear}
 			}

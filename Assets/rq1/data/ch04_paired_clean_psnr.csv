@@ -1,0 +1,2 @@
+dataset,metric,n_pairs,source,bootstrap_seed,bootstrap_repeats,llamagen_mean_db,vqgan_mean_db,paired_mean_difference_db,paired_mean_ci025_db,paired_mean_ci975_db,llamagen_win_fraction,win_fraction_ci025,win_fraction_ci975
+ImageNet validation,PSNR,50000,Chapter 5 clean rows,20260925,2000,20.792783942285766,19.648718113841916,1.144065828443849,1.1395969810421338,1.1482186231003257,0.97912,0.97782,0.9804005

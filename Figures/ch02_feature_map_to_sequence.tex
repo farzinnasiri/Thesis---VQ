@@ -1,5 +1,5 @@
 \begin{tikzpicture}[
-    font=\sffamily\scriptsize,
+    font=\sffamily\small,
     block/.style={draw=black!50, rounded corners=2pt, minimum width=25mm,
                   minimum height=14mm, align=center, fill=blue!7},
     data/.style={draw=black!45, minimum width=27mm, minimum height=14mm,
@@ -11,18 +11,18 @@
 \node[block, right=5mm of image] (encoder) {encoder\\$E$};
 \node[data, right=5mm of encoder] (latent)
     {continuous grid\\$z_e(x)\in\mathbb{R}^{h\times w\times d}$};
-\node[quant, right=5mm of latent] (nearest)
+\node[quant, below=13mm of latent] (nearest)
     {nearest codebook entry\\$k_{u,v}=\arg\min_j\|z_{e,u,v}-e_j\|_2$};
-\node[data, right=5mm of nearest] (indices)
+\node[data, left=7mm of nearest] (indices)
     {index grid\\$k\in\{1,\ldots,K\}^{h\times w}$};
-\node[data, below=12mm of indices] (sequence)
+\node[data, left=7mm of indices] (sequence)
     {raster sequence\\$s=(k_{1,1},k_{1,2},\ldots,k_{h,w})$};
 \draw[arrow] (image) -- (encoder);
 \draw[arrow] (encoder) -- (latent);
 \draw[arrow] (latent) -- (nearest);
 \draw[arrow] (nearest) -- (indices);
-\draw[arrow] (indices) -- node[right=1mm] {flatten} (sequence);
-\node[below=7mm of sequence, align=center, font=\scriptsize, text width=82mm]
+\draw[arrow] (indices) -- node[above=1mm,font=\scriptsize] {flatten} (sequence);
+\node[below=8mm of indices, align=center, font=\small, text width=120mm]
     {Example dimensions for the evaluated checkpoints, not a universal tokenizer
      constraint: $h=w=16$ and $K=16{,}384$. The grid has
      $256$ positions, and each token is one of $16{,}384$ codebook indices.};

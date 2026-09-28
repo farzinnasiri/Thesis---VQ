@@ -8,58 +8,60 @@ usage, token stability under global noise, encoder and decoder locality, and
 the response to distribution shift. Each analysis isolated the tokenizer from
 the autoregressive model that would consume its tokens.
 
-The reconstruction analysis established the clean baseline and reproduced the
-expected advantage of LlamaGen. On ImageNet validation, LlamaGen achieved
-$20.79$ rather than $19.65$ PSNR, $0.558$ rather than $0.489$ SSIM, $0.228$
+For RQ1, the reconstruction analysis established the clean baseline under
+each exporter's recorded preprocessing. On ImageNet validation, LlamaGen achieved
+$20.79$ rather than $19.65$ dB PSNR, $0.558$ rather than $0.489$ SSIM, $0.228$
 rather than $0.286$ LPIPS, and $2.19$ rather than $5.06$ FID. The codebook
 measurements revealed a larger difference between the checkpoints. LlamaGen
-used all 16{,}384 entries observed in this evaluation, while VQGAN used about
+used all 16{,}384 nominal entries at least once, while VQGAN used about
 972. The nominal vocabulary size therefore did not describe the vocabulary
 used by each checkpoint.
 
-The analysis of global image perturbations found that neither tokenizer
+For RQ2, global image perturbations showed that neither tokenizer
 preserved exact token identity under the tested Gaussian noise. At $\sigma=0.1$
 in the internal $[-1,1]$ image range (equivalent to a standard deviation of
 $0.05$ in $[0,1]$ before clipping),
 79.5\% of LlamaGen positions and 75.1\% of VQGAN positions differed from their
-clean assignments. Selected decoded images retained recognizable structure,
-and LlamaGen had higher PSNR to the original clean image at every tested noise
-level. That PSNR does not measure the change between clean and noisy
-\emph{reconstructions}; the results establish frequent index changes, not a
-quantitative bound on decoded change. Noise also concentrated code usage in
+clean assignments. LlamaGen had higher PSNR to the original clean image at
+every tested noise level. A separate 2{,}000-image comparison of saved clean
+and noisy reconstructions found lower decoded RMSE for LlamaGen at all three
+noise levels, despite its slightly higher identity-flip fraction. The
+full-dataset PSNR-to-original measure and this sampled direct-change measure
+answer different questions. Noise also concentrated code usage in
 both models without greatly changing the raw number of active codes.
 
-The analysis of local image perturbations found that the encoder response was
+For RQ3, local image perturbations showed that the encoder response was
 not confined to the perturbed patch. At low patch noise, the far-field token
 flip rate was 17.4\% for VQGAN and 17.8\% for LlamaGen. Masking one image patch
 changed 56.3\% of VQGAN positions and 49.5\% of LlamaGen positions outside the
-corresponding token region. A local change in image space can therefore alter
-the discrete representation well beyond that region.
+corresponding token region.
 
-The decoder analysis found a more concentrated response. Directly editing a
+For RQ4, the decoder analysis found that directly editing a
 local token patch produced the largest pixel changes near the edited region,
 although measurable changes remained outside it. The same pattern held on the
 slightly out-of-distribution ImageNet-V2 dataset, where the largest change in
 patch LPIPS relative to ImageNet validation was 0.0068. Locality is therefore
 preserved approximately rather than exactly when the decoder maps token edits
-back to pixels.
+back to pixels. A saved-image distance profile for the 25\% edit shows that
+outside response declines with distance from the edited boundary but remains
+measurable 80--96 pixels away on the sampled images.
 
-When tested on out-of-distribution datasets, both VQGAN and LlamaGen retained
+For RQ5, both VQGAN and LlamaGen retained
 almost all codes that were active on ImageNet. They did not switch to a
 substantially different set of active tokens. Instead, they changed how often
-they used those tokens. ImageNet-V2 and ObjectNet remained close to the
-ImageNet token distribution, while sketches, medical images, and document
-pages produced larger changes. RVL-CDIP produced the largest
+they used those tokens. ImageNet-V2 remained close to the ImageNet token
+distribution, while ImageNet-Sketch, BloodMNIST, and RVL-CDIP produced larger
+changes. These datasets support the frequency-redistribution finding
+independently of the limited ObjectNet and OrganAMNIST exports. RVL-CDIP produced the largest
 Jensen--Shannon divergence for both tokenizers. The reconstruction scores do
 not show a uniform ordering across these datasets, but their different image
 content prevents that comparison from isolating the effect of distribution
 shift on reconstruction quality.
 
-Overall, better reconstruction and broader codebook usage did not guarantee
-unchanged token identities under noise. LlamaGen reconstructed images more
-accurately and used far more codes, yet both checkpoints had high flip rates
-under the tested perturbations. Those rates are not a calibrated robustness
-ranking across different codebooks. The distribution-shift results show that
+Reconstruction, token identity, and code-frequency measurements describe
+different properties of these checkpoints. High flip rates occurred in both
+systems, but do not calibrate a robustness ranking across their different
+codebooks. The distribution-shift results show that
 an almost unchanged active set can conceal substantial frequency changes. A
 tokenizer therefore determines more than how faithfully an image is rebuilt;
 it also determines the sequence distribution presented to the autoregressive
@@ -75,31 +77,67 @@ normalization, and implementation details. The observed differences describe
 the two complete systems. They do not identify which
 design choice caused each result. A direct mechanistic study should modify one
 tokenizer property at a time, retrain the affected models, and repeat the same
-measurements. This would separate the effects of codebook size, training
-objective, and architecture.
+measurements. This would test the effects of codebook geometry and training
+choices while controlling the remaining components.
 
-Both tokenizers also require a fixed $256\times256$ input. Their exporters used
+All experiments in this thesis use $256\times256$ inputs. Their exporters used
 different resize filters, as documented in the reproducibility appendix.
+The local VQGAN baseline differs from the published comparison by 0.35 dB
+PSNR and 0.07 FID; the cause has not been isolated
+(Section~\ref{sec:rq1_reconstruction_baseline}).
 Resizing and cropping
 can alter datasets whose native resolution, aspect ratio, or layout differs
 from ImageNet, especially document and medical images. Future comparisons
-should include tokenizers with adaptive input resolution and test whether the
-same distribution-shift patterns remain without a fixed-size preprocessing
-step.
+should evaluate the existing checkpoints at other supported resolutions and
+test how the distribution-shift patterns depend on the chosen input size.
+
+The ObjectNet exporters did not explicitly remove the source images' red
+identification border. Its reported token frequencies and spatial contrasts
+therefore describe the marked-image pipeline; in particular, the border-grid
+contrast cannot be interpreted as a property of object content alone. The
+local OrganAMNIST export also omitted 1{,}643 images from the official
+training split. Its results describe the 57{,}187 saved images rather than the
+complete release. A full-dataset replication should correct both inputs and
+re-evaluate those two datasets before making border-free or full-release
+claims.
 
 The analyses of global and local perturbations used the same seeds and
-intervention levels for both models, but they did not save a shared manifest of
+intervention levels for both models, but they did not save a shared record of
 the exact noise arrays and patch locations. Identical seed values do not imply
 identical perturbations across separate implementations and preprocessing
 pipelines; the realizations and patch locations were not matched. This
 avoidable limitation was
 identified after data collection. A replication should export every
 intervention once and apply the same saved intervention to both tokenizers.
+The global-noise sweep starts at $\sigma=0.1$ in the internal image range;
+it does not characterize weaker perturbations. Clipping changes the sampled
+noise distribution, particularly at the strongest level. Decoder edit modes
+also differ in induced distance between codebooks, and VQGAN random edits can
+select codes absent from clean ImageNet assignments. These interventions do
+not identify intrinsic cross-model sensitivity or individual causal mechanisms
+(Sections~\ref{subsec:rq2_perturbation_protocol} and~\ref{sec:rq4_discussion}).
+
+The clean ImageNet PSNR comparison has a paired image-level bootstrap interval
+and win rate; the other reconstruction metrics do not have analogous paired
+estimates. The decoder distance-to-boundary profile uses 500 saved eight-bit
+image pairs per checkpoint at one patch size; it describes spatial decay, not
+a fixed-width halo or an exact receptive-field radius. The archived per-image
+ImageNet grids allowed a sample-matched
+positional-entropy check for ImageNet-V2, BloodMNIST, and RVL-CDIP. Per-image
+grids are not available for every shifted dataset, so the remaining
+comparisons could not receive the same check.
+No sampling null was computed for JSD, so small divergences are descriptive
+rather than significance tests. Cross-dataset reconstruction scores also
+depend on image content; they do not establish preservation or loss of quality
+caused by a distribution shift.
 
 Finally, the study did not train or evaluate an autoregressive model on the
 measured token streams. It therefore cannot show how token instability,
 concentrated code usage, or distribution-dependent token frequencies affect
 generation. Future work should train or evaluate autoregressive priors on these
-streams and measure generation quality and robustness directly. The spatial
-analysis should also be repeated with matched dataset sizes, since unequal
-sample counts affect the current positional-entropy estimates.
+streams and measure generation quality and robustness directly. Further
+spatial analysis should retain per-image grids for every dataset so all
+positional-entropy comparisons can use matched counts.
+
+The code, analysis notebooks, supporting data, and instructions for reproducing
+the reported results will be provided separately to the supervisor.

@@ -10,9 +10,9 @@
 \node[font=\sffamily\bfseries\scriptsize] at (40mm,7mm) {Tokenizer path};
 \node[note, font=\sffamily\bfseries\scriptsize] at (113mm,7mm) {Measurements};
 \foreach \r/\title/\inputtext/\tokentext/\outputtext in {
-  1/Clean baseline/$x$/$k$/$\hat{x}$,
-  2/Global input noise/$x+\epsilon$/$k'$/$\hat{x}'$,
-  5/Distribution shift/$x_{\mathrm{OOD}}$/$k_{\mathrm{OOD}}$/$\hat{x}_{\mathrm{OOD}}$}{
+  1/RQ1: Clean baseline/$x$/$k$/$\hat{x}$,
+  2/RQ2: Global input noise/$x+\epsilon$/$k'$/$\hat{x}'$,
+  5/RQ5: Distribution shift/$x_{\mathrm{OOD}}$/$k_{\mathrm{OOD}}$/$\hat{x}_{\mathrm{OOD}}$}{
     \pgfmathsetmacro{\yy}{-(\r-1)*1.25}
     \node[note] at (-27mm,\yy) {\title};
     \node[data] (x\r) at (0,\yy) {\inputtext};
@@ -25,13 +25,13 @@
     \draw[flow] (k\r) -- (d\r);
     \draw[flow] (d\r) -- (o\r);
 }
-\node[note] at (-27mm,-2.5) {Local image patch};
+\node[note] at (-27mm,-2.5) {RQ3: Local image patch};
 \node[data] (x3) at (0,-2.5) {$x+\epsilon\mathbf{1}_{R}$};
 \node[stage] (e3) at (20mm,-2.5) {$E$};
 \node[data] (k3) at (40mm,-2.5) {$k'$};
 \draw[flow] (x3) -- (e3);
 \draw[flow] (e3) -- (k3);
-\node[note] at (-27mm,-3.75) {Local token edit};
+\node[note] at (-27mm,-3.75) {RQ4: Local token edit};
 \node[data] (k4) at (40mm,-3.75) {$k'=\operatorname{edit}(k,S)$};
 \node[stage, trapezium angle=105] (d4) at (60mm,-3.75) {$D$};
 \node[data] (o4) at (80mm,-3.75) {$\hat{x}'$};

@@ -35,6 +35,11 @@ normalized to unit L2 norm.
 
 Table~\ref{tab:model_config_summary} summarizes the configurations of the two
 evaluated tokenizers.
+Both implementations use channel multipliers $(1,1,2,2,4)$, two residual
+blocks per encoder scale, three per decoder scale, GroupNorm with 32 groups,
+and self-attention at the coarsest spatial level and middle blocks. The
+quantizer projection and codebook geometry distinguish the implementations
+without requiring a different spatial backbone.
 
 \begin{table}[htbp]
     \centering
@@ -91,12 +96,15 @@ Chapter~\ref{ch:rq5}.
 ImageNet-V2 was collected years after the original ImageNet construction as a
 new test set for the same 1,000 classes~\cite{recht2019imagenet}. It keeps the
 label space and natural-image setting close to ImageNet while changing the
-sampled images, so it represents a near-domain shift.
+sampled images, so it represents a near-domain shift. The experiments use the
+10{,}000-image matched-frequency variant in WordNet-ID directory format, not
+the threshold-0.7 or top-images variants.
 
 ImageNet-Sketch instead keeps the ImageNet label space but replaces natural
 photographs with black-and-white sketches~\cite{wang2019learning}. It represents
-a stronger shift than ImageNet-V2 because texture, color, and photographic
+a stronger visual change than ImageNet-V2 because texture, color, and photographic
 detail are largely absent while object shape remains central.
+Figure~\ref{fig:dataset_shift_severity_ladder} illustrates the three collections.
 
 \begin{figure}[t]
     \centering
@@ -138,7 +146,7 @@ Chapter 8 also uses datasets whose visual domains are not ImageNet-like. ObjectN
         OrganAMNIST & Abdominal CT slices, 11 organ classes & 57{,}187 & Grayscale medical imaging with intensity statistics far from natural images. \\
         RVL-CDIP & Scanned document pages, 16 document classes & 39{,}996 & Layout- and text-like structure rather than natural-image content. \\
     \end{tabularx}
-    \caption{Non-ImageNet datasets used as domain-shift checks. The image counts report the subsets used in the tokenizer experiments; for example, RVL-CDIP contains 400{,}000 images in the full source dataset.}
+    \caption{Non-ImageNet collections evaluated. Counts describe the saved inputs: ObjectNet retains its identification border, and OrganAMNIST omits 1{,}643 official training images. RVL-CDIP contains 400{,}000 images in the full source dataset.}
     \label{tab:non_imagenet_datasets}
 \end{table}
 
@@ -159,9 +167,27 @@ Chapter 8 also uses datasets whose visual domains are not ImageNet-like. ObjectN
         \makebox[0.22\textwidth][c]{\includegraphics[width=0.16\textwidth,height=0.105\textheight,keepaspectratio]{dataset_examples/ood_rvlcdip_invoice.png}} \\
         headphones & class 5 & class 5 & invoice
     \end{tabular}
-    \caption{Representative non-ImageNet domain examples. ObjectNet remains object-centric, while BloodMNIST, OrganAMNIST, and RVL-CDIP move to biomedical or document domains.}
+    \caption{Illustrative non-ImageNet inputs, selected to show different content types rather than typical metric values. The visible ObjectNet identification border is also present in the evaluated export.}
     \label{fig:non_imagenet_domain_examples}
 \end{figure}
+\FloatBarrier
+
+The MedMNIST inputs are the 224-pixel exports, with train, validation, and
+test images pooled for this unsupervised tokenizer analysis. BloodMNIST
+contributes 11{,}959 training, 1{,}712 validation, and 3{,}421 test images.
+The local OrganAMNIST export contains 32{,}918 training, 6{,}491 validation,
+and 17{,}778 test images. The official release has 34{,}561 training images:
+1{,}643 are absent from the saved PNG collection, with no recorded sampling
+rule. We therefore cannot assume the missing images are a random subset.
+Grayscale OrganAMNIST images are converted to three RGB channels before
+tokenization. OrganAMNIST results
+therefore describe this incomplete export,
+not the full release. For RVL-CDIP, the test export found 39{,}997 files and
+skipped one unreadable TIFF, leaving 39{,}996 images. ObjectNet uses the local
+1.0 image collection. Its source images have a red identification
+border~\cite{barbu2019objectnet}; the exporters did not include an explicit
+border-removal step. The ObjectNet results must therefore be read as results
+for that marked-image pipeline, not as a border-free estimate of domain shift.
 
 \section{Metrics}
 \label{sec:metrics}
@@ -236,7 +262,7 @@ tokenizers, VQGAN and LlamaGen report reconstruction FID or rFID to compare the
 distribution of reconstructions with original images
 ~\cite{esser2021taming,sun2024llamagen}.
 
-sFID is a spatial variant used in common diffusion-model evaluator pipelines~\cite{dhariwal2021diffusion,openaiguideddiffusion,openaiguideddiffusionevals}. It uses spatial features rather than only pooled Inception features, so it can be more sensitive to spatial layout differences. It carries the same finite-sample and feature-extractor caveats as FID.
+sFID uses spatial Inception features, following Nash et al.~\cite{nash2021generating}, and is implemented in the guided-diffusion evaluator~\cite{dhariwal2021diffusion,openaiguideddiffusionevals}. It retains the finite-sample and feature-extractor caveats of FID while measuring spatial features rather than only pooled features.
 
 Inception Score uses an Inception classifier~\cite{salimans2016improved}:
 \begin{equation}
@@ -264,8 +290,8 @@ illustrates this distinction.
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.9\textwidth]{ch03_fig_3_3_precision_recall_tradeoff.png}
-    \caption{Fidelity and coverage manifolds for Precision and Recall. Precision measures the portion of generated support within the real data manifold; Recall measures coverage of the real manifold. Source: reproduced from Kynk\"a\"anniemi et al.~\cite{kynkaanniemi2019improved}.}
+    \input{Figures/ch03_precision_recall_schematic}
+    \aifigurecaption{Schematic of the fidelity--coverage distinction. Precision concerns generated samples near the reference support, whereas recall concerns reference samples covered by the generated support. The diagram is conceptual, not the metric computation; see Kynk\"a\"anniemi et al.~\cite{kynkaanniemi2019improved} for the formal method.}
     \label{fig:precision_recall_tradeoff}
 \end{figure}
 
@@ -307,7 +333,11 @@ Top-$m$ mass measures concentration directly:
 \end{equation}
 where $\mathrm{Top}_m(p)$ is the set of the $m$ most frequent codes. High top-$m$ mass means that a small set of codes accounts for a large fraction of assignments.
 
-Finally, positional entropy computes the same entropy quantity at each grid position $(u,v)$ across the dataset. It asks whether different spatial positions use similar parts of the codebook or whether some positions specialize to particular tokens.
+Finally, positional entropy computes the same entropy quantity at each grid
+position $(u,v)$ across the dataset. It measures code diversity at that
+position. Equal entropy at two positions does not imply that they use the
+same code identities; comparing those identities requires an overlap or
+distribution-divergence measure.
 
 \subsection{Locality and Robustness Metrics}
 \label{subsec:locality_robustness_metrics}
@@ -327,14 +357,19 @@ For a local image perturbation, the leakage ratio compares outside-region and
 inside-region flip rates:
 \begin{equation}
     \lambda_{\mathrm{enc}} =
-    \frac{r(R_{\mathrm{out}})}
-         {r(R_{\mathrm{in}})+\varepsilon}.
+    \frac{r(O_P)}
+         {r(I_P)+\varepsilon}.
 \end{equation}
-The small constant $\varepsilon$ avoids division by zero when no inside-patch flips occur. A low leakage ratio means that token changes are mostly confined to the perturbed region; a high value means that the encoder or quantizer has propagated the perturbation to distant token positions.
+Here $I_P$ and $O_P$ are the token positions inside and outside patch $P$,
+and $\varepsilon=10^{-8}$. The rates are denoted $R_{\mathrm{in}}=r(I_P)$ and
+$R_{\mathrm{out}}=r(O_P)$ in Chapter~\ref{ch:rq3}. The ratio compares response
+densities, not total numbers of changed tokens; distance profiles are needed
+to establish how far the response extends.
 
 The same definition applies to decoder locality after replacing the token flip
 indicator with an image-change measure. Later chapters specify the perturbation,
 mask, and response measure used by each experiment.
+Figure~\ref{fig:locality_leakage_curve} shows the region partition.
 
 \begin{figure}[t]
     \centering
@@ -362,13 +397,13 @@ response to controlled perturbations.
         SSIM & Local luminance, contrast, and structure & Sample image pair & $\uparrow$ & Sensitive to alignment and window choices. \\
         LPIPS & Deep-feature perceptual distance & Sample image pair & $\downarrow$ & Depends on backbone and calibration. \\
         FID / sFID & Feature-distribution match between image sets & Image set & $\downarrow$ & Feature extractor, finite-sample, and Gaussian-assumption effects. \\
-        IS & Classifier confidence and predicted-class diversity & Image set & $\uparrow$ & Does not directly compare outputs to real images. \\
+        IS & Classifier confidence and predicted-class diversity & Image set & descriptive & Does not directly compare outputs to real images. \\
         Precision / Recall & Fidelity to and coverage of a reference feature manifold & Image set & both $\uparrow$ & Depends on feature space and neighborhood construction. \\
-        Active count / fraction & How much of the nominal codebook appears & Token distribution & $\uparrow$ & Raw activity is sensitive to rare one-off codes. \\
-        Entropy / Perplexity & Effective spread of code usage & Token distribution & $\uparrow$ & Can hide spatial specialization. \\
-        Top-$m$ mass & Concentration in frequent codes & Token distribution & $\downarrow$ & Choice of $m$ must be reported. \\
-        Flip rate / leakage ratio & Token or image changes under controlled perturbation & Perturbation response & $\downarrow$ & Depends on perturbation mask and region definition. \\
+        Active count / fraction & How much of the nominal codebook appears & Token distribution & descriptive & Raw activity is sensitive to rare one-off codes. \\
+        Entropy / Perplexity & Effective spread of code usage & Token distribution & descriptive & Can hide spatial specialization. \\
+        Top-$m$ mass & Concentration in frequent codes & Token distribution & descriptive & Choice of $m$ must be reported. \\
+        Flip rate / leakage ratio & Token or image changes under controlled perturbation & Perturbation response & descriptive & Depends on perturbation mask and region definition. \\
     \end{tabularx}
-    \caption{Compact comparison of metric families used in the thesis. Arrows indicate the preferred direction under a fixed evaluation protocol.}
+    \caption{Compact comparison of metric families used in the thesis. Arrows indicate a preferred direction for reference-based fidelity metrics under a fixed protocol. Other metrics describe behavior rather than a universal ranking.}
     \label{tab:metric_comparison_summary}
 \end{table}
