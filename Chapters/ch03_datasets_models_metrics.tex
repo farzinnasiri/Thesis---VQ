@@ -146,7 +146,7 @@ Chapter 8 also uses datasets whose visual domains are not ImageNet-like. ObjectN
         OrganAMNIST & Abdominal CT slices, 11 organ classes & 57{,}187 & Grayscale medical imaging with intensity statistics far from natural images. \\
         RVL-CDIP & Scanned document pages, 16 document classes & 39{,}996 & Layout- and text-like structure rather than natural-image content. \\
     \end{tabularx}
-    \caption{Non-ImageNet collections evaluated. Counts describe the saved inputs: ObjectNet retains its identification border, and OrganAMNIST omits 1{,}643 official training images. RVL-CDIP contains 400{,}000 images in the full source dataset.}
+    \caption{Non-ImageNet collections evaluated. Counts describe the saved inputs; RVL-CDIP contains 400{,}000 images in the full source dataset.}
     \label{tab:non_imagenet_datasets}
 \end{table}
 
@@ -167,7 +167,7 @@ Chapter 8 also uses datasets whose visual domains are not ImageNet-like. ObjectN
         \makebox[0.22\textwidth][c]{\includegraphics[width=0.16\textwidth,height=0.105\textheight,keepaspectratio]{dataset_examples/ood_rvlcdip_invoice.png}} \\
         headphones & class 5 & class 5 & invoice
     \end{tabular}
-    \caption{Illustrative non-ImageNet inputs, selected to show different content types rather than typical metric values. The visible ObjectNet identification border is also present in the evaluated export.}
+    \caption{Illustrative non-ImageNet inputs selected to show the different content types.}
     \label{fig:non_imagenet_domain_examples}
 \end{figure}
 \FloatBarrier
@@ -180,14 +180,12 @@ and 17{,}778 test images. The official release has 34{,}561 training images:
 1{,}643 are absent from the saved PNG collection, with no recorded sampling
 rule. We therefore cannot assume the missing images are a random subset.
 Grayscale OrganAMNIST images are converted to three RGB channels before
-tokenization. OrganAMNIST results
-therefore describe this incomplete export,
-not the full release. For RVL-CDIP, the test export found 39{,}997 files and
+tokenization. For RVL-CDIP, the test export found 39{,}997 files and
 skipped one unreadable TIFF, leaving 39{,}996 images. ObjectNet uses the local
 1.0 image collection. Its source images have a red identification
-border~\cite{barbu2019objectnet}; the exporters did not include an explicit
-border-removal step. The ObjectNet results must therefore be read as results
-for that marked-image pipeline, not as a border-free estimate of domain shift.
+border~\cite{barbu2019objectnet}; the exporters did not include a
+border-removal step. Results for ObjectNet and OrganAMNIST apply to these
+saved exports.
 
 \section{Metrics}
 \label{sec:metrics}
@@ -280,7 +278,8 @@ reconstruction and $p(y)$ is the marginal class distribution across the set.
 The score increases when individual predictions are confident and predictions
 across the set cover different classes. It does not measure whether a
 reconstruction matches its input, so we report it as a classifier-based
-diagnostic~\cite{barratt2018note,chong2019unbiased}.
+diagnostic without assigning it a preferred reconstruction direction
+~\cite{barratt2018note,chong2019unbiased}.
 
 For reconstructed image sets, precision measures how much of the reconstruction
 distribution lies near the reference feature distribution, while recall

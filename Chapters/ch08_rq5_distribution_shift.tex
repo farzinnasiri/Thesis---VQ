@@ -47,10 +47,7 @@ versus one shifted dataset. Table~\ref{tab:rq5_dataset_sizes} reports the number
 Both tokenizers produce a $16\times16$ grid, giving 256 token assignments per
 image.
 
-ObjectNet results describe inputs with a retained red identification border.
-OrganAMNIST results describe the 57{,}187-image local export, which omits
-1{,}643 official training images. We retain these two collections as limited
-descriptive checks. The main conclusions about redistribution rely on
+The main conclusions about redistribution rely on
 ImageNet-Sketch, BloodMNIST, and RVL-CDIP, with ImageNet-V2 as a near-domain
 reference.
 
@@ -68,8 +65,8 @@ reference.
         OOD & RVL-CDIP & 39{,}996 \\
     \end{tabular}
     \caption{Datasets encoded for the distribution-shift analysis. ImageNet is
-    the in-distribution reference for every comparison. ObjectNet retains its
-    source identification border; OrganAMNIST is the incomplete local export.}
+    the in-distribution reference for every comparison. Export details are in
+    Chapter~\ref{ch:datasets_models_metrics}.}
     \label{tab:rq5_dataset_sizes}
 \end{table}
 
@@ -182,11 +179,9 @@ the medical and document datasets.
 Table~\ref{tab:rq5_global_shift} reports the global code-usage measurements.
 ImageNet-V2 produces almost no global shift: JSD is 0.002 for LlamaGen and
 0.0004 for VQGAN, while both perplexity ratios are approximately one.
-ObjectNet also remains close to the ImageNet distribution, with JSD values of
-0.020 and 0.007. ImageNet-V2 contains natural images of the same classes collected from
-different sources. The ObjectNet values describe the marked-image export used
-here; because its red identification border was not explicitly removed, these
-values do not isolate the effect of object presentation from that marker.
+The evaluated ObjectNet export also has low JSD values, 0.020 and 0.007.
+ImageNet-V2 contains natural images of the same classes collected from
+different sources.
 
 \begin{table}[t]
     \centering
@@ -208,11 +203,10 @@ values do not isolate the effect of object presentation from that marker.
         VQGAN & RVL-CDIP           & 0.999 & 0.1949 & 0.325 \\
     \end{tabular}
     \caption{Global code-usage shift relative to ImageNet. Active retention is
-    the fraction of ImageNet-active codes also observed on the shifted dataset;
-    Retention is rounded to three decimals: LlamaGen uses 16{,}383 codes on
+    the fraction of ImageNet-active codes also observed on the shifted dataset.
+    Active retention is rounded to three decimals: LlamaGen uses 16{,}383 codes on
     ImageNet-Sketch and OrganAMNIST, so their displayed 1.000 is not exact.
-    $R_P$ is the shifted-to-ImageNet perplexity ratio. ObjectNet denotes the
-    marked-image export and OrganAMNIST the incomplete export.}
+    $R_P$ is the shifted-to-ImageNet perplexity ratio.}
     \label{tab:rq5_global_shift}
 \end{table}
 
@@ -234,16 +228,14 @@ LlamaGen to a small raw set.
 \begin{figure}[t]
     \centering
     \includegraphics[width=0.98\textwidth]{ch08_fig_global_shift_summary.png}
-    \caption{Global response to each shifted dataset. ObjectNet and OrganAMNIST
-    denote the limited exports described in Section~\ref{subsec:rq5_dataset_protocol}.
-    JSD measures movement of
+    \caption{Global response to each shifted dataset. JSD measures movement of
     probability mass over fixed code identities; $R_P$ measures concentration relative to each tokenizer's ImageNet
-    baseline.}
+    baseline. Asterisks mark the two exports detailed in Chapter~\ref{ch:datasets_models_metrics}.}
     \label{fig:rq5_global_shift_summary}
 \end{figure}
 
 Figure~\ref{fig:rq5_global_shift_summary} shows that ImageNet-V2 and the
-marked ObjectNet export remain near the ImageNet reference. The stylized, medical, and document
+evaluated ObjectNet export remain near the ImageNet reference. The stylized, medical, and document
 datasets have lower perplexity ratios, despite little
 change in their raw active sets.
 
@@ -280,8 +272,7 @@ Chapter~\ref{ch:rq1}.
     \caption{Reconstruction quality on ImageNet and the shifted datasets. PSNR
     and SSIM are higher-is-better; LPIPS and FID are lower-is-better. FID
     comparisons are made between tokenizers within a dataset, not across
-    dataset rows. PSNR is in dB. ObjectNet retains its identification border;
-    OrganAMNIST omits 1{,}643 training images.}
+    dataset rows. PSNR is in dB.}
     \label{tab:rq5_reconstruction_shift}
 \end{table}
 
@@ -310,11 +301,10 @@ distribution at a typical grid position. Comparing border and interior
 averages tests whether that concentration is uniform across the grid.
 For ImageNet-Sketch, LlamaGen's mean change is $-2.21$ nats on the border
 versus $-0.85$ nats in the interior; for RVL-CDIP, it is $-2.45$ versus
-$-1.43$ nats. ObjectNet likewise shows a larger border than interior change
-($-0.92$ versus $-0.11$ nats). These averages describe spatial variation,
-which may reflect margins and backgrounds as well as preprocessing. In
-particular, the ObjectNet border contrast cannot be attributed to object
-content because the source-image red border was not removed. Both panels divide by $\log 16{,}384$ for a common
+$-1.43$ nats. The evaluated ObjectNet export also shows a larger border than
+interior change ($-0.92$ versus $-0.11$ nats). These averages describe spatial
+variation, including effects of margins, backgrounds, and preprocessing.
+Both panels divide by $\log 16{,}384$ for a common
 scale, although VQGAN's empirical ImageNet vocabulary of 972 codes has a
 smaller attainable range. Normalized bar heights therefore are not directly
 comparable as fractions of each checkpoint's empirical range.
@@ -329,7 +319,7 @@ values in nats, without normalization.
     expresses changes relative to the theoretical entropy range. These are
     full-reference, unequal-size estimates; Table~\ref{tab:rq5_matched_entropy}
     checks the three smaller datasets with equal-size ImageNet references.
-    ObjectNet and OrganAMNIST use the limited exports described above.}
+    Asterisks mark the two exports detailed in Chapter~\ref{ch:datasets_models_metrics}.}
     \label{fig:rq5_positional_entropy}
 \end{figure}
 
@@ -394,10 +384,8 @@ qualitative JSD ranking despite their different empirical vocabulary sizes.
 Changing the input domain substantially changes token frequencies for sketches,
 medical images, and documents, while the reported reconstruction scores show
 no uniform ordering across these different datasets. Each tokenizer produces
-reconstructions on these datasets, but the scores do not isolate the effect
-of distribution shift from image content. The marked ObjectNet inputs and
-incomplete OrganAMNIST export provide additional descriptive observations,
-but are not needed to support this conclusion.
+reconstructions on these datasets, but differences in image content prevent a
+causal reading of cross-dataset score changes.
 
 The global results are the main finding of this chapter. An almost unchanged
 active vocabulary can hide substantial redistribution among its codes.

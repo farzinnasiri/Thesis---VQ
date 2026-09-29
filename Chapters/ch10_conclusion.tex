@@ -51,8 +51,7 @@ almost all codes that were active on ImageNet. They did not switch to a
 substantially different set of active tokens. Instead, they changed how often
 they used those tokens. ImageNet-V2 remained close to the ImageNet token
 distribution, while ImageNet-Sketch, BloodMNIST, and RVL-CDIP produced larger
-changes. These datasets support the frequency-redistribution finding
-independently of the limited ObjectNet and OrganAMNIST exports. RVL-CDIP produced the largest
+changes. RVL-CDIP produced the largest
 Jensen--Shannon divergence for both tokenizers. The reconstruction scores do
 not show a uniform ordering across these datasets, but their different image
 content prevents that comparison from isolating the effect of distribution
@@ -82,33 +81,23 @@ choices while controlling the remaining components.
 
 All experiments in this thesis use $256\times256$ inputs. Their exporters used
 different resize filters, as documented in the reproducibility appendix.
-The local VQGAN baseline differs from the published comparison by 0.35 dB
-PSNR and 0.07 FID; the cause has not been isolated
-(Section~\ref{sec:rq1_reconstruction_baseline}).
 Resizing and cropping
 can alter datasets whose native resolution, aspect ratio, or layout differs
 from ImageNet, especially document and medical images. Future comparisons
 should evaluate the existing checkpoints at other supported resolutions and
 test how the distribution-shift patterns depend on the chosen input size.
 
-The ObjectNet exporters did not explicitly remove the source images' red
-identification border. Its reported token frequencies and spatial contrasts
-therefore describe the marked-image pipeline; in particular, the border-grid
-contrast cannot be interpreted as a property of object content alone. The
-local OrganAMNIST export also omitted 1{,}643 images from the official
-training split. Its results describe the 57{,}187 saved images rather than the
-complete release. A full-dataset replication should correct both inputs and
-re-evaluate those two datasets before making border-free or full-release
-claims.
+ObjectNet retained its identification border, and the evaluated OrganAMNIST
+export omitted 1{,}643 training images
+(Section~\ref{subsec:shifted_datasets}); a replication should correct both
+inputs.
 
 The analyses of global and local perturbations used the same seeds and
 intervention levels for both models, but they did not save a shared record of
 the exact noise arrays and patch locations. Identical seed values do not imply
 identical perturbations across separate implementations and preprocessing
-pipelines; the realizations and patch locations were not matched. This
-avoidable limitation was
-identified after data collection. A replication should export every
-intervention once and apply the same saved intervention to both tokenizers.
+pipelines; the realizations and patch locations were not matched. A replication
+should export each intervention once and apply it to both tokenizers.
 The global-noise sweep starts at $\sigma=0.1$ in the internal image range;
 it does not characterize weaker perturbations. Clipping changes the sampled
 noise distribution, particularly at the strongest level. Decoder edit modes
@@ -139,5 +128,8 @@ streams and measure generation quality and robustness directly. Further
 spatial analysis should retain per-image grids for every dataset so all
 positional-entropy comparisons can use matched counts.
 
-The code, analysis notebooks, supporting data, and instructions for reproducing
-the reported results will be provided separately to the supervisor.
+The shared $16\times16$ grid and 16{,}384-entry nominal codebook concealed very
+different empirical vocabularies. Both checkpoints changed token identities
+under the tested noise, responded beyond local intervention regions, and
+redistributed code use across image domains. Reconstruction scores alone did
+not reveal these behaviors.

@@ -35,7 +35,7 @@ documents this preprocessing difference.
 \section{Reconstruction Baseline}
 \label{sec:rq1_reconstruction_baseline}
 
-Table~\ref{tab:rq1_reconstruction_metrics} reports the ImageNet reconstruction metrics for LlamaGen and VQGAN. LlamaGen has better scores on the paired-image metrics (PSNR, SSIM, LPIPS) and the reference-conditioned distribution metrics (FID, sFID, precision, and recall). Inception Score is retained as a diagnostic of classifier confidence and class diversity, not treated as a paired reconstruction metric or as having a universally preferred direction. The remaining metrics make LlamaGen the stronger clean reconstruction baseline on ImageNet.
+Table~\ref{tab:rq1_reconstruction_metrics} reports the ImageNet reconstruction metrics for LlamaGen and VQGAN. LlamaGen has better scores on the paired-image metrics (PSNR, SSIM, LPIPS) and the reference-conditioned distribution metrics (FID, sFID, precision, and recall). Inception Score is reported alongside them as the diagnostic defined in Chapter~\ref{ch:datasets_models_metrics}.
 
 \begin{table}[t]
     \centering
@@ -46,7 +46,7 @@ Table~\ref{tab:rq1_reconstruction_metrics} reports the ImageNet reconstruction m
         LlamaGen & 20.79 & 0.558 & 0.228 & 2.19 & 5.01 & 0.978 & 0.995 & 52.70 \\
         VQGAN    & 19.65 & 0.489 & 0.286 & 5.06 & 6.49 & 0.920 & 0.973 & 46.76 \\
     \end{tabular}
-    \caption{ImageNet reconstruction metrics for the two tokenizers under their recorded preprocessing. PSNR is in dB. Higher PSNR, SSIM, precision, and recall are preferred; lower LPIPS, FID, and sFID are preferred. Inception Score has no preferred reconstruction direction.}
+    \caption{ImageNet reconstruction metrics for the two tokenizers under their recorded preprocessing. PSNR is in dB. Higher PSNR, SSIM, precision, and recall are preferred; lower LPIPS, FID, and sFID are preferred.}
     \label{tab:rq1_reconstruction_metrics}
 \end{table}
 
@@ -79,11 +79,6 @@ the resize filters differ between exporters, so these numbers do not establish
 the cause of that offset. LlamaGen's published $97\%$ usage is measured in a
 65{,}536-token queue, whereas our $100\%$ denotes codes observed at least once
 across 12.8 million assignments.
-
-Excluding Inception Score, whose interpretation is not paired to a reference
-image, the reconstruction metrics in Table~\ref{tab:rq1_reconstruction_metrics}
-consistently favor LlamaGen. The table reports the values without assigning a
-preferred direction to the classifier-based score.
 
 Figure~\ref{fig:rq1_reconstruction_triplets} shows how much detail and structure
 each tokenizer preserves through the discrete bottleneck on three paired

@@ -188,7 +188,8 @@ assignment changes. Table~\ref{tab:rq2_token_flip} and
 Figure~\ref{fig:rq2_token_flip} report the dataset mean of
 $\mathrm{flip}_{\sigma}(x)$. At $\sigma=0.1$, VQGAN changes $75.1\%$ of token
 positions and LlamaGen changes $79.5\%$, even though the selected
-reconstructions remain recognizable. The latter is a qualitative observation.
+reconstructions shown in Figures~\ref{fig:rq2_qual_vqgan}
+and~\ref{fig:rq2_qual_llamagen} remain recognizable.
 At $\sigma=0.2$, the mean flip rates rise to $89.0\%$ and $91.0\%$; at
 $\sigma=0.5$, both exceed $97\%$.
 
@@ -218,7 +219,7 @@ change separately.
 \begin{figure}[t]
     \centering
     \includegraphics[width=0.86\textwidth]{ch05_fig_token_flip_vs_sigma.png}
-    \caption{Token identity changes under global Gaussian perturbations. Figure~\ref{fig:rq2_psnr_x_xhat} separately reports fidelity to the original image; the text below compares clean and noisy reconstructions directly on a 2{,}000-image sample.}
+    \caption{Token identity changes under global Gaussian perturbations.}
     \label{fig:rq2_token_flip}
 \end{figure}
 
@@ -232,7 +233,7 @@ Mean per-image decoded RMSE in $[0,1]$ pixel units is
 0.092/0.112/0.158 for LlamaGen and 0.099/0.122/0.182 for VQGAN at
 $\sigma=0.1/0.2/0.5$, respectively. At $\sigma=0.1$, LlamaGen has a higher
 identity-flip fraction than VQGAN in this sample (0.795 versus 0.751), but
-a lower decoded RMSE. The same descriptive ordering
+a lower decoded RMSE. The ordering
 holds at the two larger noise levels. Thus the
 identity-flip ordering does not carry over to decoded-image change in this
 sample; neither measure identifies the cause of the difference.
@@ -268,7 +269,7 @@ Perplexity is more sensitive than active-code count. LlamaGen's perplexity decre
         VQGAN & mid & 971 & 780 & 0.249 \\
         VQGAN & high & 972 & 560 & 0.388 \\
     \end{tabular}
-    \caption{Global codebook distribution statistics under global perturbations. Top-$m$ mass is the fraction of all token assignments explained by the $k$ most frequent codes at that noise level.}
+    \caption{Global codebook distribution statistics under global perturbations. Top-$m$ mass is the fraction of all token assignments explained by the $m$ most frequent codes at that noise level.}
     \label{tab:rq2_codebook_distribution}
 \end{table}
 \begin{figure}[t]
@@ -296,9 +297,8 @@ identity-flip rates under each tested perturbation. Their absolute flip rates
 cannot be used to rank stability across the two codebook geometries.
 
 The direct decoded-change sample gives the opposite checkpoint ordering from
-the identity-flip fractions. This shows why a changed code ID cannot be read as
-a fixed amount of image change. The sample does not calibrate that relationship
-for individual codes or isolate codebook geometry as its cause.
+the identity-flip fractions. A changed code ID therefore has no fixed
+image-space magnitude across these checkpoints.
 
 \paragraph{Code-frequency concentration.}
 \label{subsec:rq2_noise_concentrates_usage}
@@ -312,7 +312,5 @@ The complete condition summaries are retained in
 Appendix~\ref{app:supporting_results}.
 
 The results above provide the reference point for the locality analyses. Global
-noise perturbs all image regions. Chapter~\ref{ch:rq3} isolates a local image
-change, and Chapter~\ref{ch:rq4} studies bounded token edits. These experiments
-separate where a response occurs, but do not identify individual causal
-mechanisms.
+noise perturbs all image regions. Chapter~\ref{ch:rq3} studies a local image
+change, and Chapter~\ref{ch:rq4} studies bounded token edits.

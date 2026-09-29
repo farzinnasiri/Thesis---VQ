@@ -444,9 +444,8 @@ For VQGAN, random replacement is more disruptive under LPIPS than the
 orthogonal edit despite a smaller average pixel response.
 
 VQGAN random replacement can introduce codes absent from its clean ImageNet
-assignments. This affects the interpretation of its scores and qualitative
-examples: the experiment does not isolate the effect of distance from the
-effect of using inactive codes.
+assignments. Its response therefore combines code distance with exposure to
+codes unused on those inputs.
 
 The same within-checkpoint edit patterns persist across patch fractions.
 At the 25\% level, the VQGAN farthest-code edit has an inside response of

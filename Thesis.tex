@@ -157,23 +157,17 @@ On ImageNet validation, LlamaGen obtains better reconstruction scores and uses
 all 16{,}384 codebook entries at least once in this evaluation. VQGAN uses 972
 entries on the same image set, confirming earlier reports of severe underuse
 for this checkpoint under the recorded preprocessing. At the tested noise
-levels, many token identities change. A separate comparison of 2{,}000 saved
-image pairs measures decoded change directly; its ordering differs from the
-token-flip ordering, with unmatched noise draws between checkpoints.
-Noise also concentrates code usage without greatly changing
-raw active-code counts. Local image perturbations change token assignments
-well beyond the perturbed patch. Direct token edits produce measurable pixel
-changes outside the edited region, under a different intervention and response
-measure. Under distribution shift, the active vocabulary remains largely fixed
-while code frequencies change, as shown by ImageNet-Sketch, BloodMNIST, and
-RVL-CDIP. Matching sample counts largely removes the apparent ImageNet-V2
-positional-entropy decrease. ObjectNet and OrganAMNIST results are limited to
-exports with a retained identification border and missing images, respectively.
+levels, most token identities change, while a saved-image comparison finds
+smaller decoded changes for LlamaGen at each tested level. Noise concentrates
+code usage without greatly changing raw active-code counts. Local image
+perturbations change token assignments well beyond the perturbed patch, and
+direct token edits change pixels outside the corresponding image region.
+ImageNet-Sketch, BloodMNIST, and RVL-CDIP retain almost all ImageNet-active
+codes but use them at different frequencies.
 
-Reconstruction quality, codebook utilization, token stability, and spatial
-response describe different properties. Reconstruction scores also depend on
-dataset content, so their absolute values do not establish preservation of
-quality across domains.
+Reconstruction quality alone does not capture code use, token stability, or
+spatial response. These measurements expose distinct properties of the two
+checkpoints under perturbation and distribution shift.
 \par\smallskip
 \textbf{Keywords:} vector quantization, image tokenization, VQGAN, LlamaGen, robustness, autoregressive image generation % Keywords
 
@@ -190,26 +184,19 @@ Su ImageNet validation, LlamaGen ottiene metriche di ricostruzione migliori e
 utilizza tutti i 16.384 elementi del codebook almeno una volta in questa
 valutazione; VQGAN ne utilizza 972, confermando precedenti osservazioni di
 sottoutilizzo, con il preprocessing documentato. Ai livelli di rumore testati
-cambiano molte identit\`a dei token. Un confronto separato di 2.000 coppie di
-immagini salvate misura direttamente il cambiamento delle ricostruzioni; il
-suo ordinamento differisce da quello dei cambiamenti dei token, con
-realizzazioni del rumore diverse tra i checkpoint. Il rumore concentra inoltre l'uso dei
-codici senza modificare molto il numero grezzo di codici attivi. Le
-perturbazioni locali dell'immagine modificano le assegnazioni dei token oltre
-la regione perturbata. Le modifiche dirette dei token causano cambiamenti
-misurabili nei pixel esterni alla regione modificata, con un intervento e una
-metrica di risposta diversi. In presenza di variazioni della distribuzione, il
-vocabolario attivo rimane quasi invariato, mentre cambiano le frequenze dei
-codici, come mostrano ImageNet-Sketch, BloodMNIST e RVL-CDIP. A parit\`a di
-numerosit\`a dei campioni, la diminuzione apparente dell'entropia posizionale
-di ImageNet-V2 quasi scompare. I risultati di ObjectNet e OrganAMNIST sono
-limitati a esportazioni con un bordo identificativo mantenuto e immagini
-mancanti, rispettivamente.
+cambia l'identit\`a della maggior parte dei token, mentre un confronto delle
+ricostruzioni salvate rileva cambiamenti minori per LlamaGen a ogni livello
+testato. Il rumore concentra l'uso dei codici senza modificare molto il numero
+grezzo di codici attivi. Le perturbazioni locali dell'immagine modificano le
+assegnazioni dei token ben oltre la regione perturbata; le modifiche dirette
+dei token cambiano i pixel anche fuori dalla regione corrispondente.
+ImageNet-Sketch, BloodMNIST e RVL-CDIP conservano quasi tutti i codici attivi
+su ImageNet, ma li utilizzano con frequenze diverse.
 
-Qualit\`a della ricostruzione, utilizzo del codebook, stabilit\`a dei token e
-risposta spaziale descrivono propriet\`a diverse. Le metriche di ricostruzione
-dipendono anche dal contenuto delle immagini e non permettono da sole di
-quantificare la qualit\`a preservata tra domini diversi.
+La qualit\`a della ricostruzione da sola non descrive l'uso dei codici, la
+stabilit\`a dei token o la risposta spaziale. Queste misure distinguono il
+comportamento dei due checkpoint sotto perturbazione e variazioni della
+distribuzione.
 \par\smallskip
 \textbf{Parole chiave:} quantizzazione vettoriale, tokenizzazione di immagini, VQGAN, LlamaGen, robustezza, generazione autoregressiva di immagini % Keywords (italian)
 
